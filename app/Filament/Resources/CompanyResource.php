@@ -132,6 +132,8 @@ class CompanyResource extends Resource
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
             ])
+            ->emptyStateHeading('Нет компаний')
+            ->emptyStateDescription('Создайте первую компанию, чтобы начать работу.')
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_archived')
                     ->label('Архивированные'),

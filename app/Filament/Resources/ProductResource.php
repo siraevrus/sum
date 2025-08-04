@@ -210,6 +210,8 @@ class ProductResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->emptyStateHeading('Нет товаров')
+            ->emptyStateDescription('Создайте первый товар, чтобы начать работу.')
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')

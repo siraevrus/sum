@@ -198,6 +198,8 @@ class RequestResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->emptyStateHeading('Нет запросов')
+            ->emptyStateDescription('Создайте первый запрос, чтобы начать работу.')
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')

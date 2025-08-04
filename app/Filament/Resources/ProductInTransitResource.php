@@ -269,6 +269,8 @@ class ProductInTransitResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->emptyStateHeading('Нет товаров в пути')
+            ->emptyStateDescription('Создайте первый товар в пути, чтобы начать работу.')
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')

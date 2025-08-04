@@ -154,6 +154,8 @@ class UserResource extends Resource
                     ->trueColor('danger')
                     ->falseColor('success'),
             ])
+            ->emptyStateHeading('Нет пользователей')
+            ->emptyStateDescription('Создайте первого пользователя, чтобы начать работу.')
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
                     ->label('Роль')

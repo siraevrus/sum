@@ -183,6 +183,8 @@ class ProductTemplateResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger'),
             ])
+            ->emptyStateHeading('Нет шаблонов товаров')
+            ->emptyStateDescription('Создайте первый шаблон товара, чтобы начать работу.')
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Активные'),

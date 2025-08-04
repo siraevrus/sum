@@ -371,6 +371,8 @@ class SaleResource extends Resource
                             );
                     }),
             ])
+            ->emptyStateHeading('Нет продаж')
+            ->emptyStateDescription('Создайте первую продажу, чтобы начать работу.')
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

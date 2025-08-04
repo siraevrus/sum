@@ -87,6 +87,8 @@ class WarehouseResource extends Resource
                     ->trueColor('success')
                     ->falseColor('danger'),
             ])
+            ->emptyStateHeading('Нет складов')
+            ->emptyStateDescription('Создайте первый склад, чтобы начать работу.')
             ->filters([
                 Tables\Filters\SelectFilter::make('company_id')
                     ->label('Компания')
