@@ -1,0 +1,195 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\CompanyResource\Pages;
+use App\Models\Company;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class CompanyResource extends Resource
+{
+    protected static ?string $model = Company::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
+
+    protected static ?string $navigationLabel = 'Компании';
+
+    protected static ?string $modelLabel = 'Компания';
+
+    protected static ?string $pluralModelLabel = 'Компании';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Основная информация')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Название компании')
+                            ->required()
+                            ->maxLength(100),
+
+                        Forms\Components\TextInput::make('general_director')
+                            ->label('Генеральный директор')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('phone_fax')
+                            ->label('Телефон/факс')
+                            ->maxLength(255),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Адреса')
+                    ->schema([
+                        Forms\Components\Textarea::make('legal_address')
+                            ->label('Юридический адрес')
+                            ->rows(3),
+
+                        Forms\Components\Textarea::make('postal_address')
+                            ->label('Почтовый адрес')
+                            ->rows(3),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Реквизиты')
+                    ->schema([
+                        Forms\Components\TextInput::make('inn')
+                            ->label('ИНН')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('kpp')
+                            ->label('КПП')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('ogrn')
+                            ->label('ОГРН')
+                            ->maxLength(255),
+                    ])
+                    ->columns(3),
+
+                Forms\Components\Section::make('Банковские реквизиты')
+                    ->schema([
+                        Forms\Components\TextInput::make('bank')
+                            ->label('БАНК')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('account_number')
+                            ->label('Р/с')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('correspondent_account')
+                            ->label('К/с')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('bik')
+                            ->label('БИК')
+                            ->maxLength(255),
+                    ])
+                    ->columns(2),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Название компании')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('employees_count')
+                    ->label('Количество сотрудников')
+                    ->counts('employees')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('warehouses_count')
+                    ->label('Количество складов')
+                    ->counts('warehouses')
+                    ->sortable(),
+
+                Tables\Columns\IconColumn::make('is_archived')
+                    ->label('Статус')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-archive-box')
+                    ->falseIcon('heroicon-o-building-office')
+                    ->trueColor('danger')
+                    ->falseColor('success'),
+
+                Tables\Columns\TextColumn::make('archived_at')
+                    ->label('Дата архивации')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+            ])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_archived')
+                    ->label('Архивированные'),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('archive')
+                    ->label('Архивировать')
+                    ->icon('heroicon-o-archive-box')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Архивировать компанию?')
+                    ->modalDescription('Вы хотите архивировать компанию? Вместе с ней скроются все внесенные данные связанные с этой компанией.')
+                    ->modalSubmitActionLabel('Да, архивировать')
+                    ->modalCancelActionLabel('Отмена')
+                    ->visible(fn (Company $record): bool => !$record->is_archived)
+                    ->action(function (Company $record): void {
+                        $record->archive();
+                    }),
+
+                Tables\Actions\Action::make('restore')
+                    ->label('Восстановить')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn (Company $record): bool => $record->is_archived)
+                    ->action(function (Company $record): void {
+                        $record->restore();
+                    }),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListCompanies::route('/'),
+            'create' => Pages\CreateCompany::route('/create'),
+            'edit' => Pages\EditCompany::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}

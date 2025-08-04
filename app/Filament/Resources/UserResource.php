@@ -1,0 +1,224 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\UserResource\Pages;
+use App\Models\User;
+use App\UserRole;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class UserResource extends Resource
+{
+    protected static ?string $model = User::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $navigationLabel = 'Сотрудники';
+
+    protected static ?string $modelLabel = 'Сотрудник';
+
+    protected static ?string $pluralModelLabel = 'Сотрудники';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Основная информация')
+                    ->schema([
+                        Forms\Components\Select::make('role')
+                            ->label('Роль')
+                            ->options([
+                                UserRole::ADMIN->value => UserRole::ADMIN->label(),
+                                UserRole::OPERATOR->value => UserRole::OPERATOR->label(),
+                                UserRole::WAREHOUSE_WORKER->value => UserRole::WAREHOUSE_WORKER->label(),
+                                UserRole::SALES_MANAGER->value => UserRole::SALES_MANAGER->label(),
+                            ])
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                if ($state === UserRole::ADMIN->value) {
+                                    $set('company_id', null);
+                                    $set('warehouse_id', null);
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('first_name')
+                            ->label('Имя')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('last_name')
+                            ->label('Фамилия')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('middle_name')
+                            ->label('Отчество')
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
+
+                        Forms\Components\TextInput::make('phone')
+                            ->label('Телефон')
+                            ->tel()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('password')
+                            ->label('Пароль')
+                            ->password()
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->minLength(8),
+
+                        Forms\Components\Toggle::make('is_blocked')
+                            ->label('Заблокирован')
+                            ->default(false),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Компания и склад')
+                    ->schema([
+                        Forms\Components\Select::make('company_id')
+                            ->label('Компания')
+                            ->relationship('company', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
+
+                        Forms\Components\Select::make('warehouse_id')
+                            ->label('Склад')
+                            ->relationship('warehouse', 'name', function (Builder $query, $get) {
+                                $companyId = $get('company_id');
+                                if ($companyId) {
+                                    $query->where('company_id', $companyId);
+                                }
+                                return $query;
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
+                    ])
+                    ->columns(2)
+                    ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Дата добавления')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('full_name')
+                    ->label('ФИО')
+                    ->searchable(['first_name', 'last_name', 'middle_name'])
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('company.name')
+                    ->label('Компания')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('role')
+                    ->label('Должность')
+                    ->badge()
+                    ->formatStateUsing(fn (UserRole $state): string => $state->label()),
+
+                Tables\Columns\TextColumn::make('warehouse.name')
+                    ->label('Склад')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('blocked_at')
+                    ->label('Дата блокировки')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
+
+                Tables\Columns\IconColumn::make('is_blocked')
+                    ->label('Статус')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-lock-closed')
+                    ->falseIcon('heroicon-o-lock-open')
+                    ->trueColor('danger')
+                    ->falseColor('success'),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('role')
+                    ->label('Роль')
+                    ->options([
+                        UserRole::ADMIN->value => UserRole::ADMIN->label(),
+                        UserRole::OPERATOR->value => UserRole::OPERATOR->label(),
+                        UserRole::WAREHOUSE_WORKER->value => UserRole::WAREHOUSE_WORKER->label(),
+                        UserRole::SALES_MANAGER->value => UserRole::SALES_MANAGER->label(),
+                    ]),
+
+                Tables\Filters\SelectFilter::make('company_id')
+                    ->label('Компания')
+                    ->relationship('company', 'name'),
+
+                Tables\Filters\TernaryFilter::make('is_blocked')
+                    ->label('Заблокированные'),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('block')
+                    ->label('Заблокировать')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->visible(fn (User $record): bool => !$record->is_blocked)
+                    ->action(function (User $record): void {
+                        $record->update([
+                            'is_blocked' => true,
+                            'blocked_at' => now(),
+                        ]);
+                    }),
+
+                Tables\Actions\Action::make('unblock')
+                    ->label('Разблокировать')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn (User $record): bool => $record->is_blocked)
+                    ->action(function (User $record): void {
+                        $record->update([
+                            'is_blocked' => false,
+                            'blocked_at' => null,
+                        ]);
+                    }),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListUsers::route('/'),
+            'create' => Pages\CreateUser::route('/create'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
+        ];
+    }
+}
