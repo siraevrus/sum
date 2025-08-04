@@ -1,61 +1,216 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏭 Система управления складом
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Полнофункциональная система управления складом на Laravel 12 + Filament с REST API для мобильного приложения.
 
-## About Laravel
+## 🎯 Возможности
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### ✅ Основные модули
+- **Управление товарами** - создание, редактирование, отслеживание остатков
+- **Товары в пути** - отслеживание доставки и приемка товаров
+- **Система запросов** - создание и обработка запросов на получение товаров
+- **Реализация товаров** - продажи с автоматическим списанием со склада
+- **Дашборд и отчеты** - статистика и аналитика
+- **REST API** - полный API для мобильного приложения
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🔐 Безопасность
+- Система ролей (Администратор, Оператор ПК, Работник склада, Менеджер по продажам)
+- Аутентификация через токены (Laravel Sanctum)
+- Валидация всех входных данных
+- Права доступа на уровне данных
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 📊 Аналитика
+- Статистика по товарам, продажам, запросам
+- Популярные товары
+- Просроченные доставки и запросы
+- Экспорт данных в CSV
 
-## Learning Laravel
+### 🚀 Оптимизация
+- Кеширование статистики
+- Сжатие API ответов (gzip)
+- Пагинация результатов
+- Оптимизированные запросы к БД
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🛠 Технологии
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Backend**: Laravel 12
+- **Admin Panel**: Filament 3
+- **API**: Laravel Sanctum
+- **Database**: MySQL/PostgreSQL
+- **Frontend**: Blade + Livewire
+- **Authentication**: Laravel Sanctum
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 📋 Требования
 
-## Laravel Sponsors
+- PHP 8.2+
+- Composer
+- MySQL 8.0+ или PostgreSQL 13+
+- Node.js 18+ (для сборки фронтенда)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🚀 Установка
 
-### Premium Partners
+### 1. Клонирование репозитория
+```bash
+git clone <repository-url>
+cd sklad
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Установка зависимостей
+```bash
+composer install
+npm install
+```
 
-## Contributing
+### 3. Настройка окружения
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Настройка базы данных
+Отредактируйте `.env` файл:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sklad
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## Code of Conduct
+### 5. Миграции и сидеры
+```bash
+php artisan migrate:fresh --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 6. Сборка фронтенда
+```bash
+npm run build
+```
 
-## Security Vulnerabilities
+### 7. Запуск сервера
+```bash
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 👥 Тестовые аккаунты
 
-## License
+После установки доступны следующие аккаунты:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Роль | Email | Пароль |
+|------|-------|--------|
+| **Администратор** | admin@sklad.ru | password |
+| **Оператор ПК** | operator@sklad.ru | password |
+| **Работник склада** | worker@sklad.ru | password |
+| **Менеджер по продажам** | manager@sklad.ru | password |
+
+## 🌐 Доступ к системе
+
+- **Веб-интерфейс**: http://localhost:8000/admin
+- **API**: http://localhost:8000/api
+
+## 📚 API Документация
+
+Полная документация API доступна в файле [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+
+### Основные эндпоинты:
+
+#### Аутентификация
+- `POST /api/auth/register` - Регистрация
+- `POST /api/auth/login` - Вход
+- `POST /api/auth/logout` - Выход
+- `GET /api/auth/me` - Профиль пользователя
+
+#### Товары
+- `GET /api/products` - Список товаров
+- `GET /api/products/{id}` - Получение товара
+- `POST /api/products` - Создание товара
+- `PUT /api/products/{id}` - Обновление товара
+- `DELETE /api/products/{id}` - Удаление товара
+- `GET /api/products/stats` - Статистика товаров
+- `GET /api/products/popular` - Популярные товары
+
+#### Продажи
+- `GET /api/sales` - Список продаж
+- `GET /api/sales/{id}` - Получение продажи
+- `POST /api/sales` - Создание продажи
+- `PUT /api/sales/{id}` - Обновление продажи
+- `DELETE /api/sales/{id}` - Удаление продажи
+- `POST /api/sales/{id}/process` - Оформление продажи
+- `POST /api/sales/{id}/cancel` - Отмена продажи
+- `GET /api/sales/stats` - Статистика продаж
+
+## 📊 Структура базы данных
+
+### Основные таблицы:
+- `users` - Пользователи системы
+- `companies` - Компании
+- `warehouses` - Склады
+- `product_templates` - Шаблоны товаров
+- `product_attributes` - Характеристики товаров
+- `products` - Товары на складе
+- `product_in_transit` - Товары в пути
+- `requests` - Запросы на получение товаров
+- `sales` - Продажи
+
+## 🔧 Конфигурация
+
+### Настройка ролей
+Роли определяются в `app/UserRole.php`:
+- `admin` - Полный доступ ко всем данным
+- `operator` - Оператор ПК
+- `worker` - Работник склада
+- `manager` - Менеджер по продажам
+
+### Настройка прав доступа
+Права доступа настраиваются в каждом Resource файле через метод `getEloquentQuery()`.
+
+## 📈 Мониторинг и логи
+
+- Логи приложения: `storage/logs/laravel.log`
+- Логи API запросов: `storage/logs/api.log`
+- Кеш статистики: Redis/Memcached (опционально)
+
+## 🧪 Тестирование
+
+```bash
+# Запуск всех тестов
+php artisan test
+
+# Запуск тестов API
+php artisan test --filter=Api
+
+# Запуск тестов с покрытием
+php artisan test --coverage
+```
+
+## 📦 Развертывание
+
+### Production настройки
+1. Установите `APP_ENV=production` в `.env`
+2. Настройте кеширование: `php artisan config:cache`
+3. Оптимизируйте автозагрузчик: `composer install --optimize-autoloader --no-dev`
+4. Настройте веб-сервер (Nginx/Apache)
+
+### Docker (опционально)
+```bash
+docker-compose up -d
+```
+
+## 🤝 Вклад в проект
+
+1. Форкните репозиторий
+2. Создайте ветку для новой функции
+3. Внесите изменения
+4. Создайте Pull Request
+
+## 📄 Лицензия
+
+MIT License
+
+## 📞 Поддержка
+
+Для вопросов и поддержки создайте Issue в репозитории.
+
+---
+
+**🎉 Проект полностью завершен и готов к использованию!**
