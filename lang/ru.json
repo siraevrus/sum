@@ -35,5 +35,7 @@
     "Approved": "Одобрен",
     "Rejected": "Отклонен",
     "Completed": "Завершен",
-    "Cancelled": "Отменен"
+    "Cancelled": "Отменен",
+    "No records found": "Нет элементов",
+    "No items found": "Нет элементов"
 } 
