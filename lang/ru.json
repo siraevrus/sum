@@ -37,5 +37,9 @@
     "Completed": "Завершен",
     "Cancelled": "Отменен",
     "No records found": "Нет элементов",
-    "No items found": "Нет элементов"
+    "No items found": "Нет элементов",
+    "No records found.": "Нет элементов",
+    "No items found.": "Нет элементов",
+    "No records found for": "Нет элементов для",
+    "No items found for": "Нет элементов для"
 } 

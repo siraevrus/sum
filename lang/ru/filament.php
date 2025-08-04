@@ -130,6 +130,10 @@ return [
         'select_all' => 'Выбрать все',
         'deselect_all' => 'Снять выделение',
         'no_records' => 'Нет элементов',
+        'no_records_found' => 'Нет элементов',
+        'no_items_found' => 'Нет элементов',
+        'no_records_found_for' => 'Нет элементов для',
+        'no_items_found_for' => 'Нет элементов для',
         'loading' => 'Загрузка...',
     ],
 
@@ -254,6 +258,10 @@ return [
             'company' => 'Компания',
             'warehouse' => 'Склад',
             'date_range' => 'Период',
+        ],
+        'empty_state' => [
+            'heading' => 'Нет элементов',
+            'description' => 'Создайте первый элемент, чтобы начать.',
         ],
     ],
 ]; 
