@@ -22,28 +22,25 @@ class SalesOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color('success'),
 
-            Stat::make('Выручка сегодня', Sale::where('sale_date', '>=', $today)
+            Stat::make('Выручка сегодня', number_format(Sale::where('sale_date', '>=', $today)
                 ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->sum('total_price'))
+                ->sum('total_price'), 0, ',', ' ') . ' ₽')
                 ->description('Общая выручка за сегодня')
-                ->descriptionIcon('heroicon-m-currency-ruble')
-                ->color('success')
-                ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', ' ') . ' ₽'),
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('success'),
 
-            Stat::make('Выручка за месяц', Sale::where('sale_date', '>=', $thisMonth)
+            Stat::make('Выручка за месяц', number_format(Sale::where('sale_date', '>=', $thisMonth)
                 ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->sum('total_price'))
+                ->sum('total_price'), 0, ',', ' ') . ' ₽')
                 ->description('Общая выручка за текущий месяц')
                 ->descriptionIcon('heroicon-m-chart-bar')
-                ->color('info')
-                ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', ' ') . ' ₽'),
+                ->color('info'),
 
-            Stat::make('Средний чек', Sale::where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->avg('total_price'))
+            Stat::make('Средний чек', number_format(Sale::where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                ->avg('total_price'), 0, ',', ' ') . ' ₽')
                 ->description('Средняя сумма продажи')
                 ->descriptionIcon('heroicon-m-calculator')
-                ->color('warning')
-                ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', ' ') . ' ₽'),
+                ->color('warning'),
 
             Stat::make('Ожидают оплаты', Sale::where('payment_status', Sale::PAYMENT_STATUS_PENDING)->count())
                 ->description('Продажи в ожидании оплаты')

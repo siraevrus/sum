@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductInTransit;
 use App\Models\Request;
 use App\Models\Sale;
+use App\Models\Warehouse;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -26,7 +27,7 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-users')
                 ->color('info'),
 
-            Stat::make('Складов', \App\Models\Warehouse::where('is_active', true)->count())
+            Stat::make('Складов', Warehouse::where('is_active', true)->count())
                 ->description('Активные склады')
                 ->descriptionIcon('heroicon-m-home-modern')
                 ->color('warning'),
@@ -51,11 +52,10 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info'),
 
-            Stat::make('Продажи', Sale::paid()->sum('total_price'))
+            Stat::make('Продажи', number_format(Sale::paid()->sum('total_price'), 0, ',', ' ') . ' ₽')
                 ->description('Общая выручка')
                 ->descriptionIcon('heroicon-m-currency-dollar')
-                ->color('success')
-                ->formatStateUsing(fn (float $state): string => number_format($state, 0, ',', ' ') . ' ₽'),
+                ->color('success'),
         ];
     }
 }
