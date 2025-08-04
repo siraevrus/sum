@@ -1,0 +1,210 @@
+<?php
+
+namespace Tests\Feature\Api;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ValidationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+    private string $token;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        $this->user = User::factory()->create(['role' => 'admin']);
+        $this->token = $this->user->createToken('test-token')->plainTextToken;
+    }
+
+    public function test_registration_validation_rules()
+    {
+        $response = $this->postJson('/api/auth/register', []);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['name', 'email', 'password']);
+
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'a', // слишком короткое
+            'email' => 'invalid-email', // неверный формат
+            'password' => '123', // слишком короткий
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['name', 'email', 'password']);
+    }
+
+    public function test_login_validation_rules()
+    {
+        $response = $this->postJson('/api/auth/login', []);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email', 'password']);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'invalid-email',
+            'password' => '', // пустой пароль
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email', 'password']);
+    }
+
+    public function test_product_creation_validation()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/products', []);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['name', 'warehouse_id', 'product_template_id']);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/products', [
+            'name' => '', // пустое название
+            'quantity' => -1, // отрицательное количество
+            'unit_price' => 'invalid-price', // неверная цена
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['name', 'quantity', 'unit_price']);
+    }
+
+    public function test_sale_creation_validation()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/sales', []);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['product_id', 'warehouse_id', 'customer_name', 'quantity', 'unit_price']);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/sales', [
+            'customer_name' => '', // пустое имя клиента
+            'quantity' => 0, // нулевое количество
+            'unit_price' => -100, // отрицательная цена
+            'customer_email' => 'invalid-email', // неверный email
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['customer_name', 'quantity', 'unit_price', 'customer_email']);
+    }
+
+    public function test_profile_update_validation()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->putJson('/api/auth/profile', [
+            'name' => '', // пустое имя
+            'email' => 'invalid-email', // неверный email
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['name', 'email']);
+    }
+
+    public function test_email_uniqueness_validation()
+    {
+        // Создаем первого пользователя
+        $this->postJson('/api/auth/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        // Пытаемся создать второго пользователя с тем же email
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Another User',
+            'email' => 'test@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_password_confirmation_validation()
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'different-password',
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['password']);
+    }
+
+    public function test_quantity_must_be_positive()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/products', [
+            'name' => 'Test Product',
+            'quantity' => -5,
+            'warehouse_id' => 1,
+            'product_template_id' => 1,
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['quantity']);
+    }
+
+    public function test_price_must_be_positive()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/sales', [
+            'product_id' => 1,
+            'warehouse_id' => 1,
+            'customer_name' => 'Test Customer',
+            'quantity' => 5,
+            'unit_price' => -100,
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['unit_price']);
+    }
+
+    public function test_phone_number_format_validation()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/sales', [
+            'product_id' => 1,
+            'warehouse_id' => 1,
+            'customer_name' => 'Test Customer',
+            'customer_phone' => 'invalid-phone',
+            'quantity' => 5,
+            'unit_price' => 100,
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['customer_phone']);
+    }
+
+    public function test_date_format_validation()
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->postJson('/api/products', [
+            'name' => 'Test Product',
+            'warehouse_id' => 1,
+            'product_template_id' => 1,
+            'arrival_date' => 'invalid-date',
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['arrival_date']);
+    }
+} 
