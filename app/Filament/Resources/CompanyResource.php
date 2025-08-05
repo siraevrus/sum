@@ -33,11 +33,11 @@ class CompanyResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Название компании')
                             ->required()
-                            ->maxLength(100),
+                            ->maxLength(60),
 
                         Forms\Components\TextInput::make('general_director')
                             ->label('Генеральный директор')
-                            ->maxLength(255),
+                            ->maxLength(60),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -66,15 +66,15 @@ class CompanyResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('inn')
                             ->label('ИНН')
-                            ->maxLength(255),
+                            ->maxLength(10),
 
                         Forms\Components\TextInput::make('kpp')
                             ->label('КПП')
-                            ->maxLength(255),
+                            ->maxLength(9),
 
                         Forms\Components\TextInput::make('ogrn')
                             ->label('ОГРН')
-                            ->maxLength(255),
+                            ->maxLength(13),
                     ])
                     ->columns(3),
 
@@ -86,15 +86,15 @@ class CompanyResource extends Resource
 
                         Forms\Components\TextInput::make('account_number')
                             ->label('Р/с')
-                            ->maxLength(255),
+                            ->maxLength(20),
 
                         Forms\Components\TextInput::make('correspondent_account')
                             ->label('К/с')
-                            ->maxLength(255),
+                            ->maxLength(20),
 
                         Forms\Components\TextInput::make('bik')
                             ->label('БИК')
-                            ->maxLength(255),
+                            ->maxLength(9),
                     ])
                     ->columns(2),
             ]);
