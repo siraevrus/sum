@@ -48,19 +48,78 @@ class UserResource extends Resource
                                 }
                             }),
 
+                        Forms\Components\TextInput::make('username')
+                            ->label('Логин')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(ignoreRecord: true),
+
+                        Forms\Components\TextInput::make('name')
+                            ->label('Полное имя')
+                            ->required()
+                            ->maxLength(255)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                // Автоматически формируем полное имя из ФИО
+                                $firstName = $get('first_name') ?? '';
+                                $lastName = $get('last_name') ?? '';
+                                $middleName = $get('middle_name') ?? '';
+                                
+                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
+                                if (!empty($fullName)) {
+                                    $set('name', $fullName);
+                                }
+                            }),
+
                         Forms\Components\TextInput::make('first_name')
                             ->label('Имя')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                // Обновляем полное имя при изменении ФИО
+                                $firstName = $state ?? '';
+                                $lastName = $get('last_name') ?? '';
+                                $middleName = $get('middle_name') ?? '';
+                                
+                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
+                                if (!empty($fullName)) {
+                                    $set('name', $fullName);
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('last_name')
                             ->label('Фамилия')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                // Обновляем полное имя при изменении ФИО
+                                $firstName = $get('first_name') ?? '';
+                                $lastName = $state ?? '';
+                                $middleName = $get('middle_name') ?? '';
+                                
+                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
+                                if (!empty($fullName)) {
+                                    $set('name', $fullName);
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('middle_name')
                             ->label('Отчество')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, callable $set, $get) {
+                                // Обновляем полное имя при изменении ФИО
+                                $firstName = $get('first_name') ?? '';
+                                $lastName = $get('last_name') ?? '';
+                                $middleName = $state ?? '';
+                                
+                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
+                                if (!empty($fullName)) {
+                                    $set('name', $fullName);
+                                }
+                            }),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -118,9 +177,14 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Дата добавления')
-                    ->dateTime('d.m.Y H:i')
+                Tables\Columns\TextColumn::make('username')
+                    ->label('Логин')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label('Email')
+                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('full_name')
