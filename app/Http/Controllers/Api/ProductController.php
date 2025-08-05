@@ -250,4 +250,69 @@ class ProductController extends Controller
             'data' => $products,
         ]);
     }
+
+    /**
+     * Экспорт товаров
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $query = Product::with(['template', 'warehouse', 'creator'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhere('producer', 'like', "%{$search}%");
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->template_id, function ($query, $templateId) {
+                $query->where('product_template_id', $templateId);
+            })
+            ->when($request->producer, function ($query, $producer) {
+                $query->where('producer', $producer);
+            })
+            ->when($request->in_stock, function ($query) {
+                $query->where('quantity', '>', 0);
+            })
+            ->when($request->low_stock, function ($query) {
+                $query->where('quantity', '<=', 10)->where('quantity', '>', 0);
+            })
+            ->when($request->active, function ($query) {
+                $query->where('is_active', true);
+            });
+
+        // Применяем права доступа
+        if ($user->role !== 'admin') {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        $products = $query->get();
+
+        // Формируем данные для экспорта
+        $exportData = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'producer' => $product->producer,
+                'quantity' => $product->quantity,
+                'calculated_volume' => $product->calculated_volume,
+                'warehouse' => $product->warehouse->name ?? '',
+                'template' => $product->template->name ?? '',
+                'arrival_date' => $product->arrival_date,
+                'is_active' => $product->is_active ? 'Да' : 'Нет',
+                'created_at' => $product->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $exportData,
+            'total' => $exportData->count(),
+        ]);
+    }
 } 

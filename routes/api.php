@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WarehouseController;
+use App\Http\Controllers\Api\ProductTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +37,7 @@ Route::middleware(['auth:sanctum', 'compress'])->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::get('/stats', [ProductController::class, 'stats']);
         Route::get('/popular', [ProductController::class, 'popular']);
+        Route::get('/export', [ProductController::class, 'export']);
         Route::get('/{product}', [ProductController::class, 'show']);
         Route::post('/', [ProductController::class, 'store']);
         Route::put('/{product}', [ProductController::class, 'update']);
@@ -43,11 +48,72 @@ Route::middleware(['auth:sanctum', 'compress'])->group(function () {
     Route::prefix('sales')->group(function () {
         Route::get('/', [SaleController::class, 'index']);
         Route::get('/stats', [SaleController::class, 'stats']);
+        Route::get('/export', [SaleController::class, 'export']);
         Route::get('/{sale}', [SaleController::class, 'show']);
         Route::post('/', [SaleController::class, 'store']);
         Route::put('/{sale}', [SaleController::class, 'update']);
         Route::delete('/{sale}', [SaleController::class, 'destroy']);
         Route::post('/{sale}/process', [SaleController::class, 'process']);
         Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
+    });
+
+    // Запросы
+    Route::prefix('requests')->group(function () {
+        Route::get('/', [RequestController::class, 'index']);
+        Route::get('/stats', [RequestController::class, 'stats']);
+        Route::get('/{request}', [RequestController::class, 'show']);
+        Route::post('/', [RequestController::class, 'store']);
+        Route::put('/{request}', [RequestController::class, 'update']);
+        Route::delete('/{request}', [RequestController::class, 'destroy']);
+        Route::post('/{request}/process', [RequestController::class, 'process']);
+        Route::post('/{request}/reject', [RequestController::class, 'reject']);
+    });
+
+    // Пользователи
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/stats', [UserController::class, 'stats']);
+        Route::get('/profile', [UserController::class, 'profile']);
+        Route::put('/profile', [UserController::class, 'updateProfile']);
+        Route::get('/{user}', [UserController::class, 'show']);
+        Route::post('/', [UserController::class, 'store']);
+        Route::put('/{user}', [UserController::class, 'update']);
+        Route::delete('/{user}', [UserController::class, 'destroy']);
+        Route::post('/{user}/block', [UserController::class, 'block']);
+        Route::post('/{user}/unblock', [UserController::class, 'unblock']);
+    });
+
+    // Склады
+    Route::prefix('warehouses')->group(function () {
+        Route::get('/', [WarehouseController::class, 'index']);
+        Route::get('/stats', [WarehouseController::class, 'statsAll']);
+        Route::get('/{warehouse}', [WarehouseController::class, 'show']);
+        Route::get('/{warehouse}/stats', [WarehouseController::class, 'stats']);
+        Route::get('/{warehouse}/products', [WarehouseController::class, 'products']);
+        Route::get('/{warehouse}/employees', [WarehouseController::class, 'employees']);
+        Route::post('/', [WarehouseController::class, 'store']);
+        Route::put('/{warehouse}', [WarehouseController::class, 'update']);
+        Route::delete('/{warehouse}', [WarehouseController::class, 'destroy']);
+        Route::post('/{warehouse}/activate', [WarehouseController::class, 'activate']);
+        Route::post('/{warehouse}/deactivate', [WarehouseController::class, 'deactivate']);
+    });
+
+    // Шаблоны товаров
+    Route::prefix('product-templates')->group(function () {
+        Route::get('/', [ProductTemplateController::class, 'index']);
+        Route::get('/stats', [ProductTemplateController::class, 'stats']);
+        Route::get('/units', [ProductTemplateController::class, 'units']);
+        Route::get('/{productTemplate}', [ProductTemplateController::class, 'show']);
+        Route::get('/{productTemplate}/attributes', [ProductTemplateController::class, 'attributes']);
+        Route::get('/{productTemplate}/products', [ProductTemplateController::class, 'products']);
+        Route::post('/', [ProductTemplateController::class, 'store']);
+        Route::put('/{productTemplate}', [ProductTemplateController::class, 'update']);
+        Route::delete('/{productTemplate}', [ProductTemplateController::class, 'destroy']);
+        Route::post('/{productTemplate}/activate', [ProductTemplateController::class, 'activate']);
+        Route::post('/{productTemplate}/deactivate', [ProductTemplateController::class, 'deactivate']);
+        Route::post('/{productTemplate}/test-formula', [ProductTemplateController::class, 'testFormula']);
+        Route::post('/{productTemplate}/attributes', [ProductTemplateController::class, 'addAttribute']);
+        Route::put('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'updateAttribute']);
+        Route::delete('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'deleteAttribute']);
     });
 }); 

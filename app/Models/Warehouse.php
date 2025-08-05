@@ -39,6 +39,14 @@ class Warehouse extends Model
     }
 
     /**
+     * Get the products for the warehouse.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * Get the employees count for the warehouse.
      */
     public function getEmployeesCountAttribute(): int

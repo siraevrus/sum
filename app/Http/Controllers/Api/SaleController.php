@@ -310,4 +310,78 @@ class SaleController extends Controller
             'data' => $stats,
         ]);
     }
+
+    /**
+     * Экспорт продаж
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $query = Sale::with(['product', 'warehouse', 'user'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('sale_number', 'like', "%{$search}%")
+                      ->orWhere('customer_name', 'like', "%{$search}%")
+                      ->orWhere('customer_phone', 'like', "%{$search}%");
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->payment_status, function ($query, $status) {
+                $query->where('payment_status', $status);
+            })
+            ->when($request->delivery_status, function ($query, $status) {
+                $query->where('delivery_status', $status);
+            })
+            ->when($request->payment_method, function ($query, $method) {
+                $query->where('payment_method', $method);
+            })
+            ->when($request->date_from, function ($query, $date) {
+                $query->where('sale_date', '>=', $date);
+            })
+            ->when($request->date_to, function ($query, $date) {
+                $query->where('sale_date', '<=', $date);
+            })
+            ->when($request->active, function ($query) {
+                $query->where('is_active', true);
+            });
+
+        // Применяем права доступа
+        if ($user->role !== 'admin') {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        $sales = $query->orderBy('created_at', 'desc')->get();
+
+        // Формируем данные для экспорта
+        $exportData = $sales->map(function ($sale) {
+            return [
+                'id' => $sale->id,
+                'sale_number' => $sale->sale_number,
+                'customer_name' => $sale->customer_name,
+                'customer_phone' => $sale->customer_phone,
+                'customer_email' => $sale->customer_email,
+                'product_name' => $sale->product->name ?? '',
+                'warehouse' => $sale->warehouse->name ?? '',
+                'quantity' => $sale->quantity,
+                'unit_price' => $sale->unit_price,
+                'total_price' => $sale->total_price,
+                'payment_status' => $sale->payment_status,
+                'delivery_status' => $sale->delivery_status,
+                'payment_method' => $sale->payment_method,
+                'sale_date' => $sale->sale_date,
+                'delivery_date' => $sale->delivery_date,
+                'created_by' => $sale->user->name ?? '',
+                'created_at' => $sale->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $exportData,
+            'total' => $exportData->count(),
+        ]);
+    }
 } 

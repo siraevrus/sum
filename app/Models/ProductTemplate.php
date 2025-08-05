@@ -31,6 +31,14 @@ class ProductTemplate extends Model
     }
 
     /**
+     * Get the products for the template.
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
      * Get the formula attributes (used in formula).
      */
     public function formulaAttributes(): HasMany

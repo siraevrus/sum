@@ -45,6 +45,14 @@ class Product extends Model
     }
 
     /**
+     * Связь с шаблоном товара (альтернативное название)
+     */
+    public function productTemplate(): BelongsTo
+    {
+        return $this->belongsTo(ProductTemplate::class, 'product_template_id');
+    }
+
+    /**
      * Связь со складом
      */
     public function warehouse(): BelongsTo
@@ -99,16 +107,36 @@ class Product extends Model
      */
     public function calculateVolume(): ?float
     {
-        if (!$this->template || !$this->template->formula) {
+        // Загружаем productTemplate, если не загружен
+        if (!$this->relationLoaded('productTemplate')) {
+            $this->load('productTemplate');
+        }
+        
+        if (!$this->productTemplate || !$this->productTemplate->formula) {
             return null;
         }
 
         try {
-            $testResult = $this->template->testFormula($this->attributes);
+            $attributes = $this->getAttribute('attributes');
+            if (is_string($attributes)) {
+                $attributes = json_decode($attributes, true) ?? [];
+            } elseif (!is_array($attributes)) {
+                $attributes = [];
+            }
+            $testResult = $this->productTemplate->testFormula($attributes);
             
             if ($testResult['success']) {
                 return (float) $testResult['result'];
             }
+            
+            // Отладочная информация
+            \Log::info('calculateVolume failed', [
+                'product_id' => $this->id,
+                'template_id' => $this->product_template_id,
+                'formula' => $this->productTemplate->formula,
+                'attributes' => $attributes,
+                'test_result' => $testResult,
+            ]);
             
             return null;
         } catch (\Exception $e) {

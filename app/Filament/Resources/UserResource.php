@@ -215,6 +215,19 @@ class UserResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // Администратор видит всех пользователей
+        if (\Illuminate\Support\Facades\Auth::user()->role === UserRole::ADMIN) {
+            return $query;
+        }
+        
+        // Остальные пользователи видят только пользователей своей компании
+        return $query->where('company_id', \Illuminate\Support\Facades\Auth::user()->company_id);
+    }
+
     public static function getPages(): array
     {
         return [

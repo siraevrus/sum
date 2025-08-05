@@ -1,0 +1,223 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Request;
+use App\Models\User;
+use App\Models\Warehouse;
+use App\Models\ProductTemplate;
+use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+
+class RequestController extends Controller
+{
+    /**
+     * Получить список запросов
+     */
+    public function index(HttpRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+        $query = Request::query();
+
+        // Фильтрация по компании пользователя
+        if ($user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        // Фильтрация по статусу
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Фильтрация по приоритету
+        if ($request->has('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        // Фильтрация по пользователю
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Фильтрация по складу
+        if ($request->has('warehouse_id')) {
+            $query->where('warehouse_id', $request->warehouse_id);
+        }
+
+        // Фильтрация по шаблону товара
+        if ($request->has('product_template_id')) {
+            $query->where('product_template_id', $request->product_template_id);
+        }
+
+        // Сортировка
+        $sortBy = $request->get('sort', 'created_at');
+        $sortOrder = $request->get('order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Пагинация
+        $perPage = $request->get('per_page', 15);
+        $requests = $query->with(['user', 'warehouse', 'productTemplate'])->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $requests->items(),
+            'pagination' => [
+                'current_page' => $requests->currentPage(),
+                'last_page' => $requests->lastPage(),
+                'per_page' => $requests->perPage(),
+                'total' => $requests->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Получить конкретный запрос
+     */
+    public function show(Request $request): JsonResponse
+    {
+        $request->load(['user', 'warehouse', 'productTemplate']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $request,
+        ]);
+    }
+
+    /**
+     * Создать новый запрос
+     */
+    public function store(HttpRequest $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'product_template_id' => 'required|exists:product_templates,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'quantity' => 'required|integer|min:1',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
+        ]);
+
+        $validated['user_id'] = Auth::id();
+        $validated['status'] = $validated['status'] ?? 'pending';
+
+        $requestModel = Request::create($validated);
+        $requestModel->load(['user', 'warehouse', 'productTemplate']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос успешно создан',
+            'data' => $requestModel,
+        ], 201);
+    }
+
+    /**
+     * Обновить запрос
+     */
+    public function update(HttpRequest $httpRequest, Request $request): JsonResponse
+    {
+        $validated = $httpRequest->validate([
+            'warehouse_id' => 'sometimes|exists:warehouses,id',
+            'product_template_id' => 'sometimes|exists:product_templates,id',
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'quantity' => 'sometimes|integer|min:1',
+            'priority' => 'sometimes|in:low,normal,high,urgent',
+            'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
+            'admin_notes' => 'sometimes|string',
+        ]);
+
+        $request->update($validated);
+        $request->load(['user', 'warehouse', 'productTemplate']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос успешно обновлен',
+            'data' => $request,
+        ]);
+    }
+
+    /**
+     * Удалить запрос
+     */
+    public function destroy(Request $request): JsonResponse
+    {
+        $request->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос успешно удален',
+        ]);
+    }
+
+    /**
+     * Обработать запрос (изменить статус)
+     */
+    public function process(Request $request): JsonResponse
+    {
+        $request->update([
+            'status' => 'completed',
+            'processed_by' => Auth::id(),
+            'processed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос обработан',
+            'data' => $request->load(['user', 'warehouse', 'productTemplate']),
+        ]);
+    }
+
+    /**
+     * Отклонить запрос
+     */
+    public function reject(Request $request): JsonResponse
+    {
+        $request->update([
+            'status' => 'rejected',
+            'processed_by' => Auth::id(),
+            'processed_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос отклонен',
+            'data' => $request->load(['user', 'warehouse', 'productTemplate']),
+        ]);
+    }
+
+    /**
+     * Получить статистику запросов
+     */
+    public function stats(): JsonResponse
+    {
+        $user = Auth::user();
+        $query = Request::query();
+
+        // Фильтрация по компании пользователя
+        if ($user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        $stats = [
+            'total' => $query->count(),
+            'pending' => $query->where('status', 'pending')->count(),
+            'approved' => $query->where('status', 'approved')->count(),
+            'completed' => $query->where('status', 'completed')->count(),
+            'rejected' => $query->where('status', 'rejected')->count(),
+            'in_progress' => $query->where('status', 'in_progress')->count(),
+            'cancelled' => $query->where('status', 'cancelled')->count(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats,
+        ]);
+    }
+} 
