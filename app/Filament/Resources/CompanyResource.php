@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class CompanyResource extends Resource
 {
@@ -23,6 +24,14 @@ class CompanyResource extends Resource
     protected static ?string $modelLabel = 'Компания';
 
     protected static ?string $pluralModelLabel = 'Компании';
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        return $user->role->value === 'admin';
+    }
 
     public static function form(Form $form): Form
     {

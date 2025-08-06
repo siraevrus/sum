@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class ProductTemplateResource extends Resource
 {
@@ -23,6 +24,14 @@ class ProductTemplateResource extends Resource
     protected static ?string $modelLabel = 'Шаблон товара';
 
     protected static ?string $pluralModelLabel = 'Шаблоны товаров';
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        return $user->role->value === 'admin';
+    }
 
     public static function form(Form $form): Form
     {

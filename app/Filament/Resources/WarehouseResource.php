@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class WarehouseResource extends Resource
 {
@@ -24,6 +25,14 @@ class WarehouseResource extends Resource
     protected static ?string $modelLabel = 'Склад';
 
     protected static ?string $pluralModelLabel = 'Склады';
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        return $user->role->value === 'admin';
+    }
 
     public static function form(Form $form): Form
     {

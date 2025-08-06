@@ -27,6 +27,18 @@ class StockResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (!$user) return false;
+        
+        return in_array($user->role->value, [
+            'admin',
+            'warehouse_worker',
+            'sales_manager'
+        ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
