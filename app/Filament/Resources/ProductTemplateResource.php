@@ -171,11 +171,6 @@ class ProductTemplateResource extends Resource
                     ->label('Описание')
                     ->limit(50),
 
-                Tables\Columns\TextColumn::make('attributes_count')
-                    ->label('Характеристики')
-                    ->counts('attributes')
-                    ->formatStateUsing(fn (int $state): string => "{$state} характеристик"),
-
                 Tables\Columns\TextColumn::make('unit')
                     ->label('Единица измерения')
                     ->badge(),

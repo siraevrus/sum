@@ -14,7 +14,7 @@ class EditUser extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label(''),
+                ->label('Удалить'),
         ];
     }
 }

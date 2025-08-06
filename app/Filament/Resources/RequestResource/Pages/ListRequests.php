@@ -14,7 +14,7 @@ class ListRequests extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Создать запрос'),
+                ->label('Создать'),
         ];
     }
 } 

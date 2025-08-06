@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('companies', function (Blueprint $table) {
             // Обновляем ограничения для названия и ФИО
             $table->string('name', 60)->change();
-            $table->string('general_director', 60)->change();
+            $table->string('general_director', 255)->change();
             
             // Обновляем ограничения для реквизитов
             $table->string('inn', 10)->change();

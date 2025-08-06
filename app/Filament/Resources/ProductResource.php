@@ -283,11 +283,11 @@ class ProductResource extends Resource
                 ]),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('export')
-                    ->label('Экспорт')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->url(route('products.export'))
-                    ->openUrlInNewTab(),
+                // Tables\Actions\Action::make('export')
+                //     ->label('Экспорт')
+                //     ->icon('heroicon-o-arrow-down-tray')
+                //     ->url(route('products.export'))
+                //     ->openUrlInNewTab(),
             ])
             ->defaultSort('created_at', 'desc');
     }

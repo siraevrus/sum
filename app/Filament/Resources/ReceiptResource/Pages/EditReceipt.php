@@ -14,7 +14,7 @@ class EditReceipt extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label(''),
+                ->label('Удалить'),
         ];
     }
 }

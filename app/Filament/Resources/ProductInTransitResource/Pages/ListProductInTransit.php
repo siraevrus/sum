@@ -14,7 +14,7 @@ class ListProductInTransit extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Добавить товар в путь'),
+                ->label('Добавить'),
         ];
     }
 } 

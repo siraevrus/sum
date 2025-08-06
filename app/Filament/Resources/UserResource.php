@@ -65,7 +65,6 @@ class UserResource extends Resource
 
                         Forms\Components\TextInput::make('name')
                             ->label('Полное имя')
-                            ->required()
                             ->maxLength(255)
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, $get) {
@@ -133,7 +132,6 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->email()
-                            ->required()
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
