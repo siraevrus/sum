@@ -31,6 +31,11 @@ class CreateProduct extends CreateRecord
             }
         }
         
+        // Убеждаемся, что attributes всегда установлен
+        if (!isset($data['attributes'])) {
+            $data['attributes'] = [];
+        }
+        
         return $data;
     }
 
