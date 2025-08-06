@@ -67,6 +67,8 @@ class Sale extends Model
 
     // Способы оплаты
     const PAYMENT_METHOD_CASH = 'cash';
+    const PAYMENT_METHOD_NOCASH = 'nocash';
+    const PAYMENT_METHOD_NOCASH_AND_CASH = 'nocash_and_cash';
     const PAYMENT_METHOD_CARD = 'card';
     const PAYMENT_METHOD_BANK_TRANSFER = 'bank_transfer';
     const PAYMENT_METHOD_OTHER = 'other';

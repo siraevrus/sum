@@ -125,30 +125,6 @@ class SaleResource extends Resource
                                     ->disabled()
                                     ->required(),
 
-                                TextInput::make('vat_rate')
-                                    ->label('Ставка НДС (%)')
-                                    ->numeric()
-                                    ->default(20.00)
-                                    ->minValue(0)
-                                    ->maxValue(100)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $priceWithoutVat = $get('price_without_vat');
-                                        $vatRate = $get('vat_rate');
-                                        if ($priceWithoutVat && $vatRate) {
-                                            $vatAmount = $priceWithoutVat * ($vatRate / 100);
-                                            $set('vat_amount', $vatAmount);
-                                            $set('total_price', $priceWithoutVat + $vatAmount);
-                                        }
-                                    }),
-
-                                TextInput::make('vat_amount')
-                                    ->label('Сумма НДС')
-                                    ->numeric()
-                                    ->disabled()
-                                    ->required(),
-
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')
                                     ->numeric()
@@ -158,10 +134,9 @@ class SaleResource extends Resource
                                 Select::make('payment_method')
                                     ->label('Способ оплаты')
                                     ->options([
-                                        Sale::PAYMENT_METHOD_CASH => 'Наличные',
-                                        Sale::PAYMENT_METHOD_CARD => 'Карта',
-                                        Sale::PAYMENT_METHOD_BANK_TRANSFER => 'Банковский перевод',
-                                        Sale::PAYMENT_METHOD_OTHER => 'Другое',
+                                        Sale::PAYMENT_METHOD_CASH => 'Нал',
+                                        Sale::PAYMENT_METHOD_NOCASH => 'Безнал',
+                                        Sale::PAYMENT_METHOD_NOCASH_AND_CASH => 'Нал + безнал',
                                     ])
                                     ->default(Sale::PAYMENT_METHOD_CASH)
                                     ->required(),
@@ -175,17 +150,6 @@ class SaleResource extends Resource
                                         Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
                                     ])
                                     ->default(Sale::PAYMENT_STATUS_PENDING)
-                                    ->required(),
-
-                                Select::make('delivery_status')
-                                    ->label('Статус доставки')
-                                    ->options([
-                                        Sale::DELIVERY_STATUS_PENDING => 'Ожидает доставки',
-                                        Sale::DELIVERY_STATUS_IN_PROGRESS => 'В доставке',
-                                        Sale::DELIVERY_STATUS_DELIVERED => 'Доставлено',
-                                        Sale::DELIVERY_STATUS_CANCELLED => 'Отменено',
-                                    ])
-                                    ->default(Sale::DELIVERY_STATUS_PENDING)
                                     ->required(),
 
                                 DatePicker::make('sale_date')

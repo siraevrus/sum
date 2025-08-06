@@ -136,24 +136,7 @@ class ProductTemplateResource extends Resource
                             ->rows(3)
                             ->helperText('Используйте переменные из характеристик. Пример: length * width * height')
                             ->placeholder('length * width * height'),
-
-                        Forms\Components\Actions::make([
-                            Forms\Components\Actions\Action::make('test_formula')
-                                ->label('Тестировать формулу')
-                                ->icon('heroicon-o-play')
-                                ->action(function (ProductTemplate $record, array $data) {
-                                    // Здесь будет логика тестирования формулы
-                                    return 'Формула протестирована';
-                                })
-                                ->requiresConfirmation()
-                                ->modalHeading('Тестирование формулы')
-                                ->modalDescription('Введите тестовые значения для проверки формулы')
-                                ->form([
-                                    Forms\Components\TextInput::make('test_value')
-                                        ->label('Тестовое значение')
-                                        ->required(),
-                                ]),
-                        ]),
+                        
                     ]),
             ]);
     }
