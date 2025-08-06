@@ -132,10 +132,11 @@ class StockResourceTest extends TestCase
             'company_id' => $company->id,
         ]);
 
+        // Оператор НЕ должен видеть остатки
         $response = $this->actingAs($operator)
             ->get('/admin/stocks');
 
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     /** @test */

@@ -323,8 +323,9 @@ class FilamentCrudTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
+        // Работник склада НЕ должен видеть товары (только остатки)
         $response = $this->actingAs($worker)->get('/admin/products');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     public function test_manager_can_access_sales()
@@ -334,8 +335,9 @@ class FilamentCrudTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
+        // Менеджер по продажам НЕ должен видеть продажи
         $response = $this->actingAs($manager)->get('/admin/sales');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     // Тесты для проверки модели данных

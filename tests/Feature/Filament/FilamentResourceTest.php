@@ -98,8 +98,9 @@ class FilamentResourceTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
+        // Работник склада НЕ должен видеть товары (только остатки)
         $response = $this->actingAs($worker)->get('/admin/products');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     public function test_manager_can_access_sales()
@@ -109,8 +110,9 @@ class FilamentResourceTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
+        // Менеджер по продажам НЕ должен видеть продажи
         $response = $this->actingAs($manager)->get('/admin/sales');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     public function test_guest_cannot_access_admin()
@@ -213,8 +215,9 @@ class FilamentResourceTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
+        // Оператор НЕ должен видеть управление пользователями
         $response = $this->actingAs($operator)->get('/admin/users');
-        $response->assertStatus(200); // Пока что все могут видеть, но не редактировать
+        $response->assertStatus(403);
     }
 
     public function test_model_relationships_work_correctly()
