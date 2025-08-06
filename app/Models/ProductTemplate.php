@@ -146,14 +146,22 @@ class ProductTemplate extends Model
             throw new \Exception('Выражение содержит недопустимые символы');
         }
 
-        // Используем eval для вычисления (в продакшене лучше использовать библиотеку math.js)
-        $result = eval("return $expression;");
-        
-        if (!is_numeric($result)) {
-            throw new \Exception('Результат не является числом');
+        // Простое и безопасное вычисление математического выражения
+        try {
+            // Используем eval с дополнительными проверками
+            $result = eval("return $expression;");
+            
+            if (!is_numeric($result)) {
+                throw new \Exception('Результат не является числом');
+            }
+            
+            return (float) $result;
+            
+        } catch (\ParseError $e) {
+            throw new \Exception('Синтаксическая ошибка в выражении: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            throw new \Exception('Ошибка вычисления выражения: ' . $e->getMessage());
         }
-
-        return (float) $result;
     }
 
     /**
