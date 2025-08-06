@@ -378,7 +378,7 @@ class ProductResource extends Resource
         $user = Auth::user();
         
         // Администратор видит все товары
-        if ($user->role === 'admin') {
+        if ($user->role->value === 'admin') {
             return parent::getEloquentQuery();
         }
         

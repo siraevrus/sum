@@ -120,4 +120,6 @@ class StockOverview extends Page implements HasTable
 
         return $query->get();
     }
+
+
 } 

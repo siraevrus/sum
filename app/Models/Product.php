@@ -36,6 +36,10 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $attributes = [
+        'attributes' => '[]',
+    ];
+
     /**
      * Связь с шаблоном товара
      */
@@ -130,7 +134,7 @@ class Product extends Model
             }
             
             // Отладочная информация
-            \Log::info('calculateVolume failed', [
+            \Illuminate\Support\Facades\Log::info('calculateVolume failed', [
                 'product_id' => $this->id,
                 'template_id' => $this->product_template_id,
                 'formula' => $this->productTemplate->formula,
