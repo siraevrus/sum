@@ -386,8 +386,8 @@ class SaleResource extends Resource
             ->emptyStateHeading('Нет продаж')
             ->emptyStateDescription('Создайте первую продажу, чтобы начать работу.')
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('process_sale')
                     ->label('Оформить продажу')
                     ->icon('heroicon-o-check')
@@ -418,7 +418,7 @@ class SaleResource extends Resource
                     ->modalDescription('Товар будет возвращен на склад и продажа будет отменена.')
                     ->modalSubmitActionLabel('Отменить'),
 
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

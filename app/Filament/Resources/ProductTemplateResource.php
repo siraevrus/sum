@@ -176,10 +176,6 @@ class ProductTemplateResource extends Resource
                     ->counts('attributes')
                     ->formatStateUsing(fn (int $state): string => "{$state} характеристик"),
 
-                Tables\Columns\TextColumn::make('formula')
-                    ->label('Формула')
-                    ->limit(30),
-
                 Tables\Columns\TextColumn::make('unit')
                     ->label('Единица измерения')
                     ->badge(),
@@ -199,16 +195,8 @@ class ProductTemplateResource extends Resource
                     ->label('Активные'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('test_formula')
-                    ->label('Тест формулы')
-                    ->icon('heroicon-o-play')
-                    ->color('success')
-                    ->action(function (ProductTemplate $record) {
-                        // Здесь будет логика тестирования
-                        return 'Формула протестирована';
-                    }),
+                Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\EditAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

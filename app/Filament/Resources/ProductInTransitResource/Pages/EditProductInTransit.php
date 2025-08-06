@@ -14,7 +14,7 @@ class EditProductInTransit extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label('Удалить товар в пути'),
+                ->label(''),
         ];
     }
 

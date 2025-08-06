@@ -148,9 +148,9 @@ class CompanyResource extends Resource
                     ->label('Архивированные'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('archive')
-                    ->label('Архивировать')
+                    ->label('')
                     ->icon('heroicon-o-archive-box')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -164,7 +164,7 @@ class CompanyResource extends Resource
                     }),
 
                 Tables\Actions\Action::make('restore')
-                    ->label('Восстановить')
+                    ->label('')
                     ->icon('heroicon-o-arrow-path')
                     ->color('success')
                     ->requiresConfirmation()

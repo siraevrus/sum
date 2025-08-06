@@ -137,8 +137,8 @@ class StockResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->where('quantity', '<=', 10)->where('quantity', '>', 0)),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\EditAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

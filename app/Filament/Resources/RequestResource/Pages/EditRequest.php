@@ -14,7 +14,7 @@ class EditRequest extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label('Удалить запрос'),
+                ->label(''),
         ];
     }
 

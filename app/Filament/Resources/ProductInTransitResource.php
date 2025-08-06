@@ -327,8 +327,8 @@ class ProductInTransitResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('receive')
                     ->label('Принять')
                     ->icon('heroicon-o-check')
@@ -343,7 +343,7 @@ class ProductInTransitResource extends Resource
                     ->modalHeading('Принять товар')
                     ->modalDescription('Товар будет перемещен в остатки на складе.')
                     ->modalSubmitActionLabel('Принять'),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

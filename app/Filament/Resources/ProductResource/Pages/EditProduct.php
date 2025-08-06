@@ -14,7 +14,7 @@ class EditProduct extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label('Удалить товар'),
+                ->label(''),
         ];
     }
 

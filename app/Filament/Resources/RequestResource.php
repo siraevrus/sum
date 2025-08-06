@@ -263,8 +263,8 @@ class RequestResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('approve')
                     ->label('Одобрить')
                     ->icon('heroicon-o-check')
@@ -340,7 +340,7 @@ class RequestResource extends Resource
                     ->modalDescription('Запрос будет отменен.')
                     ->modalSubmitActionLabel('Отменить'),
 
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

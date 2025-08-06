@@ -14,7 +14,7 @@ class ViewRequest extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->label('Редактировать запрос'),
+                ->label(''),
         ];
     }
 } 

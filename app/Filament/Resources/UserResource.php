@@ -247,9 +247,9 @@ class UserResource extends Resource
                     ->label('Заблокированные'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('block')
-                    ->label('Заблокировать')
+                    ->label('')
                     ->icon('heroicon-o-lock-closed')
                     ->color('danger')
                     ->requiresConfirmation()
@@ -262,7 +262,7 @@ class UserResource extends Resource
                     }),
 
                 Tables\Actions\Action::make('unblock')
-                    ->label('Разблокировать')
+                    ->label('')
                     ->icon('heroicon-o-lock-open')
                     ->color('success')
                     ->requiresConfirmation()
