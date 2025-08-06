@@ -14,7 +14,7 @@ class ViewReceipt extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->label(''),
+                ->label('Изменить'),
         ];
     }
 } 
