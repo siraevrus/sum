@@ -18,6 +18,40 @@ class EditProduct extends EditRecord
         ];
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Обрабатываем характеристики
+        $attributes = [];
+        foreach ($data as $key => $value) {
+            if (str_starts_with($key, 'attribute_') && $value !== null) {
+                $attributeName = str_replace('attribute_', '', $key);
+                $attributes[$attributeName] = $value;
+            }
+        }
+        $data['attributes'] = $attributes;
+        
+        // Удаляем временные поля характеристик
+        foreach ($data as $key => $value) {
+            if (str_starts_with($key, 'attribute_')) {
+                unset($data[$key]);
+            }
+        }
+        
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Загружаем характеристики в отдельные поля для формы
+        if (isset($data['attributes']) && is_array($data['attributes'])) {
+            foreach ($data['attributes'] as $key => $value) {
+                $data["attribute_{$key}"] = $value;
+            }
+        }
+        
+        return $data;
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

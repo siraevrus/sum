@@ -13,16 +13,40 @@ return new class extends Migration
     public function up(): void
     {
         // Обрезаем данные в полях companies до нужной длины
-        DB::table('companies')->update([
-            'name' => DB::raw('LEFT(name, 60)'),
-            'general_director' => DB::raw('LEFT(general_director, 60)'),
-            'inn' => DB::raw('LEFT(inn, 10)'),
-            'kpp' => DB::raw('LEFT(kpp, 9)'),
-            'ogrn' => DB::raw('LEFT(ogrn, 13)'),
-            'account_number' => DB::raw('LEFT(account_number, 20)'),
-            'correspondent_account' => DB::raw('LEFT(correspondent_account, 20)'),
-            'bik' => DB::raw('LEFT(bik, 9)'),
-        ]);
+        $companies = DB::table('companies')->get();
+        
+        foreach ($companies as $company) {
+            $updates = [];
+            
+            if (strlen($company->name) > 60) {
+                $updates['name'] = substr($company->name, 0, 60);
+            }
+            if (strlen($company->general_director) > 60) {
+                $updates['general_director'] = substr($company->general_director, 0, 60);
+            }
+            if (strlen($company->inn) > 10) {
+                $updates['inn'] = substr($company->inn, 0, 10);
+            }
+            if (strlen($company->kpp) > 9) {
+                $updates['kpp'] = substr($company->kpp, 0, 9);
+            }
+            if (strlen($company->ogrn) > 13) {
+                $updates['ogrn'] = substr($company->ogrn, 0, 13);
+            }
+            if (strlen($company->account_number) > 20) {
+                $updates['account_number'] = substr($company->account_number, 0, 20);
+            }
+            if (strlen($company->correspondent_account) > 20) {
+                $updates['correspondent_account'] = substr($company->correspondent_account, 0, 20);
+            }
+            if (strlen($company->bik) > 9) {
+                $updates['bik'] = substr($company->bik, 0, 9);
+            }
+            
+            if (!empty($updates)) {
+                DB::table('companies')->where('id', $company->id)->update($updates);
+            }
+        }
     }
 
     /**

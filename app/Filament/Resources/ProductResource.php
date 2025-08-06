@@ -66,8 +66,21 @@ class ProductResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->live()
-                                    ->afterStateUpdated(function (Set $set) {
-                                        $set('attributes', []);
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Очищаем старые характеристики при смене шаблона
+                                        $set('calculated_volume', null);
+                                        
+                                        // Добавляем динамические поля характеристик
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::with('attributes')->find($templateId);
+                                            if ($template) {
+                                                // Очищаем старые поля характеристик
+                                                foreach ($template->attributes as $attribute) {
+                                                    $set("attribute_{$attribute->variable}", null);
+                                                }
+                                            }
+                                        }
                                     }),
 
                                 Select::make('warehouse_id')
@@ -114,27 +127,78 @@ class ProductResource extends Resource
 
                 Section::make('Характеристики товара')
                     ->schema([
-                        KeyValue::make('attributes')
-                            ->label('Характеристики')
-                            ->keyLabel('Название')
-                            ->valueLabel('Значение')
-                            ->columnSpanFull()
-                            ->live()
-                            ->afterStateUpdated(function (Set $set, Get $get, $state) {
-                                // Автоматически рассчитываем объем при изменении характеристик
-                                $templateId = $get('product_template_id');
-                                if ($templateId && $state) {
-                                    $template = ProductTemplate::find($templateId);
-                                    if ($template && $template->formula) {
-                                        $testResult = $template->testFormula($state);
-                                        if ($testResult['success']) {
-                                            $set('calculated_volume', $testResult['result']);
-                                        }
+                        // Динамические поля характеристик будут добавляться здесь
+                    ])
+                    ->visible(fn (Get $get) => $get('product_template_id') !== null)
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                        // Автоматически рассчитываем объем при изменении характеристик
+                        $templateId = $get('product_template_id');
+                        if ($templateId) {
+                            $template = ProductTemplate::find($templateId);
+                            if ($template && $template->formula) {
+                                // Собираем все значения характеристик
+                                $attributes = [];
+                                foreach ($state as $key => $value) {
+                                    if (str_starts_with($key, 'attribute_')) {
+                                        $attributeName = str_replace('attribute_', '', $key);
+                                        $attributes[$attributeName] = $value;
                                     }
                                 }
-                            }),
-                    ])
-                    ->visible(fn (Get $get) => $get('product_template_id') !== null),
+                                
+                                if (!empty($attributes)) {
+                                    $testResult = $template->testFormula($attributes);
+                                    if ($testResult['success']) {
+                                        $set('calculated_volume', $testResult['result']);
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    ->schema(function (Get $get) {
+                        $templateId = $get('product_template_id');
+                        if (!$templateId) {
+                            return [];
+                        }
+
+                        $template = ProductTemplate::with('attributes')->find($templateId);
+                        if (!$template) {
+                            return [];
+                        }
+
+                        $fields = [];
+                        foreach ($template->attributes as $attribute) {
+                            $fieldName = "attribute_{$attribute->variable}";
+                            
+                            switch ($attribute->type) {
+                                case 'number':
+                                    $fields[] = TextInput::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->numeric()
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                                    
+                                case 'text':
+                                    $fields[] = TextInput::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                                    
+                                case 'select':
+                                    $options = $attribute->options_array;
+                                    $fields[] = Select::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->options($options)
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                            }
+                        }
+
+                        return $fields;
+                    }),
 
                 Section::make('Расчет объема')
                     ->schema([
