@@ -438,7 +438,7 @@ class ProductInTransitResource extends Resource
                     ->label('Группировать по поставкам'),
             )
             ->groups([
-                Tables\Grouping\Group::make()
+                Tables\Grouping\Group::make('shipment_number')
                     ->label('Номер поставки')
                     ->collapsible(),
             ]);
