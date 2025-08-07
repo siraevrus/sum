@@ -76,7 +76,24 @@ class RequestResource extends Resource
                                     ->label('Шаблон товара')
                                     ->options(ProductTemplate::pluck('name', 'id'))
                                     ->searchable()
-                                    ->placeholder('Выберите шаблон (необязательно)'),
+                                    ->placeholder('Выберите шаблон (необязательно)')
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Очищаем старые характеристики при смене шаблона
+                                        $set('calculated_volume', null);
+                                        
+                                        // Добавляем динамические поля характеристик
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::with('attributes')->find($templateId);
+                                            if ($template) {
+                                                // Очищаем старые поля характеристик
+                                                foreach ($template->attributes as $attribute) {
+                                                    $set("attribute_{$attribute->variable}", null);
+                                                }
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -128,6 +145,100 @@ class RequestResource extends Resource
                                 return Auth::user()->role === 'admin';
                             }),
                     ]),
+
+                Section::make('Характеристики товара')
+                    ->schema([
+                        // Динамические поля характеристик будут добавляться здесь
+                    ])
+                    ->visible(fn (Get $get) => $get('product_template_id') !== null)
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                        // Автоматически рассчитываем объем при изменении характеристик
+                        $templateId = $get('product_template_id');
+                        if ($templateId) {
+                            $template = ProductTemplate::find($templateId);
+                            if ($template && $template->formula) {
+                                // Собираем все значения характеристик
+                                $attributes = [];
+                                foreach ($state as $key => $value) {
+                                    if (str_starts_with($key, 'attribute_')) {
+                                        $attributeName = str_replace('attribute_', '', $key);
+                                        $attributes[$attributeName] = $value;
+                                    }
+                                }
+                                
+                                if (!empty($attributes)) {
+                                    $testResult = $template->testFormula($attributes);
+                                    if ($testResult['success']) {
+                                        $set('calculated_volume', $testResult['result']);
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    ->schema(function (Get $get) {
+                        $templateId = $get('product_template_id');
+                        if (!$templateId) {
+                            return [];
+                        }
+
+                        $template = ProductTemplate::with('attributes')->find($templateId);
+                        if (!$template) {
+                            return [];
+                        }
+
+                        $fields = [];
+                        foreach ($template->attributes as $attribute) {
+                            $fieldName = "attribute_{$attribute->variable}";
+                            
+                            switch ($attribute->type) {
+                                case 'number':
+                                    $fields[] = TextInput::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->numeric()
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                                    
+                                case 'text':
+                                    $fields[] = TextInput::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                                    
+                                case 'select':
+                                    $options = $attribute->options_array;
+                                    $fields[] = Select::make($fieldName)
+                                        ->label($attribute->full_name)
+                                        ->options($options)
+                                        ->required($attribute->is_required)
+                                        ->live();
+                                    break;
+                            }
+                        }
+
+                        return $fields;
+                    }),
+
+                Section::make('Расчет объема')
+                    ->schema([
+                        TextInput::make('calculated_volume')
+                            ->label('Рассчитанный объем')
+                            ->numeric()
+                            ->disabled()
+                            ->suffix(function (Get $get) {
+                                $templateId = $get('product_template_id');
+                                if ($templateId) {
+                                    $template = ProductTemplate::find($templateId);
+                                    return $template ? $template->unit : '';
+                                }
+                                return '';
+                            }),
+                    ])
+                    ->visible(function (Get $get) {
+                        return $get('product_template_id') !== null;
+                    }),
             ]);
     }
 
