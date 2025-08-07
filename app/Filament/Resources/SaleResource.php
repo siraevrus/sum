@@ -95,17 +95,27 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->rules([
-                                        function ($value, Closure $fail, Get $get) {
-                                            $productId = $get('product_id');
-                                            if ($productId && $value) {
-                                                $product = Product::find($productId);
-                                                if ($product && $product->quantity < (int)$value) {
-                                                    $fail("Недостаточно товара на складе. Доступно: {$product->quantity}");
-                                                }
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $productId = $get('product_id');
+                                        $quantity = $get('quantity');
+                                        if ($productId && $quantity) {
+                                            $product = Product::find($productId);
+                                            if ($product && $product->quantity < (int)$quantity) {
+                                                $set('quantity', $product->quantity);
                                             }
                                         }
-                                    ]),
+                                    })
+                                    ->dehydrateStateUsing(function ($state, Get $get) {
+                                        $productId = $get('product_id');
+                                        if ($productId && $state) {
+                                            $product = Product::find($productId);
+                                            if ($product && $product->quantity < (int)$state) {
+                                                throw new \Exception("Недостаточно товара на складе. Доступно: {$product->quantity}");
+                                            }
+                                        }
+                                        return $state;
+                                    }),
 
 
 
