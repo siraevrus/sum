@@ -15,6 +15,14 @@ class CreateSale extends CreateRecord
         $data['user_id'] = Auth::id();
         $data['sale_number'] = \App\Models\Sale::generateSaleNumber();
         
+        // Получаем warehouse_id из товара
+        if (isset($data['product_id'])) {
+            $product = \App\Models\Product::find($data['product_id']);
+            if ($product) {
+                $data['warehouse_id'] = $product->warehouse_id;
+            }
+        }
+        
         // Рассчитываем общую сумму
         $data['total_price'] = ($data['cash_amount'] ?? 0) + ($data['nocash_amount'] ?? 0);
         
