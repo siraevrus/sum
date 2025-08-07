@@ -432,8 +432,13 @@ class ProductInTransitResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
+            ->groupRecordsTriggerAction(
+                fn (Tables\Actions\Action $action) => $action
+                    ->button()
+                    ->label('Группировать по поставкам'),
+            )
             ->groups([
-                'shipment_number' => Tables\Grouping\Group::make()
+                Tables\Grouping\Group::make()
                     ->label('Номер поставки')
                     ->collapsible(),
             ]);
