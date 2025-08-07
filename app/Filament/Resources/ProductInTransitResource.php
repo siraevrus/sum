@@ -134,13 +134,10 @@ class ProductInTransitResource extends Resource
                                 Select::make('status')
                                     ->label('Статус')
                                     ->options([
-                                        ProductInTransit::STATUS_ORDERED => 'Заказан',
                                         ProductInTransit::STATUS_IN_TRANSIT => 'В пути',
                                         ProductInTransit::STATUS_ARRIVED => 'Прибыл',
-                                        ProductInTransit::STATUS_RECEIVED => 'Принят',
-                                        ProductInTransit::STATUS_CANCELLED => 'Отменен',
                                     ])
-                                    ->default(ProductInTransit::STATUS_ORDERED)
+                                    ->default(ProductInTransit::STATUS_IN_TRANSIT)
                                     ->required(),
 
                                 Toggle::make('is_active')
