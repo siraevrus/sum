@@ -106,7 +106,7 @@ class ProductResource extends Resource
                                     ->required(),
 
                                 TextInput::make('transport_number')
-                                    ->label('Номер транспорта')
+                                    ->label('Номер транспортного средства')
                                     ->maxLength(255),
 
                                 DatePicker::make('arrival_date')
@@ -116,6 +116,7 @@ class ProductResource extends Resource
 
                                 Toggle::make('is_active')
                                     ->label('Активен')
+                                    ->hidden()
                                     ->default(true),
                             ]),
 
@@ -273,17 +274,13 @@ class ProductResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Статус')
                     ->boolean()
+                    ->hidden()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Создатель')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Создан')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->emptyStateHeading('Нет товаров')
             ->emptyStateDescription('Создайте первый товар, чтобы начать работу.')
@@ -337,7 +334,6 @@ class ProductResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
@@ -368,7 +364,6 @@ class ProductResource extends Resource
         return [
             'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'view' => Pages\ViewProduct::route('/{record}'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }

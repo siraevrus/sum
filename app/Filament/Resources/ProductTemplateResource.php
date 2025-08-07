@@ -72,6 +72,7 @@ class ProductTemplateResource extends Resource
                     ->schema([
                         Forms\Components\Repeater::make('attributes')
                             ->relationship('attributes')
+                            ->label('характеристикам')
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label('Название характеристики')

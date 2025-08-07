@@ -37,6 +37,29 @@ class EditRequest extends EditRecord
         return $data;
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Загружаем характеристики в отдельные поля для формы
+        if (isset($data['attributes']) && is_array($data['attributes'])) {
+            foreach ($data['attributes'] as $key => $value) {
+                $data["attribute_{$key}"] = $value;
+            }
+        }
+        
+        // Рассчитываем объем при загрузке данных
+        if (isset($data['product_template_id']) && isset($data['attributes']) && is_array($data['attributes'])) {
+            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+            if ($template && $template->formula && !empty($data['attributes'])) {
+                $testResult = $template->testFormula($data['attributes']);
+                if ($testResult['success']) {
+                    $data['calculated_volume'] = $testResult['result'];
+                }
+            }
+        }
+        
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
