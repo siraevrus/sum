@@ -98,6 +98,11 @@ class ProductInTransitResource extends Resource
                                     ->required()
                                     ->maxLength(255),
 
+                                TextInput::make('shipment_number')
+                                    ->label('Номер поставки')
+                                    ->maxLength(255)
+                                    ->required(),
+
                                 TextInput::make('producer')
                                     ->label('Производитель')
                                     ->maxLength(255),
@@ -272,6 +277,11 @@ class ProductInTransitResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('shipment_number')
+                    ->label('Номер поставки')
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('template.name')
                     ->label('Шаблон')
                     ->sortable(),
@@ -358,6 +368,14 @@ class ProductInTransitResource extends Resource
                     ->options(ProductTemplate::pluck('name', 'id'))
                     ->searchable(),
 
+                SelectFilter::make('shipment_number')
+                    ->label('Номер поставки')
+                    ->options(function () {
+                        $shipments = ProductInTransit::getShipmentNumbers();
+                        return array_combine($shipments, $shipments);
+                    })
+                    ->searchable(),
+
                 SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
@@ -413,7 +431,12 @@ class ProductInTransitResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->groups([
+                'shipment_number' => Tables\Grouping\Group::make()
+                    ->label('Номер поставки')
+                    ->collapsible(),
+            ]);
     }
 
     public static function getRelations(): array

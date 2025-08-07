@@ -19,6 +19,7 @@ class ProductInTransit extends Model
         'warehouse_id',
         'created_by',
         'name',
+        'shipment_number',
         'description',
         'attributes',
         'calculated_volume',
@@ -330,6 +331,20 @@ class ProductInTransit extends Model
         return static::distinct()
             ->whereNotNull('shipping_location')
             ->pluck('shipping_location')
+            ->filter()
+            ->sort()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Получить список номеров поставок
+     */
+    public static function getShipmentNumbers(): array
+    {
+        return static::distinct()
+            ->whereNotNull('shipment_number')
+            ->pluck('shipment_number')
             ->filter()
             ->sort()
             ->values()
