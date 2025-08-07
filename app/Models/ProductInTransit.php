@@ -25,7 +25,8 @@ class ProductInTransit extends Model
         'quantity',
         'transport_number',
         'producer',
-        'supplier',
+        'shipping_location',
+        'shipping_date',
         'tracking_number',
         'expected_arrival_date',
         'actual_arrival_date',
@@ -41,6 +42,7 @@ class ProductInTransit extends Model
         'quantity' => 'integer',
         'expected_arrival_date' => 'date',
         'actual_arrival_date' => 'date',
+        'shipping_date' => 'date',
         'is_active' => 'boolean',
     ];
 
@@ -295,11 +297,11 @@ class ProductInTransit extends Model
     }
 
     /**
-     * Scope для фильтрации по поставщику
+     * Scope для фильтрации по месту отгрузки
      */
-    public function scopeBySupplier(Builder $query, string $supplier): void
+    public function scopeByShippingLocation(Builder $query, string $location): void
     {
-        $query->where('supplier', $supplier);
+        $query->where('shipping_location', $location);
     }
 
     /**
@@ -320,13 +322,13 @@ class ProductInTransit extends Model
     }
 
     /**
-     * Получить список поставщиков
+     * Получить список мест отгрузки
      */
-    public static function getSuppliers(): array
+    public static function getShippingLocations(): array
     {
         return static::distinct()
-            ->whereNotNull('supplier')
-            ->pluck('supplier')
+            ->whereNotNull('shipping_location')
+            ->pluck('shipping_location')
             ->filter()
             ->sort()
             ->values()

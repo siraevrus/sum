@@ -102,10 +102,15 @@ class ProductInTransitResource extends Resource
                                     ->label('Производитель')
                                     ->maxLength(255),
 
-                                TextInput::make('supplier')
-                                    ->label('Поставщик')
+                                TextInput::make('shipping_location')
+                                    ->label('Место отгрузки')
                                     ->maxLength(255)
                                     ->required(),
+
+                                DatePicker::make('shipping_date')
+                                    ->label('Дата отгрузки')
+                                    ->required()
+                                    ->default(now()),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -278,9 +283,14 @@ class ProductInTransitResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('supplier')
-                    ->label('Поставщик')
+                Tables\Columns\TextColumn::make('shipping_location')
+                    ->label('Место отгрузки')
                     ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('shipping_date')
+                    ->label('Дата отгрузки')
+                    ->date()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('producer')
@@ -356,11 +366,11 @@ class ProductInTransitResource extends Resource
                     ->options(ProductTemplate::pluck('name', 'id'))
                     ->searchable(),
 
-                SelectFilter::make('supplier')
-                    ->label('Поставщик')
+                SelectFilter::make('shipping_location')
+                    ->label('Место отгрузки')
                     ->options(function () {
-                        $suppliers = ProductInTransit::getSuppliers();
-                        return array_combine($suppliers, $suppliers);
+                        $locations = ProductInTransit::getShippingLocations();
+                        return array_combine($locations, $locations);
                     })
                     ->searchable(),
 
