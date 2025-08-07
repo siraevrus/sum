@@ -30,12 +30,7 @@ class SaleFactory extends Factory
         $product = Product::where('quantity', '>', 0)->inRandomOrder()->first();
         $user = User::inRandomOrder()->first();
 
-        $paymentMethods = [
-            Sale::PAYMENT_METHOD_CASH,
-            Sale::PAYMENT_METHOD_CARD,
-            Sale::PAYMENT_METHOD_BANK_TRANSFER,
-            Sale::PAYMENT_METHOD_OTHER,
-        ];
+
 
         $paymentStatuses = [
             Sale::PAYMENT_STATUS_PENDING,
@@ -75,7 +70,8 @@ class SaleFactory extends Factory
             'price_without_vat' => $priceWithoutVat,
             'currency' => 'RUB',
             'exchange_rate' => 1.0000,
-            'payment_method' => $this->faker->randomElement($paymentMethods),
+            'cash_amount' => $this->faker->randomFloat(2, 0, $totalPrice),
+            'nocash_amount' => $this->faker->randomFloat(2, 0, $totalPrice),
             'payment_status' => $this->faker->randomElement($paymentStatuses),
             'delivery_status' => $this->faker->randomElement($deliveryStatuses),
             'notes' => $this->faker->optional()->sentence(),

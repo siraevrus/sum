@@ -25,12 +25,13 @@ class Sale extends Model
         'quantity',
         'unit_price',
         'total_price',
+        'cash_amount',
+        'nocash_amount',
         'vat_rate',
         'vat_amount',
         'price_without_vat',
         'currency',
         'exchange_rate',
-        'payment_method',
         'payment_status',
         'delivery_status',
         'notes',
@@ -44,6 +45,8 @@ class Sale extends Model
         'quantity' => 'integer',
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
+        'cash_amount' => 'decimal:2',
+        'nocash_amount' => 'decimal:2',
         'vat_rate' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'price_without_vat' => 'decimal:2',
@@ -65,13 +68,7 @@ class Sale extends Model
     const DELIVERY_STATUS_DELIVERED = 'delivered';
     const DELIVERY_STATUS_CANCELLED = 'cancelled';
 
-    // Способы оплаты
-    const PAYMENT_METHOD_CASH = 'cash';
-    const PAYMENT_METHOD_NOCASH = 'nocash';
-    const PAYMENT_METHOD_NOCASH_AND_CASH = 'nocash_and_cash';
-    const PAYMENT_METHOD_CARD = 'card';
-    const PAYMENT_METHOD_BANK_TRANSFER = 'bank_transfer';
-    const PAYMENT_METHOD_OTHER = 'other';
+
 
     /**
      * Связь с товаром
@@ -245,19 +242,7 @@ class Sale extends Model
         };
     }
 
-    /**
-     * Получить способ оплаты на русском языке
-     */
-    public function getPaymentMethodLabel(): string
-    {
-        return match($this->payment_method) {
-            self::PAYMENT_METHOD_CASH => 'Наличные',
-            self::PAYMENT_METHOD_CARD => 'Карта',
-            self::PAYMENT_METHOD_BANK_TRANSFER => 'Банковский перевод',
-            self::PAYMENT_METHOD_OTHER => 'Другое',
-            default => 'Неизвестно',
-        };
-    }
+
 
     /**
      * Получить полное имя клиента

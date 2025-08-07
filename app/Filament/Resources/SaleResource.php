@@ -105,20 +105,34 @@ class SaleResource extends Resource
                                         }
                                     }),
 
+                                TextInput::make('cash_amount')
+                                    ->label('Сумма (нал)')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $cashAmount = $get('cash_amount') ?? 0;
+                                        $nocashAmount = $get('nocash_amount') ?? 0;
+                                        $set('total_price', $cashAmount + $nocashAmount);
+                                    }),
+
+                                TextInput::make('nocash_amount')
+                                    ->label('Сумма (безнал)')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $cashAmount = $get('cash_amount') ?? 0;
+                                        $nocashAmount = $get('nocash_amount') ?? 0;
+                                        $set('total_price', $cashAmount + $nocashAmount);
+                                    }),
+
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')
                                     ->numeric()
                                     ->disabled()
-                                    ->required(),
-
-                                Select::make('payment_method')
-                                    ->label('Способ оплаты')
-                                    ->options([
-                                        Sale::PAYMENT_METHOD_CASH => 'Нал',
-                                        Sale::PAYMENT_METHOD_NOCASH => 'Безнал',
-                                        Sale::PAYMENT_METHOD_NOCASH_AND_CASH => 'Нал + безнал',
-                                    ])
-                                    ->default(Sale::PAYMENT_METHOD_CASH)
                                     ->required(),
 
                                 DatePicker::make('sale_date')
@@ -183,8 +197,13 @@ class SaleResource extends Resource
                     ->sortable()
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('total_price')
-                    ->label('Общая сумма')
+                Tables\Columns\TextColumn::make('cash_amount')
+                    ->label('Сумма (нал)')
+                    ->money('RUB')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('nocash_amount')
+                    ->label('Сумма (безнал)')
                     ->money('RUB')
                     ->sortable(),
 
@@ -209,13 +228,7 @@ class SaleResource extends Resource
                     ->options(Warehouse::pluck('name', 'id'))
                     ->searchable(),
 
-                SelectFilter::make('payment_method')
-                    ->label('Способ оплаты')
-                    ->options([
-                        Sale::PAYMENT_METHOD_CASH => 'Наличные',
-                        Sale::PAYMENT_METHOD_NOCASH => 'Безнал',
-                        Sale::PAYMENT_METHOD_NOCASH_AND_CASH => 'Безнал + нал',
-                    ]),
+
 
                 Filter::make('active')
                     ->label('Только активные')

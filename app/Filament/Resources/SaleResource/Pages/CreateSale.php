@@ -15,6 +15,9 @@ class CreateSale extends CreateRecord
         $data['user_id'] = Auth::id();
         $data['sale_number'] = \App\Models\Sale::generateSaleNumber();
         
+        // Рассчитываем общую сумму
+        $data['total_price'] = ($data['cash_amount'] ?? 0) + ($data['nocash_amount'] ?? 0);
+        
         return $data;
     }
 
