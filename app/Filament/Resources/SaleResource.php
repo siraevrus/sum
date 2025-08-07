@@ -110,7 +110,7 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->live()
+                                    ->live(500)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $cashAmount = $get('cash_amount') ?? 0;
                                         $nocashAmount = $get('nocash_amount') ?? 0;
@@ -122,7 +122,7 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->live()
+                                    ->live(500)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $cashAmount = $get('cash_amount') ?? 0;
                                         $nocashAmount = $get('nocash_amount') ?? 0;
