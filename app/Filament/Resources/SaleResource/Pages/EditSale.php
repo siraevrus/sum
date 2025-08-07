@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SaleResource\Pages;
 
 use App\Filament\Resources\SaleResource;
+use App\Models\Sale;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -14,7 +15,13 @@ class EditSale extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label('Удалить'),
+                ->label('Удалить')
+                ->before(function (Sale $record) {
+                    // Возвращаем товар на склад при удалении продажи
+                    if ($record->product && $record->quantity > 0) {
+                        $record->product->increaseQuantity($record->quantity);
+                    }
+                }),
         ];
     }
 
@@ -49,6 +56,29 @@ class EditSale extends EditRecord
         $data['is_active'] = $data['is_active'] ?? true;
         
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $sale = $this->record;
+        $originalQuantity = $sale->getOriginal('quantity');
+        $newQuantity = $sale->quantity;
+        
+        // Если количество изменилось, корректируем остатки на складе
+        if ($originalQuantity !== $newQuantity && $sale->product) {
+            $difference = $newQuantity - $originalQuantity;
+            
+            if ($difference > 0) {
+                // Увеличили количество - списываем дополнительно
+                $success = $sale->product->decreaseQuantity($difference);
+                if (!$success) {
+                    $this->notify('error', 'Недостаточно товара на складе для увеличения количества');
+                }
+            } elseif ($difference < 0) {
+                // Уменьшили количество - возвращаем разницу
+                $sale->product->increaseQuantity(abs($difference));
+            }
+        }
     }
 
     protected function getRedirectUrl(): string

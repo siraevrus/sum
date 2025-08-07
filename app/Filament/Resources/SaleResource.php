@@ -26,6 +26,7 @@ use Filament\Forms\Set;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Closure;
 
 class SaleResource extends Resource
 {
@@ -71,8 +72,19 @@ class SaleResource extends Resource
                                     ->label('Товар')
                                     ->options(Product::where('quantity', '>', 0)->pluck('name', 'id'))
                                     ->required()
-                                    ->searchable()
                                     ->live()
+                                    ->rules([
+                                        function (string $attribute, $value, Closure $fail) {
+                                            if ($value) {
+                                                $product = Product::find($value);
+                                                if (!$product) {
+                                                    $fail('Товар не найден');
+                                                } elseif ($product->quantity <= 0) {
+                                                    $fail('Товар отсутствует на складе');
+                                                }
+                                            }
+                                        }
+                                    ])
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $productId = $get('product_id');
                                         if ($productId) {
@@ -87,7 +99,6 @@ class SaleResource extends Resource
                                     ->label('Склад')
                                     ->options(Warehouse::pluck('name', 'id'))
                                     ->required()
-                                    ->searchable()
                                     ->disabled(),
 
                                 TextInput::make('quantity')
@@ -95,7 +106,18 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->rules([
+                                        function (string $attribute, $value, Closure $fail) {
+                                            $productId = request()->input('product_id');
+                                            if ($productId && $value) {
+                                                $product = Product::find($productId);
+                                                if ($product && $product->quantity < $value) {
+                                                    $fail("Недостаточно товара на складе. Доступно: {$product->quantity}");
+                                                }
+                                            }
+                                        }
+                                    ]),
 
 
 
@@ -172,17 +194,14 @@ class SaleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('sale_number')
                     ->label('Номер продажи')
-                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('product.name')
                     ->label('Товар')
-                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Клиент')
-                    ->searchable()
                     ->sortable()
                     ->placeholder('Не указан'),
 
@@ -219,10 +238,7 @@ class SaleResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
-                    ->searchable(),
-
-
+                    ->options(Warehouse::pluck('name', 'id')),
 
                 Filter::make('active')
                     ->label('Только активные')
@@ -291,13 +307,6 @@ class SaleResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->headerActions([
-                Tables\Actions\Action::make('export')
-                    ->label('Экспорт')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->url(route('sales.export'))
-                    ->openUrlInNewTab(),
             ])
             ->defaultSort('created_at', 'desc');
     }

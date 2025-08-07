@@ -46,6 +46,20 @@ class CreateSale extends CreateRecord
         return $data;
     }
 
+    protected function afterCreate(): void
+    {
+        // Списываем товар со склада после создания продажи
+        $sale = $this->record;
+        if ($sale->product && $sale->quantity > 0) {
+            $success = $sale->product->decreaseQuantity($sale->quantity);
+            
+            if (!$success) {
+                // Если не удалось списать товар, показываем ошибку
+                $this->notify('error', 'Недостаточно товара на складе для продажи');
+            }
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
