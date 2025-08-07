@@ -55,7 +55,63 @@ class ReceiptResource extends Resource
     {
         return $form
             ->schema([
-                //
+                Section::make('Основная информация')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('Наименование')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                TextInput::make('producer')
+                                    ->label('Производитель')
+                                    ->maxLength(255),
+
+                                TextInput::make('shipping_location')
+                                    ->label('Место отгрузки')
+                                    ->maxLength(255)
+                                    ->required(),
+
+                                DatePicker::make('shipping_date')
+                                    ->label('Дата отгрузки')
+                                    ->required(),
+
+                                TextInput::make('quantity')
+                                    ->label('Количество')
+                                    ->numeric()
+                                    ->required(),
+
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспорта')
+                                    ->maxLength(255),
+
+                                TextInput::make('tracking_number')
+                                    ->label('Номер отслеживания')
+                                    ->maxLength(255),
+
+                                DatePicker::make('expected_arrival_date')
+                                    ->label('Ожидаемая дата прибытия'),
+
+                                TextInput::make('calculated_volume')
+                                    ->label('Рассчитанный объем')
+                                    ->numeric()
+                                    ->disabled(),
+                            ]),
+                    ]),
+
+                Section::make('Дополнительная информация')
+                    ->schema([
+                        Textarea::make('description')
+                            ->label('Описание')
+                            ->rows(3)
+                            ->maxLength(1000),
+
+                        Textarea::make('notes')
+                            ->label('Заметки')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ]),
             ]);
     }
 
