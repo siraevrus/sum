@@ -31,10 +31,8 @@ class EditSale extends EditRecord
         // Рассчитываем общую сумму
         $data['total_price'] = ($data['cash_amount'] ?? 0) + ($data['nocash_amount'] ?? 0);
         
-        // Рассчитываем цену за единицу (если не указана)
-        if (!isset($data['unit_price']) || $data['unit_price'] == 0) {
-            $data['unit_price'] = $data['total_price'] / ($data['quantity'] ?? 1);
-        }
+        // Рассчитываем цену за единицу
+        $data['unit_price'] = $data['total_price'] / ($data['quantity'] ?? 1);
         
         // Рассчитываем цену без НДС
         $data['price_without_vat'] = $data['total_price'] / 1.2; // НДС 20%
