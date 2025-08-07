@@ -25,6 +25,8 @@ class CompanyResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Компании';
 
+    protected static ?int $navigationSort = 1;
+
     public static function canViewAny(): bool
     {
         $user = Auth::user();

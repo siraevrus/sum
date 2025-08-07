@@ -26,6 +26,8 @@ class WarehouseResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Склады';
 
+    protected static ?int $navigationSort = 2;
+
     public static function canViewAny(): bool
     {
         $user = Auth::user();
