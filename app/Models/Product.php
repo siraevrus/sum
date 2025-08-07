@@ -127,6 +127,10 @@ class Product extends Model
             } elseif (!is_array($attributes)) {
                 $attributes = [];
             }
+            
+            // Добавляем количество в атрибуты для использования в формуле
+            $attributes['quantity'] = $this->quantity;
+            
             $testResult = $this->productTemplate->testFormula($attributes);
             
             if ($testResult['success']) {

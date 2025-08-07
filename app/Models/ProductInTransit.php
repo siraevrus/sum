@@ -111,7 +111,11 @@ class ProductInTransit extends Model
         }
 
         try {
-            $testResult = $this->template->testFormula($this->attributes);
+            // Добавляем количество в атрибуты для использования в формуле
+            $attributes = $this->attributes;
+            $attributes['quantity'] = $this->quantity;
+            
+            $testResult = $this->template->testFormula($attributes);
             
             if ($testResult['success']) {
                 return (float) $testResult['result'];
