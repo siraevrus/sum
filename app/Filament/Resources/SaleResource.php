@@ -324,14 +324,16 @@ class SaleResource extends Resource
         $user = Auth::user();
         
         // Администратор видит все продажи
-        if ($user->role === 'admin') {
+        if ($user->role->value === 'admin') {
             return parent::getEloquentQuery();
         }
         
         // Остальные пользователи видят только продажи на своих складах
         return parent::getEloquentQuery()
             ->whereHas('warehouse', function (Builder $query) use ($user) {
-                $query->where('company_id', $user->company_id);
+                if ($user->company_id) {
+                    $query->where('company_id', $user->company_id);
+                }
             });
     }
 } 
