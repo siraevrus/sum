@@ -105,26 +105,6 @@ class SaleResource extends Resource
                                         }
                                     }),
 
-                                TextInput::make('unit_price')
-                                    ->label('Цена за единицу')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $quantity = $get('quantity');
-                                        $unitPrice = $get('unit_price');
-                                        if ($quantity && $unitPrice) {
-                                            $set('price_without_vat', $quantity * $unitPrice);
-                                        }
-                                    }),
-
-                                TextInput::make('price_without_vat')
-                                    ->label('Сумма без НДС')
-                                    ->numeric()
-                                    ->disabled()
-                                    ->required(),
-
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')
                                     ->numeric()
@@ -141,24 +121,10 @@ class SaleResource extends Resource
                                     ->default(Sale::PAYMENT_METHOD_CASH)
                                     ->required(),
 
-                                Select::make('payment_status')
-                                    ->label('Статус оплаты')
-                                    ->options([
-                                        Sale::PAYMENT_STATUS_PENDING => 'Ожидает оплаты',
-                                        Sale::PAYMENT_STATUS_PAID => 'Оплачено',
-                                        Sale::PAYMENT_STATUS_PARTIALLY_PAID => 'Частично оплачено',
-                                        Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
-                                    ])
-                                    ->default(Sale::PAYMENT_STATUS_PENDING)
-                                    ->required(),
-
                                 DatePicker::make('sale_date')
                                     ->label('Дата продажи')
                                     ->required()
                                     ->default(now()),
-
-                                DatePicker::make('delivery_date')
-                                    ->label('Дата доставки'),
 
                                 Toggle::make('is_active')
                                     ->label('Активна')
@@ -179,20 +145,7 @@ class SaleResource extends Resource
                                     ->tel()
                                     ->maxLength(255),
 
-                                TextInput::make('customer_email')
-                                    ->label('Email клиента')
-                                    ->email()
-                                    ->maxLength(255),
-
-                                TextInput::make('invoice_number')
-                                    ->label('Номер счета')
-                                    ->maxLength(255),
                             ]),
-
-                        Textarea::make('customer_address')
-                            ->label('Адрес клиента')
-                            ->rows(3)
-                            ->maxLength(1000),
                     ]),
 
                 Section::make('Дополнительная информация')
@@ -230,40 +183,9 @@ class SaleResource extends Resource
                     ->sortable()
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('unit_price')
-                    ->label('Цена за ед.')
-                    ->money('RUB')
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Общая сумма')
                     ->money('RUB')
-                    ->sortable(),
-
-                Tables\Columns\BadgeColumn::make('payment_status')
-                    ->label('Оплата')
-                    ->colors([
-                        'warning' => Sale::PAYMENT_STATUS_PENDING,
-                        'success' => Sale::PAYMENT_STATUS_PAID,
-                        'info' => Sale::PAYMENT_STATUS_PARTIALLY_PAID,
-                        'danger' => Sale::PAYMENT_STATUS_CANCELLED,
-                    ])
-                    ->formatStateUsing(function (Sale $record): string {
-                        return $record->getPaymentStatusLabel();
-                    })
-                    ->sortable(),
-
-                Tables\Columns\BadgeColumn::make('delivery_status')
-                    ->label('Доставка')
-                    ->colors([
-                        'warning' => Sale::DELIVERY_STATUS_PENDING,
-                        'info' => Sale::DELIVERY_STATUS_IN_PROGRESS,
-                        'success' => Sale::DELIVERY_STATUS_DELIVERED,
-                        'danger' => Sale::DELIVERY_STATUS_CANCELLED,
-                    ])
-                    ->formatStateUsing(function (Sale $record): string {
-                        return $record->getDeliveryStatusLabel();
-                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('sale_date')
@@ -287,39 +209,13 @@ class SaleResource extends Resource
                     ->options(Warehouse::pluck('name', 'id'))
                     ->searchable(),
 
-                SelectFilter::make('payment_status')
-                    ->label('Статус оплаты')
-                    ->options([
-                        Sale::PAYMENT_STATUS_PENDING => 'Ожидает оплаты',
-                        Sale::PAYMENT_STATUS_PAID => 'Оплачено',
-                        Sale::PAYMENT_STATUS_PARTIALLY_PAID => 'Частично оплачено',
-                        Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
-                    ]),
-
-                SelectFilter::make('delivery_status')
-                    ->label('Статус доставки')
-                    ->options([
-                        Sale::DELIVERY_STATUS_PENDING => 'Ожидает доставки',
-                        Sale::DELIVERY_STATUS_IN_PROGRESS => 'В доставке',
-                        Sale::DELIVERY_STATUS_DELIVERED => 'Доставлено',
-                        Sale::DELIVERY_STATUS_CANCELLED => 'Отменено',
-                    ]),
-
                 SelectFilter::make('payment_method')
                     ->label('Способ оплаты')
                     ->options([
                         Sale::PAYMENT_METHOD_CASH => 'Наличные',
-                        Sale::PAYMENT_METHOD_CARD => 'Карта',
-                        Sale::PAYMENT_METHOD_BANK_TRANSFER => 'Банковский перевод',
-                        Sale::PAYMENT_METHOD_OTHER => 'Другое',
+                        Sale::PAYMENT_METHOD_NOCASH => 'Безнал',
+                        Sale::PAYMENT_METHOD_NOCASH_AND_CASH => 'Безнал + нал',
                     ]),
-
-                Filter::make('delivery_overdue')
-                    ->label('Просроченные доставки')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)
-                                   ->where('sale_date', '<', now()->subDays(7));
-                    }),
 
                 Filter::make('active')
                     ->label('Только активные')
