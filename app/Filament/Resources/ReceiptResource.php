@@ -197,20 +197,6 @@ class ReceiptResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
-                Tables\Actions\Action::make('receive')
-                    ->label('Принять')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(function (ProductInTransit $record): bool {
-                        return $record->canBeReceived();
-                    })
-                    ->action(function (ProductInTransit $record): void {
-                        $record->receive();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Принять товар')
-                    ->modalDescription('Товар будет перемещен в остатки на складе.')
-                    ->modalSubmitActionLabel('Принять'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
