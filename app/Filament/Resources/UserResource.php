@@ -26,6 +26,8 @@ class UserResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Сотрудники';
 
+    protected static ?int $navigationSort = 3;
+
     public static function canViewAny(): bool
     {
         $user = Auth::user();

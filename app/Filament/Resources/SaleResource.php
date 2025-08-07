@@ -33,11 +33,11 @@ class SaleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
-    protected static ?string $navigationGroup = 'Продажи';
+    protected static ?string $navigationGroup = 'Реализация';
 
-    protected static ?string $modelLabel = 'Продажа';
+    protected static ?string $modelLabel = 'Реализация';
 
-    protected static ?string $pluralModelLabel = 'Продажи';
+    protected static ?string $pluralModelLabel = 'Реализация';
 
     protected static ?int $navigationSort = 6;
 
