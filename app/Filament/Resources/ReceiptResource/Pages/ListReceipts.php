@@ -13,7 +13,7 @@ class ListReceipts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Убираем кнопку создания, так как приемка работает только с существующими товарами
         ];
     }
 }
