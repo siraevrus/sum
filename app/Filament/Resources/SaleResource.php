@@ -73,18 +73,6 @@ class SaleResource extends Resource
                                     ->options(Product::where('quantity', '>', 0)->pluck('name', 'id'))
                                     ->required()
                                     ->live()
-                                    ->rules([
-                                        function (string $attribute, $value, Closure $fail) {
-                                            if ($value) {
-                                                $product = Product::find($value);
-                                                if (!$product) {
-                                                    $fail('Товар не найден');
-                                                } elseif ($product->quantity <= 0) {
-                                                    $fail('Товар отсутствует на складе');
-                                                }
-                                            }
-                                        }
-                                    ])
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $productId = $get('product_id');
                                         if ($productId) {
@@ -112,7 +100,7 @@ class SaleResource extends Resource
                                             $productId = $get('product_id');
                                             if ($productId && $value) {
                                                 $product = Product::find($productId);
-                                                if ($product && $product->quantity < $value) {
+                                                if ($product && $product->quantity < (int)$value) {
                                                     $fail("Недостаточно товара на складе. Доступно: {$product->quantity}");
                                                 }
                                             }
