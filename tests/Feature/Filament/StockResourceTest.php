@@ -253,7 +253,7 @@ class StockResourceTest extends TestCase
             ->get('/admin/stocks');
 
         $response->assertStatus(200);
-        $response->assertSee('24'); // 2 * 3 * 4 = 24
+        $response->assertSee('24.00'); // 2 * 3 * 4 = 24
     }
 
     /** @test */

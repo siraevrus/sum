@@ -205,7 +205,6 @@ class ProductResource extends Resource
                     ->schema([
                         TextInput::make('calculated_volume')
                             ->label('Рассчитанный объем')
-                            ->numeric()
                             ->disabled()
                             ->suffix(function (Get $get) {
                                 $templateId = $get('product_template_id');
