@@ -114,7 +114,7 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $cashAmount = $get('cash_amount') ?? 0;
                                         $nocashAmount = $get('nocash_amount') ?? 0;
-                                        $set('total_price', $cashAmount + $nocashAmount);
+                                        $set('total_price', (float)$cashAmount + (float)$nocashAmount);
                                     }),
 
                                 TextInput::make('nocash_amount')
