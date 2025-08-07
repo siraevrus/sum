@@ -26,7 +26,6 @@ use Filament\Forms\Set;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Closure;
 
 class SaleResource extends Resource
 {
@@ -227,11 +226,6 @@ class SaleResource extends Resource
                     ->label('Продавец')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Создана')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('warehouse_id')

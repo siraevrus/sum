@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CreateSale extends CreateRecord
 {
@@ -12,6 +13,7 @@ class CreateSale extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        Log::info('Начало создания продажи', $data);
         $data['user_id'] = Auth::id();
         $data['sale_number'] = \App\Models\Sale::generateSaleNumber();
         
@@ -51,17 +53,24 @@ class CreateSale extends CreateRecord
         // Списываем товар со склада после создания продажи
         $sale = $this->record;
         if ($sale->product && $sale->quantity > 0) {
-            $success = $sale->product->decreaseQuantity($sale->quantity);
-            
-            if (!$success) {
-                // Если не удалось списать товар, показываем ошибку
-                $this->notify('error', 'Недостаточно товара на складе для продажи');
+            try {
+                $success = $sale->product->decreaseQuantity($sale->quantity);
+                
+                if (!$success) {
+                    // Если не удалось списать товар, показываем ошибку
+                    $this->notify('error', 'Недостаточно товара на складе для продажи');
+                }
+            } catch (\Exception $e) {
+                // Логируем ошибку и показываем пользователю
+                Log::error('Ошибка при списании товара: ' . $e->getMessage());
+                $this->notify('error', 'Ошибка при списании товара со склада');
             }
         }
     }
 
     protected function getRedirectUrl(): string
     {
+        Log::info('Редирект после создания продажи');
         return $this->getResource()::getUrl('index');
     }
 } 
