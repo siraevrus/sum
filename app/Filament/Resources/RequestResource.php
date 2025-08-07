@@ -270,6 +270,18 @@ class RequestResource extends Resource
                     ->sortable()
                     ->badge(),
 
+                Tables\Columns\TextColumn::make('calculated_volume')
+                    ->label('Объем')
+                    ->numeric(
+                        decimalPlaces: 4,
+                        decimalSeparator: '.',
+                        thousandsSeparator: ' ',
+                    )
+                    ->suffix(function (Request $record): string {
+                        return $record->productTemplate?->unit ?? '';
+                    })
+                    ->sortable(),
+
                 Tables\Columns\BadgeColumn::make('priority')
                     ->label('Приоритет')
                     ->colors([

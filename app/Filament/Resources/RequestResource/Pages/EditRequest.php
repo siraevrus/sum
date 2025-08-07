@@ -34,6 +34,17 @@ class EditRequest extends EditRecord
             $data['attributes'] = [];
         }
         
+        // Рассчитываем и сохраняем объем
+        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+            if ($template && $template->formula) {
+                $testResult = $template->testFormula($data['attributes']);
+                if ($testResult['success']) {
+                    $data['calculated_volume'] = $testResult['result'];
+                }
+            }
+        }
+        
         return $data;
     }
 

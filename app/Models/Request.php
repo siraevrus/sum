@@ -17,6 +17,7 @@ class Request extends Model
         'warehouse_id',
         'product_template_id',
         'attributes',
+        'calculated_volume',
         'title',
         'description',
         'quantity',
@@ -34,6 +35,7 @@ class Request extends Model
     protected $casts = [
         'quantity' => 'integer',
         'attributes' => 'array',
+        'calculated_volume' => 'decimal:4',
         'approved_at' => 'datetime',
         'processed_at' => 'datetime',
         'completed_at' => 'datetime',
