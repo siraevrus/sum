@@ -280,7 +280,9 @@ class RequestResource extends Resource
                     ->suffix(function (Request $record): string {
                         return $record->productTemplate?->unit ?? '';
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->visible()
+                    ->placeholder('Не указан'),
 
                 Tables\Columns\BadgeColumn::make('priority')
                     ->label('Приоритет')
