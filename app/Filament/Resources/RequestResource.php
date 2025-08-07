@@ -273,7 +273,7 @@ class RequestResource extends Resource
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
                     ->numeric(
-                        decimalPlaces: 4,
+                        decimalPlaces: 0,
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )

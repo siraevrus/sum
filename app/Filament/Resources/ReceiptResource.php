@@ -146,7 +146,7 @@ class ReceiptResource extends Resource
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем (м³)')
                     ->numeric(
-                        decimalPlaces: 2,
+                        decimalPlaces: 0,
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
