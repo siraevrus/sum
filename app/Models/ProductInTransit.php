@@ -38,6 +38,7 @@ class ProductInTransit extends Model
 
     protected $casts = [
         'attributes' => 'array',
+        'document_path' => 'array',
         'calculated_volume' => 'decimal:4',
         'quantity' => 'integer',
         'expected_arrival_date' => 'date',

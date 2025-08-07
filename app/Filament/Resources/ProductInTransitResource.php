@@ -129,7 +129,6 @@ class ProductInTransitResource extends Resource
 
                                 DatePicker::make('expected_arrival_date')
                                     ->label('Ожидаемая дата прибытия')
-                                    ->required()
                                     ->default(now()->addDays(7)),
 
                                 Select::make('status')
