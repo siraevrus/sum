@@ -108,8 +108,8 @@ class SaleResource extends Resource
                                     ->minValue(1)
                                     ->required()
                                     ->rules([
-                                        function (string $attribute, $value, Closure $fail) {
-                                            $productId = request()->input('product_id');
+                                        function (string $attribute, $value, Closure $fail, Get $get) {
+                                            $productId = $get('product_id');
                                             if ($productId && $value) {
                                                 $product = Product::find($productId);
                                                 if ($product && $product->quantity < $value) {
