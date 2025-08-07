@@ -105,6 +105,20 @@ class SaleResource extends Resource
                                         }
                                     }),
 
+                                TextInput::make('unit_price')
+                                    ->label('Цена за единицу')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $quantity = $get('quantity');
+                                        $unitPrice = $get('unit_price');
+                                        if ($quantity && $unitPrice) {
+                                            $set('price_without_vat', $quantity * $unitPrice);
+                                        }
+                                    }),
+
                                 TextInput::make('cash_amount')
                                     ->label('Сумма (нал)')
                                     ->numeric()
