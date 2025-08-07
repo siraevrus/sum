@@ -146,6 +146,7 @@ class ProductInTransitResource extends Resource
 
                                 Toggle::make('is_active')
                                     ->label('Активен')
+                                    ->hidden()
                                     ->default(true),
                             ]),
 
@@ -347,11 +348,6 @@ class ProductInTransitResource extends Resource
                     ->label('Создатель')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Создан')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->emptyStateHeading('Нет товаров в пути')
             ->emptyStateDescription('Создайте первый товар в пути, чтобы начать работу.')

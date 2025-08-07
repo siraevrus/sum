@@ -155,6 +155,7 @@ class SaleResource extends Resource
 
                                 Toggle::make('is_active')
                                     ->label('Активна')
+                                    ->hidden()
                                     ->default(true),
                             ]),
                     ]),
