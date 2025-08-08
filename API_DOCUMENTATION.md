@@ -8,119 +8,94 @@ http://localhost:8000/api
 ## Аутентификация
 
 ### Регистрация
-**POST** `/auth/register`
+POST `/auth/register`
 
-**Параметры:**
+Параметры:
 ```json
 {
+  "name": "Иван Иванов",
+  "email": "ivan@example.com",
+  "password": "password123"
+}
+```
+
+Ответ:
+```json
+{
+  "user": {
+    "id": 1,
     "name": "Иван Иванов",
     "email": "ivan@example.com",
-    "password": "password123",
-    "password_confirmation": "password123",
-    "role": "operator",
-    "company_id": 1
+    "role": "admin"
+  },
+  "token": "1|abc123..."
 }
 ```
 
-**Ответ:**
-```json
-{
-    "message": "Пользователь успешно зарегистрирован",
-    "user": {
-        "id": 1,
-        "name": "Иван Иванов",
-        "email": "ivan@example.com",
-        "role": "operator",
-        "company": {
-            "id": 1,
-            "name": "ООО Склад"
-        }
-    },
-    "token": "1|abc123..."
-}
-```
+Примечания:
+- Валидация: 422 с ошибками полей.
 
 ### Вход
-**POST** `/auth/login`
+POST `/auth/login`
 
-**Параметры:**
+Параметры:
 ```json
 {
-    "email": "ivan@example.com",
-    "password": "password123"
+  "email": "ivan@example.com",
+  "password": "password123"
 }
 ```
 
-**Ответ:**
+Ответ (успех):
 ```json
 {
-    "message": "Успешный вход",
-    "user": {
-        "id": 1,
-        "name": "Иван Иванов",
-        "email": "ivan@example.com",
-        "role": "operator",
-        "company": {
-            "id": 1,
-            "name": "ООО Склад"
-        }
-    },
-    "token": "1|abc123..."
+  "user": { "id": 1, "name": "Иван Иванов", "email": "ivan@example.com", "role": "admin" },
+  "token": "1|abc123..."
 }
+```
+
+Ответ (ошибка):
+```json
+{ "message": "Неверные учетные данные" } // 401
+{ "message": "Ваш аккаунт заблокирован" } // 401
 ```
 
 ### Выход
-**POST** `/auth/logout`
+POST `/auth/logout`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ:
 ```json
-{
-    "message": "Успешный выход"
-}
+{ "message": "Успешно вышли из системы" }
 ```
 
-### Получение профиля
-**GET** `/auth/me`
+### Профиль
+GET `/auth/me`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ: объект пользователя (без обертки):
 ```json
-{
-    "user": {
-        "id": 1,
-        "name": "Иван Иванов",
-        "email": "ivan@example.com",
-        "role": "operator",
-        "company": {
-            "id": 1,
-            "name": "ООО Склад"
-        }
-    }
-}
+{ "id": 1, "name": "Иван Иванов", "email": "ivan@example.com", "role": "admin" }
 ```
 
 ### Обновление профиля
-**PUT** `/auth/profile`
+PUT `/auth/profile`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Параметры:**
+Тело (любые из полей): `name`, `username`, `email`, `password` (+подтверждение)
+
+Ответ:
 ```json
-{
-    "name": "Иван Петров",
-    "email": "ivan.petrov@example.com",
-    "password": "newpassword123",
-    "password_confirmation": "newpassword123"
-}
+{ "message": "Профиль обновлен", "user": { "id": 1, "name": "..." } }
 ```
 
 ## Товары
 
 ### Получение списка товаров
-**GET** `/products`
+GET `/products`
 
 **Параметры запроса:**
 - `search` - поиск по названию, описанию, производителю
@@ -133,9 +108,9 @@ http://localhost:8000/api
 - `per_page` - количество на странице (по умолчанию 15)
 - `page` - номер страницы
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ:
 ```json
 {
     "data": [
@@ -168,6 +143,12 @@ http://localhost:8000/api
             }
         }
     ],
+    "links": {
+        "first": "...",
+        "last": "...",
+        "prev": null,
+        "next": null
+    },
     "meta": {
         "current_page": 1,
         "last_page": 1,
@@ -178,16 +159,18 @@ http://localhost:8000/api
 ```
 
 ### Получение товара по ID
-**GET** `/products/{id}`
+GET `/products/{id}`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: объект товара. Ошибки: 404 `{ "message": "Товар не найден" }`, 403 `{ "message": "Доступ запрещен" }`.
 
 ### Создание товара
-**POST** `/products`
+POST `/products`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Параметры:**
+Параметры:
 ```json
 {
     "product_template_id": 1,
@@ -207,45 +190,60 @@ http://localhost:8000/api
 }
 ```
 
-### Обновление товара
-**PUT** `/products/{id}`
+Ответ:
+```json
+{ "message": "Товар успешно создан", "data": { "id": 1, "name": "..." } }
+```
 
-**Заголовки:** `Authorization: Bearer {token}`
+### Обновление товара
+PUT `/products/{id}`
+
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Товар успешно обновлен", "data": { ... } }`
 
 ### Удаление товара
-**DELETE** `/products/{id}`
+DELETE `/products/{id}`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Товар успешно удален" }`
 
 ### Статистика товаров
-**GET** `/products/stats`
+GET `/products/stats`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ:
 ```json
 {
-    "data": {
-        "total_products": 10,
-        "active_products": 8,
-        "in_stock": 7,
-        "low_stock": 2,
-        "out_of_stock": 1,
-        "total_quantity": 150,
-        "total_volume": 3.45
-    }
+  "success": true,
+  "data": {
+    "total_products": 10,
+    "active_products": 8,
+    "in_stock": 7,
+    "low_stock": 2,
+    "out_of_stock": 1,
+    "total_quantity": 150,
+    "total_volume": 3.45
+  }
 }
 ```
 
 ### Популярные товары
-**GET** `/products/popular`
+GET `/products/popular`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ:
+```json
+{ "success": true, "data": [ { "id": 1, "name": "...", "total_sales": 12, "total_revenue": "10000.00" } ] }
+```
 
 ## Продажи
 
 ### Получение списка продаж
-**GET** `/sales`
+GET `/sales`
 
 **Параметры запроса:**
 - `search` - поиск по номеру продажи, клиенту, телефону
@@ -259,9 +257,9 @@ http://localhost:8000/api
 - `per_page` - количество на странице
 - `page` - номер страницы
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ:
 ```json
 {
     "data": [
@@ -290,6 +288,12 @@ http://localhost:8000/api
             }
         }
     ],
+    "links": {
+        "first": "...",
+        "last": "...",
+        "prev": null,
+        "next": null
+    },
     "meta": {
         "current_page": 1,
         "last_page": 1,
@@ -300,16 +304,18 @@ http://localhost:8000/api
 ```
 
 ### Получение продажи по ID
-**GET** `/sales/{id}`
+GET `/sales/{id}`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: объект продажи. Ошибки: 404 `{ "message": "Продажа не найдена" }`.
 
 ### Создание продажи
-**POST** `/sales`
+POST `/sales`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Параметры:**
+Параметры:
 ```json
 {
     "product_id": 1,
@@ -330,43 +336,53 @@ http://localhost:8000/api
 }
 ```
 
-### Обновление продажи
-**PUT** `/sales/{id}`
+Ответ: `{ "message": "Продажа успешно создана", "sale": { ... } }`
 
-**Заголовки:** `Authorization: Bearer {token}`
+### Обновление продажи
+PUT `/sales/{id}`
+
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Продажа успешно обновлена", "sale": { ... } }`
 
 ### Удаление продажи
-**DELETE** `/sales/{id}`
+DELETE `/sales/{id}`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Продажа удалена" }`
 
 ### Оформление продажи
-**POST** `/sales/{id}/process`
+POST `/sales/{id}/process`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Продажа оформлена", "sale": { ... } }`
 
 ### Отмена продажи
-**POST** `/sales/{id}/cancel`
+POST `/sales/{id}/cancel`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
+
+Ответ: `{ "message": "Продажа отменена", "sale": { ... } }`
 
 ### Статистика продаж
-**GET** `/sales/stats`
+GET `/sales/stats`
 
-**Заголовки:** `Authorization: Bearer {token}`
+Заголовки: `Authorization: Bearer {token}`
 
-**Ответ:**
+Ответ (объект без обертки):
 ```json
 {
-    "data": {
-        "total_sales": 25,
-        "paid_sales": 20,
-        "pending_payments": 3,
-        "today_sales": 2,
-        "month_revenue": 150000.00,
-        "total_revenue": 500000.00,
-        "total_quantity": 150
-    }
+  "total_sales": 25,
+  "paid_sales": 20,
+  "pending_payments": 3,
+  "today_sales": 2,
+  "month_revenue": 150000.00,
+  "total_revenue": 500000.00,
+  "total_quantity": 150,
+  "average_sale": 12000.00,
+  "in_delivery": 4
 }
 ```
 
