@@ -3,55 +3,73 @@
 namespace App\Filament\Resources\ProductInTransitResource\Pages;
 
 use App\Filament\Resources\ProductInTransitResource;
+use App\Models\ProductInTransit;
+use App\Models\ProductTemplate;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateProductInTransit extends CreateRecord
 {
     protected static string $resource = ProductInTransitResource::class;
 
-    protected function mutateFormDataBeforeCreate(array $data): array
+    protected function handleRecordCreation(array $data): Model
     {
-        $data['created_by'] = Auth::id();
-        
-        // Обрабатываем характеристики
-        $attributes = [];
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_') && $value !== null) {
-                $attributeName = str_replace('attribute_', '', $key);
-                $attributes[$attributeName] = $value;
-            }
-        }
-        $data['attributes'] = $attributes;
-        
-        // Удаляем временные поля характеристик
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_')) {
-                unset($data[$key]);
-            }
-        }
-        
-        // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
-            $data['attributes'] = [];
-        }
-        
-        // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
-            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            if ($template && $template->formula) {
-                // Добавляем количество в атрибуты для формулы
-                $attributes = $data['attributes'];
-                $attributes['quantity'] = $data['quantity'] ?? 1;
-                
-                $testResult = $template->testFormula($attributes);
-                if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
+        $createdBy = Auth::id();
+
+        $common = [
+            'warehouse_id' => $data['warehouse_id'] ?? null,
+            'shipping_location' => $data['shipping_location'] ?? null,
+            'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
+            'transport_number' => $data['transport_number'] ?? null,
+            'tracking_number' => $data['tracking_number'] ?? null,
+            'expected_arrival_date' => $data['expected_arrival_date'] ?? null,
+            'status' => $data['status'] ?? ProductInTransit::STATUS_IN_TRANSIT,
+            'notes' => $data['notes'] ?? null,
+            'document_path' => $data['document_path'] ?? null,
+            'created_by' => $createdBy,
+            'is_active' => true,
+        ];
+
+        $firstRecord = null;
+
+        foreach ($data['items'] as $item) {
+            $attributes = [];
+            foreach ($item as $key => $value) {
+                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                    $attributeName = str_replace('attribute_', '', $key);
+                    $attributes[$attributeName] = $value;
                 }
             }
+
+            $recordData = array_merge($common, [
+                'product_template_id' => $item['product_template_id'],
+                'name' => $item['name'],
+                'producer' => $item['producer'] ?? null,
+                'quantity' => $item['quantity'] ?? 1,
+                'attributes' => $attributes,
+            ]);
+
+            // Рассчет объема, если задана формула
+            if (!empty($recordData['product_template_id']) && !empty($attributes)) {
+                $template = ProductTemplate::find($recordData['product_template_id']);
+                if ($template && $template->formula) {
+                    $attrsForFormula = $attributes;
+                    $attrsForFormula['quantity'] = $recordData['quantity'];
+                    $testResult = $template->testFormula($attrsForFormula);
+                    if ($testResult['success']) {
+                        $recordData['calculated_volume'] = $testResult['result'];
+                    }
+                }
+            }
+
+            $created = ProductInTransit::create($recordData);
+            if ($firstRecord === null) {
+                $firstRecord = $created;
+            }
         }
-        
-        return $data;
+
+        return $firstRecord ?? new ProductInTransit();
     }
 
     protected function getRedirectUrl(): string

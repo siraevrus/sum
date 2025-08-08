@@ -25,6 +25,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Forms\Components\Repeater;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -64,43 +65,11 @@ class ProductInTransitResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('product_template_id')
-                                    ->label('Шаблон товара')
-                                    ->options(ProductTemplate::pluck('name', 'id'))
-                                    ->required()
-                                    ->searchable()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        // Очищаем старые характеристики при смене шаблона
-                                        $set('calculated_volume', null);
-                                        
-                                        // Добавляем динамические поля характеристик
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::with('attributes')->find($templateId);
-                                            if ($template) {
-                                                // Очищаем старые поля характеристик
-                                                foreach ($template->attributes as $attribute) {
-                                                    $set("attribute_{$attribute->variable}", null);
-                                                }
-                                            }
-                                        }
-                                    }),
-
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
                                     ->options(Warehouse::pluck('name', 'id'))
                                     ->required()
                                     ->searchable(),
-
-                                TextInput::make('name')
-                                    ->label('Наименование')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                TextInput::make('producer')
-                                    ->label('Производитель')
-                                    ->maxLength(255),
 
                                 TextInput::make('shipping_location')
                                     ->label('Место отгрузки')
@@ -111,13 +80,6 @@ class ProductInTransitResource extends Resource
                                     ->label('Дата отгрузки')
                                     ->required()
                                     ->default(now()),
-
-                                TextInput::make('quantity')
-                                    ->label('Количество')
-                                    ->numeric()
-                                    ->default(1)
-                                    ->minValue(1)
-                                    ->required(),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
@@ -146,110 +108,109 @@ class ProductInTransitResource extends Resource
                                     ->default(true),
                             ]),
 
-                        Textarea::make('description')
-                            ->label('Описание')
-                            ->rows(3)
-                            ->maxLength(1000),
-
                         Textarea::make('notes')
                             ->label('Заметки')
                             ->rows(3)
                             ->maxLength(1000),
                     ]),
 
-                Section::make('Характеристики товара')
+                Section::make('Товары')
                     ->schema([
-                        // Динамические поля характеристик будут добавляться здесь
-                    ])
-                    ->visible(fn (Get $get) => $get('product_template_id') !== null)
-                    ->live()
-                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
-                        // Автоматически рассчитываем объем при изменении характеристик
-                        $templateId = $get('product_template_id');
-                        if ($templateId) {
-                            $template = ProductTemplate::find($templateId);
-                            if ($template && $template->formula) {
-                                // Собираем все значения характеристик
-                                $attributes = [];
-                                foreach ($state as $key => $value) {
-                                    if (str_starts_with($key, 'attribute_')) {
-                                        $attributeName = str_replace('attribute_', '', $key);
-                                        $attributes[$attributeName] = $value;
-                                    }
-                                }
-                                
-                                if (!empty($attributes)) {
-                                    $testResult = $template->testFormula($attributes);
-                                    if ($testResult['success']) {
-                                        $set('calculated_volume', $testResult['result']);
-                                    }
-                                }
-                            }
-                        }
-                    })
-                    ->schema(function (Get $get) {
-                        $templateId = $get('product_template_id');
-                        if (!$templateId) {
-                            return [];
-                        }
+                        Repeater::make('items')
+                            ->label('Товары к добавлению')
+                            ->minItems(1)
+                            ->collapsed()
+                            ->grid(1)
+                            ->schema([
+                                Grid::make(2)
+                                    ->schema([
+                                        Select::make('product_template_id')
+                                            ->label('Шаблон товара')
+                                            ->options(ProductTemplate::pluck('name', 'id'))
+                                            ->required()
+                                            ->searchable()
+                                            ->live(),
 
-                        $template = ProductTemplate::with('attributes')->find($templateId);
-                        if (!$template) {
-                            return [];
-                        }
+                                        TextInput::make('name')
+                                            ->label('Наименование')
+                                            ->required()
+                                            ->maxLength(255),
 
-                        $fields = [];
-                        foreach ($template->attributes as $attribute) {
-                            $fieldName = "attribute_{$attribute->variable}";
-                            
-                            switch ($attribute->type) {
-                                case 'number':
-                                    $fields[] = TextInput::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->numeric()
-                                        ->required($attribute->is_required)
-                                        ->live();
-                                    break;
-                                    
-                                case 'text':
-                                    $fields[] = TextInput::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->required($attribute->is_required)
-                                        ->live();
-                                    break;
-                                    
-                                case 'select':
-                                    $options = $attribute->options_array;
-                                    $fields[] = Select::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->options($options)
-                                        ->required($attribute->is_required)
-                                        ->live();
-                                    break;
-                            }
-                        }
+                                        TextInput::make('producer')
+                                            ->label('Производитель')
+                                            ->maxLength(255),
 
-                        return $fields;
-                    }),
+                                        TextInput::make('quantity')
+                                            ->label('Количество')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->minValue(1)
+                                            ->required(),
+                                    ]),
 
-                Section::make('Расчет объема')
-                    ->schema([
-                        TextInput::make('calculated_volume')
-                            ->label('Рассчитанный объем')
-                            ->numeric()
-                            ->disabled()
-                            ->suffix(function (Get $get) {
-                                $templateId = $get('product_template_id');
-                                if ($templateId) {
-                                    $template = ProductTemplate::find($templateId);
-                                    return $template ? $template->unit : '';
-                                }
-                                return '';
-                            }),
-                    ])
-                    ->visible(function (Get $get) {
-                        return $get('product_template_id') !== null;
-                    }),
+                                Section::make('Характеристики товара')
+                                    ->schema(function (Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if (!$templateId) {
+                                            return [];
+                                        }
+
+                                        $template = ProductTemplate::with('attributes')->find($templateId);
+                                        if (!$template) {
+                                            return [];
+                                        }
+
+                                        $fields = [];
+                                        foreach ($template->attributes as $attribute) {
+                                            $fieldName = "attribute_{$attribute->variable}";
+
+                                            switch ($attribute->type) {
+                                                case 'number':
+                                                    $fields[] = TextInput::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->numeric()
+                                                        ->required($attribute->is_required)
+                                                        ->live();
+                                                    break;
+
+                                                case 'text':
+                                                    $fields[] = TextInput::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->required($attribute->is_required)
+                                                        ->live();
+                                                    break;
+
+                                                case 'select':
+                                                    $options = $attribute->options_array;
+                                                    $fields[] = Select::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->options($options)
+                                                        ->required($attribute->is_required)
+                                                        ->live();
+                                                    break;
+                                            }
+                                        }
+
+                                        return $fields;
+                                    }),
+
+                                Grid::make(1)
+                                    ->schema([
+                                        TextInput::make('calculated_volume')
+                                            ->label('Рассчитанный объем')
+                                            ->numeric()
+                                            ->disabled()
+                                            ->suffix(function (Get $get) {
+                                                $templateId = $get('product_template_id');
+                                                if ($templateId) {
+                                                    $template = ProductTemplate::find($templateId);
+                                                    return $template ? $template->unit : '';
+                                                }
+                                                return '';
+                                            }),
+                                    ]),
+                            ]),
+                    ]),
 
                 Section::make('Документы')
                     ->schema([

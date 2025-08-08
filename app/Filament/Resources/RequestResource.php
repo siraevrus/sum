@@ -102,33 +102,15 @@ class RequestResource extends Resource
                                     ->minValue(1)
                                     ->required(),
 
-                                Select::make('priority')
-                                    ->label('Приоритет')
-                                    ->options([
-                                        Request::PRIORITY_LOW => 'Низкий',
-                                        Request::PRIORITY_NORMAL => 'Обычный',
-                                        Request::PRIORITY_HIGH => 'Высокий',
-                                        Request::PRIORITY_URGENT => 'Срочный',
-                                    ])
-                                    ->default(Request::PRIORITY_NORMAL)
-                                    ->required(),
-
                                 Select::make('status')
                                     ->label('Статус')
                                     ->options([
                                         Request::STATUS_PENDING => 'Ожидает рассмотрения',
                                         Request::STATUS_APPROVED => 'Одобрен',
-                                        Request::STATUS_REJECTED => 'Отклонен',
-                                        Request::STATUS_IN_PROGRESS => 'В обработке',
-                                        Request::STATUS_COMPLETED => 'Завершен',
-                                        Request::STATUS_CANCELLED => 'Отменен',
                                     ])
                                     ->default(Request::STATUS_PENDING)
                                     ->required(),
 
-                                Toggle::make('is_active')
-                                    ->label('Активен')
-                                    ->default(true),
                             ]),
 
                         Textarea::make('description')
@@ -260,52 +242,11 @@ class RequestResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('productTemplate.name')
-                    ->label('Шаблон товара')
-                    ->sortable()
-                    ->placeholder('Не указан'),
-
-                Tables\Columns\TextColumn::make('quantity')
-                    ->label('Количество')
-                    ->sortable()
-                    ->badge(),
-
-                Tables\Columns\TextColumn::make('calculated_volume')
-                    ->label('Объем')
-                    ->numeric(
-                        decimalPlaces: 0,
-                        decimalSeparator: '.',
-                        thousandsSeparator: ' ',
-                    )
-                    ->suffix(function (Request $record): string {
-                        return $record->productTemplate?->unit ?? '';
-                    })
-                    ->sortable()
-                    ->visible()
-                    ->placeholder('Не указан'),
-
-                Tables\Columns\BadgeColumn::make('priority')
-                    ->label('Приоритет')
-                    ->colors([
-                        'gray' => Request::PRIORITY_LOW,
-                        'info' => Request::PRIORITY_NORMAL,
-                        'warning' => Request::PRIORITY_HIGH,
-                        'danger' => Request::PRIORITY_URGENT,
-                    ])
-                    ->formatStateUsing(function (Request $record): string {
-                        return $record->getPriorityLabel();
-                    })
-                    ->sortable(),
-
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
                     ->colors([
                         'warning' => Request::STATUS_PENDING,
                         'info' => Request::STATUS_APPROVED,
-                        'danger' => Request::STATUS_REJECTED,
-                        'primary' => Request::STATUS_IN_PROGRESS,
-                        'success' => Request::STATUS_COMPLETED,
-                        'gray' => Request::STATUS_CANCELLED,
                     ])
                     ->formatStateUsing(function (Request $record): string {
                         return $record->getStatusLabel();
@@ -317,23 +258,6 @@ class RequestResource extends Resource
                     ->dateTime()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('approved_at')
-                    ->label('Одобрен')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('processed_at')
-                    ->label('Обработан')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('completed_at')
-                    ->label('Завершен')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->emptyStateHeading('Нет запросов')
             ->emptyStateDescription('Создайте первый запрос, чтобы начать работу.')
@@ -343,128 +267,16 @@ class RequestResource extends Resource
                     ->options(Warehouse::pluck('name', 'id'))
                     ->searchable(),
 
-                SelectFilter::make('product_template_id')
-                    ->label('Шаблон')
-                    ->options(ProductTemplate::pluck('name', 'id'))
-                    ->searchable(),
-
-                SelectFilter::make('priority')
-                    ->label('Приоритет')
-                    ->options([
-                        Request::PRIORITY_LOW => 'Низкий',
-                        Request::PRIORITY_NORMAL => 'Обычный',
-                        Request::PRIORITY_HIGH => 'Высокий',
-                        Request::PRIORITY_URGENT => 'Срочный',
-                    ]),
-
                 SelectFilter::make('status')
                     ->label('Статус')
                     ->options([
                         Request::STATUS_PENDING => 'Ожидает рассмотрения',
                         Request::STATUS_APPROVED => 'Одобрен',
-                        Request::STATUS_REJECTED => 'Отклонен',
-                        Request::STATUS_IN_PROGRESS => 'В обработке',
-                        Request::STATUS_COMPLETED => 'Завершен',
-                        Request::STATUS_CANCELLED => 'Отменен',
                     ]),
 
-                Filter::make('overdue')
-                    ->label('Просроченные')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('status', Request::STATUS_IN_PROGRESS)
-                                   ->where('processed_at', '<', now()->subDays(7));
-                    }),
-
-                Filter::make('urgent')
-                    ->label('Срочные')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('priority', Request::PRIORITY_URGENT);
-                    }),
-
-                Filter::make('active')
-                    ->label('Только активные')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('is_active', true);
-                    }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
-                Tables\Actions\Action::make('approve')
-                    ->label('Одобрить')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(function (Request $record): bool {
-                        return $record->canBeApproved() && Auth::user()->role === 'admin';
-                    })
-                    ->action(function (Request $record): void {
-                        $record->approve();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Одобрить запрос')
-                    ->modalDescription('Запрос будет одобрен и переведен в статус "Одобрен".')
-                    ->modalSubmitActionLabel('Одобрить'),
-
-                Tables\Actions\Action::make('reject')
-                    ->label('Отклонить')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(function (Request $record): bool {
-                        return $record->canBeRejected() && Auth::user()->role === 'admin';
-                    })
-                    ->action(function (Request $record): void {
-                        $record->reject();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Отклонить запрос')
-                    ->modalDescription('Запрос будет отклонен.')
-                    ->modalSubmitActionLabel('Отклонить'),
-
-                Tables\Actions\Action::make('start_processing')
-                    ->label('Начать обработку')
-                    ->icon('heroicon-o-play')
-                    ->color('primary')
-                    ->visible(function (Request $record): bool {
-                        return $record->canBeProcessed();
-                    })
-                    ->action(function (Request $record): void {
-                        $record->startProcessing();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Начать обработку')
-                    ->modalDescription('Запрос будет переведен в статус "В обработке".')
-                    ->modalSubmitActionLabel('Начать'),
-
-                Tables\Actions\Action::make('complete')
-                    ->label('Завершить')
-                    ->icon('heroicon-o-flag')
-                    ->color('success')
-                    ->visible(function (Request $record): bool {
-                        return $record->canBeCompleted();
-                    })
-                    ->action(function (Request $record): void {
-                        $record->complete();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Завершить запрос')
-                    ->modalDescription('Запрос будет завершен.')
-                    ->modalSubmitActionLabel('Завершить'),
-
-                Tables\Actions\Action::make('cancel')
-                    ->label('Отменить')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('gray')
-                    ->visible(function (Request $record): bool {
-                        return $record->canBeCancelled();
-                    })
-                    ->action(function (Request $record): void {
-                        $record->cancel();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Отменить запрос')
-                    ->modalDescription('Запрос будет отменен.')
-                    ->modalSubmitActionLabel('Отменить'),
-
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
