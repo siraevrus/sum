@@ -38,10 +38,12 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
                 \App\Filament\Pages\StockOverview::class,
             ])
+            // Явно указываем виджеты дашборда и скрываем ненужные
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
                 \App\Filament\Widgets\DashboardStats::class,
+                \App\Filament\Widgets\PopularProducts::class,
+                \App\Filament\Widgets\LatestSales::class,
             ])
             ->middleware([
                 EncryptCookies::class,

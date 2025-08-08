@@ -13,6 +13,8 @@ class LatestSales extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    protected static ?string $heading = 'Последние продажи';
+
     public function table(Table $table): Table
     {
         return $table
