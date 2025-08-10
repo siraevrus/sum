@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Product;
 use App\Models\Warehouse;
 use Filament\Pages\Page;
+use Filament\Pages\Concerns\HasHeaderWidgets;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class StockOverview extends Page implements HasTable
 {
-    use InteractsWithTable;
+    use InteractsWithTable, HasHeaderWidgets;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
@@ -182,4 +183,11 @@ class StockOverview extends Page implements HasTable
         return $summary;
     }
 
-} 
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\DashboardStats::class,
+            \App\Filament\Widgets\PopularProducts::class,
+        ];
+    }
+}
