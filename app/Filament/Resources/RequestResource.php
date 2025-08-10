@@ -68,7 +68,7 @@ class RequestResource extends Resource
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
-                                    ->options(Warehouse::pluck('name', 'id'))
+                                    ->options(fn () => \App\Models\Warehouse::optionsForCurrentUser())
                                     ->required()
                                     ->searchable(),
 
@@ -109,7 +109,9 @@ class RequestResource extends Resource
                                         Request::STATUS_APPROVED => 'Одобрен',
                                     ])
                                     ->default(Request::STATUS_PENDING)
-                                    ->required(),
+                                    ->required()
+                                    ->visible(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
+                                    ->dehydrated(fn () => (bool) (Auth::user()?->isAdmin() ?? false)),
 
                             ]),
 
@@ -264,7 +266,7 @@ class RequestResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
+                    ->options(fn () => \App\Models\Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
                 SelectFilter::make('status')
@@ -309,12 +311,12 @@ class RequestResource extends Resource
         $user = Auth::user();
         
         // Администратор видит все запросы
-        if ($user->role === 'admin') {
+        if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
             return parent::getEloquentQuery();
         }
         
         // Остальные пользователи видят только свои запросы
         return parent::getEloquentQuery()
-            ->where('user_id', $user->id);
+            ->where('user_id', $user?->id);
     }
 } 
