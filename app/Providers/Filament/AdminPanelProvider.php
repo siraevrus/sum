@@ -43,7 +43,6 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 \App\Filament\Widgets\DashboardStats::class,
                 \App\Filament\Widgets\PopularProducts::class,
-                \App\Filament\Widgets\LatestSales::class,
             ])
             ->middleware([
                 EncryptCookies::class,
