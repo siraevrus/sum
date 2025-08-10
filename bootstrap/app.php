@@ -6,6 +6,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Http\Request;
+use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function ($e, $request) {
+        $exceptions->render(function (Throwable $e, Request $request) {
             $isAdmin = $request->is('admin') || $request->is('admin/*');
             if (!$isAdmin) {
                 return null;
