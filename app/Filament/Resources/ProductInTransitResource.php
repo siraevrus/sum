@@ -291,10 +291,6 @@ class ProductInTransitResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('template.name')
-                    ->label('Шаблон')
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
@@ -314,22 +310,6 @@ class ProductInTransitResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('quantity')
-                    ->label('Количество')
-                    ->sortable()
-                    ->badge(),
-
-                Tables\Columns\TextColumn::make('calculated_volume')
-                    ->label('Объем')
-                    ->numeric(
-                        decimalPlaces: 0,
-                        decimalSeparator: '.',
-                        thousandsSeparator: ' ',
-                    )
-                    ->suffix(function (ProductInTransit $record): string {
-                        return $record->template?->unit ?? '';
-                    })
-                    ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
