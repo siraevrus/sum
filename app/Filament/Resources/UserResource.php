@@ -68,6 +68,7 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->label('Полное имя')
                             ->maxLength(255)
+                            ->hidden()
                             ->reactive()
                             ->afterStateUpdated(function ($state, callable $set, $get) {
                                 // Автоматически формируем полное имя из ФИО

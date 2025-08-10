@@ -1,0 +1,7 @@
+---
+description: используемый стек
+globs:
+alwaysApply: false
+---
+
+laravel 12 + filament

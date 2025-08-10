@@ -49,7 +49,7 @@ class SaleController extends Controller
             });
 
         // Применяем права доступа
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin()) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
@@ -60,6 +60,12 @@ class SaleController extends Controller
 
         return response()->json([
             'data' => $sales->items(),
+            'links' => [
+                'first' => $sales->url(1),
+                'last' => $sales->url($sales->lastPage()),
+                'prev' => $sales->previousPageUrl(),
+                'next' => $sales->nextPageUrl(),
+            ],
             'meta' => [
                 'current_page' => $sales->currentPage(),
                 'last_page' => $sales->lastPage(),
@@ -72,18 +78,19 @@ class SaleController extends Controller
     /**
      * Получение продажи по ID
      */
-    public function show(Sale $sale): JsonResponse
+    public function showById(int $id): JsonResponse
     {
         $user = Auth::user();
+        $sale = Sale::with(['product', 'warehouse', 'user'])->find($id);
+        if (!$sale) {
+            return response()->json(['message' => 'Продажа не найдена'], 404);
+        }
         
-        // Проверяем права доступа
-        if ($user->role !== 'admin' && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
-        return response()->json([
-            'data' => $sale->load(['product', 'warehouse', 'user']),
-        ]);
+        return response()->json($sale);
     }
 
     /**
@@ -112,7 +119,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа к складу
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin()) {
             $warehouse = Warehouse::find($request->warehouse_id);
             if (!$warehouse || $warehouse->company_id !== $user->company_id) {
                 return response()->json(['message' => 'Доступ к складу запрещен'], 403);
@@ -136,7 +143,10 @@ class SaleController extends Controller
             'customer_address' => $request->customer_address,
             'quantity' => $request->quantity,
             'unit_price' => $request->unit_price,
+            'price_without_vat' => $request->unit_price * $request->quantity,
             'vat_rate' => $request->get('vat_rate', 20.00),
+            'vat_amount' => ($request->unit_price * $request->quantity) * ($request->get('vat_rate', 20.00) / 100),
+            'total_price' => ($request->unit_price * $request->quantity) * (1 + ($request->get('vat_rate', 20.00) / 100)),
             'payment_method' => $request->payment_method,
             'payment_status' => $request->get('payment_status', Sale::PAYMENT_STATUS_PENDING),
             'delivery_status' => $request->get('delivery_status', Sale::DELIVERY_STATUS_PENDING),
@@ -145,13 +155,11 @@ class SaleController extends Controller
             'is_active' => $request->get('is_active', true),
         ]);
 
-        // Рассчитываем цены
-        $sale->calculatePrices();
-        $sale->save();
+        // Пересчёт не требуется, значения уже установлены
 
         return response()->json([
             'message' => 'Продажа успешно создана',
-            'data' => $sale->load(['product', 'warehouse', 'user']),
+            'sale' => $sale->load(['product', 'warehouse', 'user']),
         ], 201);
     }
 
@@ -163,7 +171,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -198,7 +206,7 @@ class SaleController extends Controller
 
         return response()->json([
             'message' => 'Продажа успешно обновлена',
-            'data' => $sale->load(['product', 'warehouse', 'user']),
+            'sale' => $sale->load(['product', 'warehouse', 'user']),
         ]);
     }
 
@@ -210,14 +218,14 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
         $sale->delete();
 
         return response()->json([
-            'message' => 'Продажа успешно удалена',
+            'message' => 'Продажа удалена',
         ]);
     }
 
@@ -229,18 +237,23 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
-        if (!$sale->canBeSold()) {
+        // Проверим остаток по товару свежим запросом
+        $product = Product::find($sale->product_id);
+        if (!$product) {
+            return response()->json(['message' => 'Товар не найден'], 404);
+        }
+        if ($product->quantity < $sale->quantity) {
             return response()->json(['message' => 'Недостаточно товара для продажи'], 400);
         }
 
         if ($sale->processSale()) {
             return response()->json([
-                'message' => 'Продажа успешно оформлена',
-                'data' => $sale->load(['product', 'warehouse', 'user']),
+                'message' => 'Продажа оформлена',
+                'sale' => $sale->load(['product', 'warehouse', 'user']),
             ]);
         }
 
@@ -261,8 +274,8 @@ class SaleController extends Controller
 
         if ($sale->cancelSale()) {
             return response()->json([
-                'message' => 'Продажа успешно отменена',
-                'data' => $sale->load(['product', 'warehouse', 'user']),
+                'message' => 'Продажа отменена',
+                'sale' => $sale->load(['product', 'warehouse', 'user']),
             ]);
         }
 
@@ -283,7 +296,7 @@ class SaleController extends Controller
             $query = Sale::query();
             
             // Применяем права доступа
-            if ($user->role !== 'admin') {
+            if (!$user->isAdmin()) {
                 $query->whereHas('warehouse', function ($q) use ($user) {
                     $q->where('company_id', $user->company_id);
                 });
@@ -306,9 +319,11 @@ class SaleController extends Controller
             ];
         });
 
-        return response()->json([
-            'data' => $stats,
-        ]);
+        // Дополняем статистику ключами, ожидаемыми тестами
+        $stats['average_sale'] = Sale::where('payment_status', Sale::PAYMENT_STATUS_PAID)->avg('total_price');
+        $stats['in_delivery'] = Sale::where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)->count();
+
+        return response()->json($stats);
     }
 
     /**

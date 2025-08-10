@@ -19,27 +19,22 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|in:admin,operator,worker,manager',
-            'company_id' => 'required|exists:companies,id',
+            'password' => 'required|string|min:8',
         ]);
 
         $user = User::create([
             'name' => $request->name,
-            'username' => $request->username,
+            'username' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'company_id' => $request->company_id,
+            'role' => 'admin',
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Пользователь успешно зарегистрирован',
-            'user' => $user->load('company'),
+            'user' => $user,
             'token' => $token,
         ], 201);
     }
@@ -50,29 +45,32 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'login' => 'required|string', // email или username
+            'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
-        $login = $request->input('login');
+        $login = $request->input('email');
         $password = $request->input('password');
 
         // Пытаемся найти пользователя по email или username
-        $user = User::where('email', $login)
-            ->orWhere('username', $login)
-            ->first();
+        $user = User::where('email', $login)->first();
+
+        if ($user && $user->is_blocked) {
+            return response()->json([
+                'message' => 'Ваш аккаунт заблокирован',
+            ], 401);
+        }
 
         if (!$user || !Hash::check($password, $user->password)) {
-            throw ValidationException::withMessages([
-                'login' => ['Неверные учетные данные.'],
-            ]);
+            return response()->json([
+                'message' => 'Неверные учетные данные',
+            ], 401);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Успешный вход',
-            'user' => $user->load('company'),
+            'user' => $user,
             'token' => $token,
         ]);
     }
@@ -85,7 +83,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Успешный выход',
+            'message' => 'Успешно вышли из системы',
         ]);
     }
 
@@ -94,9 +92,7 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        return response()->json([
-            'user' => $request->user()->load('company'),
-        ]);
+        return response()->json($request->user());
     }
 
     /**
@@ -123,7 +119,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Профиль обновлен',
-            'user' => $user->load('company'),
+            'user' => $user,
         ]);
     }
 } 

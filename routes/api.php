@@ -38,7 +38,7 @@ Route::middleware(['auth:sanctum', 'compress'])->group(function () {
         Route::get('/stats', [ProductController::class, 'stats']);
         Route::get('/popular', [ProductController::class, 'popular']);
         Route::get('/export', [ProductController::class, 'export']);
-        Route::get('/{product}', [ProductController::class, 'show']);
+        Route::get('/{product}', [ProductController::class, 'showById']);
         Route::post('/', [ProductController::class, 'store']);
         Route::put('/{product}', [ProductController::class, 'update']);
         Route::delete('/{product}', [ProductController::class, 'destroy']);
@@ -49,7 +49,7 @@ Route::middleware(['auth:sanctum', 'compress'])->group(function () {
         Route::get('/', [SaleController::class, 'index']);
         Route::get('/stats', [SaleController::class, 'stats']);
         Route::get('/export', [SaleController::class, 'export']);
-        Route::get('/{sale}', [SaleController::class, 'show']);
+        Route::get('/{sale}', [SaleController::class, 'showById']);
         Route::post('/', [SaleController::class, 'store']);
         Route::put('/{sale}', [SaleController::class, 'update']);
         Route::delete('/{sale}', [SaleController::class, 'destroy']);

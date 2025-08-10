@@ -137,7 +137,7 @@ class ProductTemplateResource extends Resource
                         Forms\Components\Textarea::make('formula')
                             ->label('Формула')
                             ->rows(3)
-                            ->helperText('Используйте переменные из характеристик. Пример: length * width * height')
+                            ->helperText('Используйте переменные из характеристик. Пример: length * width * height, добавьте умножение * quantity если будете считать количество')
                             ->placeholder('length * width * height'),
                         
                     ]),

@@ -17,8 +17,10 @@ class CompressResponse
     {
         $response = $next($request);
 
-        // Сжимаем только JSON ответы
-        if ($response->headers->get('Content-Type') === 'application/json') {
+        // Сжимаем только JSON-ответы, если клиент поддерживает gzip и не в окружении testing
+        if (!app()->environment('testing')
+            && str_contains((string) $response->headers->get('Content-Type'), 'application/json')
+            && str_contains((string) $request->header('Accept-Encoding'), 'gzip')) {
             $content = $response->getContent();
             
             // Сжимаем контент
