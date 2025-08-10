@@ -121,5 +121,65 @@ class StockOverview extends Page implements HasTable
         return $query->get();
     }
 
+    /**
+     * Сводка по характеристикам товаров: для каждого имени характеристики
+     * агрегируем значения и считаем количество позиций, суммарное количество и общий объём.
+     *
+     * @return array<string, array<string, array{items:int,quantity:int,total_volume:float}>>
+     */
+    public function getAttributeSummary(int $limitPerAttribute = 10): array
+    {
+        $products = $this->getTableQuery()
+            ->select(['attributes', 'quantity', 'calculated_volume'])
+            ->get();
+
+        $summary = [];
+
+        foreach ($products as $product) {
+            $attributes = $product->attributes ?? [];
+            if (!is_array($attributes)) {
+                continue;
+            }
+
+            foreach ($attributes as $attributeName => $attributeValue) {
+                // Преобразуем сложные значения в строку для группировки
+                if (is_array($attributeValue)) {
+                    $attributeValue = json_encode($attributeValue, JSON_UNESCAPED_UNICODE);
+                }
+
+                $valueKey = (string) $attributeValue;
+
+                if (!isset($summary[$attributeName][$valueKey])) {
+                    $summary[$attributeName][$valueKey] = [
+                        'items' => 0,
+                        'quantity' => 0,
+                        'total_volume' => 0.0,
+                    ];
+                }
+
+                $summary[$attributeName][$valueKey]['items'] += 1;
+                $summary[$attributeName][$valueKey]['quantity'] += (int) ($product->quantity ?? 0);
+                $summary[$attributeName][$valueKey]['total_volume'] += (float) (($product->calculated_volume ?? 0) * ($product->quantity ?? 0));
+            }
+        }
+
+        // Сортируем значения по суммарному количеству по убыванию и ограничиваем топ-N
+        foreach ($summary as $attributeName => $values) {
+            uasort($values, function ($a, $b) {
+                return ($b['quantity'] <=> $a['quantity'])
+                    ?: ($b['items'] <=> $a['items']);
+            });
+            if ($limitPerAttribute > 0) {
+                $summary[$attributeName] = array_slice($values, 0, $limitPerAttribute, true);
+            } else {
+                $summary[$attributeName] = $values;
+            }
+        }
+
+        // Сортируем список характеристик по имени
+        ksort($summary, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $summary;
+    }
 
 } 
