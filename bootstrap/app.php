@@ -7,7 +7,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Http\Request;
-use Throwable;
+// use Throwable; // не требуется в новых версиях, т.к. FQCN указан в сигнатуре
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
