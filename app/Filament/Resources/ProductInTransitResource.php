@@ -170,14 +170,52 @@ class ProductInTransitResource extends Resource
                                                         ->label($attribute->full_name)
                                                         ->numeric()
                                                         ->required($attribute->is_required)
-                                                        ->live();
+                                                        ->live(debounce: 500)
+                                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                            $templateId = $get('product_template_id');
+                                                            if (!$templateId) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $template = \App\Models\ProductTemplate::with('attributes')->find($templateId);
+                                                            if (!$template || !$template->formula) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $attrs = [];
+                                                            foreach ($template->attributes as $a) {
+                                                                $attrs[$a->variable] = $get('attribute_' . $a->variable);
+                                                            }
+                                                            $attrs['quantity'] = (int) ($get('quantity') ?? 0);
+                                                            $r = $template->testFormula($attrs);
+                                                            $set('calculated_volume', $r['success'] ? $r['result'] : null);
+                                                        });
                                                     break;
 
                                                 case 'text':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->full_name)
                                                         ->required($attribute->is_required)
-                                                        ->live();
+                                                        ->live(debounce: 500)
+                                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                            $templateId = $get('product_template_id');
+                                                            if (!$templateId) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $template = \App\Models\ProductTemplate::with('attributes')->find($templateId);
+                                                            if (!$template || !$template->formula) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $attrs = [];
+                                                            foreach ($template->attributes as $a) {
+                                                                $attrs[$a->variable] = $get('attribute_' . $a->variable);
+                                                            }
+                                                            $attrs['quantity'] = (int) ($get('quantity') ?? 0);
+                                                            $r = $template->testFormula($attrs);
+                                                            $set('calculated_volume', $r['success'] ? $r['result'] : null);
+                                                        });
                                                     break;
 
                                                 case 'select':
@@ -186,7 +224,26 @@ class ProductInTransitResource extends Resource
                                                         ->label($attribute->full_name)
                                                         ->options($options)
                                                         ->required($attribute->is_required)
-                                                        ->live();
+                                                        ->live()
+                                                        ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                            $templateId = $get('product_template_id');
+                                                            if (!$templateId) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $template = \App\Models\ProductTemplate::with('attributes')->find($templateId);
+                                                            if (!$template || !$template->formula) {
+                                                                $set('calculated_volume', null);
+                                                                return;
+                                                            }
+                                                            $attrs = [];
+                                                            foreach ($template->attributes as $a) {
+                                                                $attrs[$a->variable] = $get('attribute_' . $a->variable);
+                                                            }
+                                                            $attrs['quantity'] = (int) ($get('quantity') ?? 0);
+                                                            $r = $template->testFormula($attrs);
+                                                            $set('calculated_volume', $r['success'] ? $r['result'] : null);
+                                                        });
                                                     break;
                                             }
                                         }
@@ -199,6 +256,7 @@ class ProductInTransitResource extends Resource
                                         TextInput::make('calculated_volume')
                                             ->label('Рассчитанный объем')
                                             ->numeric()
+                                            ->rule('numeric')
                                             ->disabled()
                                             ->suffix(function (Get $get) {
                                                 $templateId = $get('product_template_id');
@@ -351,22 +409,7 @@ class ProductInTransitResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
-                Tables\Actions\Action::make('receive')
-                    ->label('Принять')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(function (ProductInTransit $record): bool {
-                        return $record->canBeReceived();
-                    })
-                    ->action(function (ProductInTransit $record): void {
-                        $record->receive();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Принять товар')
-                    ->modalDescription('Товар будет перемещен в остатки на складе.')
-                    ->modalSubmitActionLabel('Принять'),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([

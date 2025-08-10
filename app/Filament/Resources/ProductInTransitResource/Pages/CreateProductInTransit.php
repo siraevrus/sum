@@ -50,15 +50,15 @@ class CreateProductInTransit extends CreateRecord
                 'attributes' => $attributes,
             ]);
 
-            // Рассчет объема, если задана формула
-            if (!empty($recordData['product_template_id']) && !empty($attributes)) {
+            // Рассчет объема, если задана формула (аналогично Product)
+            if (!empty($recordData['product_template_id'])) {
                 $template = ProductTemplate::find($recordData['product_template_id']);
                 if ($template && $template->formula) {
-                    $attrsForFormula = $attributes;
-                    $attrsForFormula['quantity'] = $recordData['quantity'];
+                    $attrsForFormula = is_array($attributes) ? $attributes : [];
+                    $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 0);
                     $testResult = $template->testFormula($attrsForFormula);
                     if ($testResult['success']) {
-                        $recordData['calculated_volume'] = $testResult['result'];
+                        $recordData['calculated_volume'] = (float) $testResult['result'];
                     }
                 }
             }
