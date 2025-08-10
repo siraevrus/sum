@@ -179,7 +179,7 @@ class ReceiptResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
+                    ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
                 SelectFilter::make('product_template_id')

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Warehouse extends Model
 {
@@ -68,5 +69,40 @@ class Warehouse extends Model
     public function getFullAddressAttribute(): string
     {
         return $this->company ? "{$this->company->name}, {$this->address}" : $this->address;
+    }
+
+    /**
+     * Список складов, доступных пользователю, для выпадающих списков (id => name)
+     */
+    public static function optionsForUser(?User $user): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        $query = static::query()->active();
+
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            return $query->pluck('name', 'id')->toArray();
+        }
+
+        if (!empty($user->warehouse_id)) {
+            $query->where('id', $user->warehouse_id);
+        } elseif (!empty($user->company_id)) {
+            $query->where('company_id', $user->company_id);
+        } else {
+            // если нет привязки — не показываем ничего
+            return [];
+        }
+
+        return $query->pluck('name', 'id')->toArray();
+    }
+
+    /**
+     * Список складов для текущего аутентифицированного пользователя
+     */
+    public static function optionsForCurrentUser(): array
+    {
+        return static::optionsForUser(Auth::user());
     }
 }

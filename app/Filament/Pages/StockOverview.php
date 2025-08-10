@@ -61,7 +61,7 @@ class StockOverview extends Page implements HasTable
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id')),
+                    ->options(fn () => Warehouse::optionsForCurrentUser()),
                 Tables\Filters\SelectFilter::make('producer')
                     ->label('Производитель')
                     ->options(fn () => Product::distinct()->pluck('producer', 'producer')->filter()),

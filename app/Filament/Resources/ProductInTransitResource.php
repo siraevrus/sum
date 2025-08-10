@@ -67,7 +67,7 @@ class ProductInTransitResource extends Resource
                             ->schema([
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
-                                    ->options(Warehouse::pluck('name', 'id'))
+                                    ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
                                     ->searchable(),
 
@@ -260,7 +260,7 @@ class ProductInTransitResource extends Resource
                                             ->disabled()
                                             ->suffix(function (Get $get) {
                                                 $templateId = $get('product_template_id');
-                                                if ($templateId) {
+                                                if ($templateId) {  
                                                     $template = ProductTemplate::find($templateId);
                                                     return $template ? $template->unit : '';
                                                 }
@@ -369,7 +369,7 @@ class ProductInTransitResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
+                    ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
                 SelectFilter::make('product_template_id')

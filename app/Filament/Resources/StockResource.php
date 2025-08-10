@@ -45,7 +45,7 @@ class StockResource extends Resource
             ->schema([
                 Forms\Components\Select::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
+                    ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->required()
                     ->searchable(),
                 Forms\Components\Select::make('product_template_id')
@@ -120,7 +120,7 @@ class StockResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id')),
+                    ->options(fn () => Warehouse::optionsForCurrentUser()),
                 Tables\Filters\SelectFilter::make('producer')
                     ->label('Производитель')
                     ->options(fn () => Product::distinct()->pluck('producer', 'producer')->filter()),
