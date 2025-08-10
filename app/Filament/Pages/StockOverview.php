@@ -26,6 +26,13 @@ class StockOverview extends Page implements HasTable
 
     protected static string $view = 'filament.pages.stock-overview';
 
+    public static function canAccess(): bool
+    {
+        // Доступ открыт всем не заблокированным пользователям, чтобы был стартовый раздел
+        $user = Auth::user();
+        return $user && !$user->isBlocked();
+    }
+
     public function table(Table $table): Table
     {
         return $table

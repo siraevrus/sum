@@ -14,6 +14,12 @@ class Dashboard extends BaseDashboard
         $user = Auth::user();
         return $user && method_exists($user, 'isAdmin') ? $user->isAdmin() : false;
     }
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+        return $user && method_exists($user, 'isAdmin') ? $user->isAdmin() : false;
+    }
 }
 
 
