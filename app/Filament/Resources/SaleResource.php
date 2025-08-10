@@ -48,8 +48,8 @@ class SaleResource extends Resource
         
         return in_array($user->role->value, [
             'admin',
-            'operator',
-            'warehouse_worker'
+            'warehouse_worker',
+            'sales_manager',
         ]);
     }
 

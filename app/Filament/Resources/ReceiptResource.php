@@ -43,11 +43,10 @@ class ReceiptResource extends Resource
         $user = Auth::user();
         if (!$user) return false;
         
+        // Приемка не доступна оператору и менеджеру по продажам
         return in_array($user->role->value, [
             'admin',
-            'operator',
             'warehouse_worker',
-            'sales_manager'
         ]);
     }
 
