@@ -17,12 +17,18 @@ class CheckRole
     public function handle(Request $request, Closure $next, string $role): Response
     {
         if (!$request->user()) {
-            return redirect()->route('login');
+            if ($request->is('api') || $request->is('api/*')) {
+                return response()->json(['message' => 'Не авторизован'], 401);
+            }
+            return redirect('/admin/login');
         }
 
         if ($request->user()->isBlocked()) {
             \Illuminate\Support\Facades\Auth::logout();
-            return redirect()->route('login')->withErrors([
+            if ($request->is('api') || $request->is('api/*')) {
+                return response()->json(['message' => 'Ваш аккаунт заблокирован'], 401);
+            }
+            return redirect('/admin/login')->withErrors([
                 'email' => 'Ваш аккаунт заблокирован'
             ]);
         }
