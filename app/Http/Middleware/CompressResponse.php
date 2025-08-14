@@ -19,6 +19,7 @@ class CompressResponse
 
         // Сжимаем только JSON-ответы, если клиент поддерживает gzip и не в окружении testing
         if (!app()->environment('testing')
+            && !$response->headers->has('Content-Encoding')
             && str_contains((string) $response->headers->get('Content-Type'), 'application/json')
             && str_contains((string) $request->header('Accept-Encoding'), 'gzip')) {
             $content = $response->getContent();
@@ -29,7 +30,9 @@ class CompressResponse
             if ($compressed !== false) {
                 $response->setContent($compressed);
                 $response->headers->set('Content-Encoding', 'gzip');
-                $response->headers->set('Content-Length', strlen($compressed));
+                // Не выставляем Content-Length вручную, чтобы избежать несоответствий при чанкованной передаче
+                $response->headers->remove('Content-Length');
+                $response->headers->set('Vary', 'Accept-Encoding');
             }
         }
 

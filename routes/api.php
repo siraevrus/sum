@@ -26,7 +26,8 @@ Route::post('/auth/register', [AuthController::class, 'register'])->name('regist
 Route::post('/auth/login', [AuthController::class, 'login'])->name('login');
 
 // Защищенные маршруты (требуют аутентификации)
-Route::middleware(['auth:sanctum', 'compress'])->group(function () {
+// Временно без gzip-сжатия, чтобы исключить влияние на клиентов
+Route::middleware(['auth:sanctum'])->group(function () {
     // Аутентификация
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
