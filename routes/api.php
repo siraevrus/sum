@@ -22,8 +22,8 @@ use App\Http\Controllers\Api\ProductTemplateController;
 */
 
 // Публичные маршруты (без аутентификации)
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/register', [AuthController::class, 'register'])->name('register');
+Route::post('/auth/login', [AuthController::class, 'login'])->name('login');
 
 // Защищенные маршруты (требуют аутентификации)
 Route::middleware(['auth:sanctum', 'compress'])->group(function () {

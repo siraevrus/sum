@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
@@ -32,6 +33,14 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
+        // Для API всегда отдаем JSON при ошибках валидации
+        if (($request->is('api') || $request->is('api/*')) && $e instanceof ValidationException) {
+            return response()->json([
+                'message' => 'Ошибка валидации',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
         $isAdmin = $request->is('admin') || $request->is('admin/*');
 
         if ($isAdmin) {
