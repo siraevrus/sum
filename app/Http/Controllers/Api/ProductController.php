@@ -45,8 +45,8 @@ class ProductController extends Controller
                 $query->where('is_active', true);
             });
 
-        // Применяем права доступа
-        if ($user->role !== 'admin') {
+        // Применяем права доступа (если не админ и задана компания)
+        if (!$user->isAdmin() && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
@@ -81,7 +81,7 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json(['message' => 'Товар не найден'], 404);
         }
-        if ($user->role !== 'admin' && $product->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -108,7 +108,7 @@ class ProductController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа к складу
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin() && $user->company_id) {
             $warehouse = Warehouse::find($request->warehouse_id);
             if (!$warehouse) {
                 return response()->json(['message' => 'Склад не найден'], 404);
@@ -149,7 +149,7 @@ class ProductController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $product->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -249,7 +249,7 @@ class ProductController extends Controller
             ->limit(10);
 
         // Применяем права доступа
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin() && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
@@ -296,7 +296,7 @@ class ProductController extends Controller
             });
 
         // Применяем права доступа
-        if ($user->role !== 'admin') {
+        if (!$user->isAdmin() && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
