@@ -21,6 +21,8 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'role' => 'sometimes|string|in:admin,operator,manager',
+            'company_id' => 'sometimes|integer|exists:companies,id',
         ]);
 
         $user = User::create([
@@ -28,12 +30,14 @@ class AuthController extends Controller
             'username' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'admin',
+            'role' => $request->get('role', 'admin'),
+            'company_id' => $request->get('company_id'),
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
+            'message' => 'Пользователь успешно зарегистрирован',
             'user' => $user,
             'token' => $token,
         ], 201);
@@ -63,13 +67,14 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($password, $user->password)) {
             return response()->json([
-                'message' => 'Неверные учетные данные',
-            ], 401);
+                'message' => 'Неверные учетные данные.',
+            ], 422);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
+            'message' => 'Успешный вход',
             'user' => $user,
             'token' => $token,
         ]);

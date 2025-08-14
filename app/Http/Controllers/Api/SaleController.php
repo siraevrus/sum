@@ -49,7 +49,7 @@ class SaleController extends Controller
             });
 
         // Применяем права доступа
-        if (!$user->isAdmin()) {
+        if (!$user->isAdmin() && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
@@ -119,7 +119,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа к складу
-        if (!$user->isAdmin()) {
+        if (!$user->isAdmin() && $user->company_id) {
             $warehouse = Warehouse::find($request->warehouse_id);
             if (!$warehouse || $warehouse->company_id !== $user->company_id) {
                 return response()->json(['message' => 'Доступ к складу запрещен'], 403);
@@ -171,7 +171,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -218,7 +218,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -296,7 +296,7 @@ class SaleController extends Controller
             $query = Sale::query();
             
             // Применяем права доступа
-            if (!$user->isAdmin()) {
+        if (!$user->isAdmin() && $user->company_id) {
                 $query->whereHas('warehouse', function ($q) use ($user) {
                     $q->where('company_id', $user->company_id);
                 });

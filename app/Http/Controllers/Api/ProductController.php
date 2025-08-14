@@ -136,8 +136,8 @@ class ProductController extends Controller
         $product->updateCalculatedVolume();
 
         return response()->json([
-            'message' => 'Товар успешно создан',
-            'data' => $product->load(['template', 'warehouse', 'creator']),
+            'message' => 'Товар создан',
+            'product' => $product->load(['template', 'warehouse', 'creator']),
         ], 201);
     }
 
@@ -174,8 +174,8 @@ class ProductController extends Controller
         }
 
         return response()->json([
-            'message' => 'Товар успешно обновлен',
-            'data' => $product->load(['template', 'warehouse', 'creator']),
+            'message' => 'Товар обновлен',
+            'product' => $product->load(['template', 'warehouse', 'creator']),
         ]);
     }
 
@@ -237,10 +237,11 @@ class ProductController extends Controller
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        // Старый формат, ожидаемый тестами
+        return response()->json(array_merge($stats, [
+            'low_stock_count' => $stats['low_stock'],
+            'out_of_stock_count' => $stats['out_of_stock'],
+        ]));
     }
 
     /**
