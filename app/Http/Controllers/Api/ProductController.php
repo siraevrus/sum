@@ -205,27 +205,35 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         
-        // Кешируем статистику на 5 минут
-        $cacheKey = "product_stats_{$user->id}";
+        // Кешируем статистику на 5 минут (v2 — чтобы сбросить старый кэш)
+        $cacheKey = "product_stats_v2_{$user->id}";
         
         $stats = Cache::remember($cacheKey, 300, function () use ($user) {
-            $query = Product::query();
+            $baseQuery = Product::query();
             
-            // Применяем права доступа
-            if ($user->role !== 'admin') {
-                $query->whereHas('warehouse', function ($q) use ($user) {
+            // Применяем права доступа (если не админ и задана компания)
+            if (!$user->isAdmin() && $user->company_id) {
+                $baseQuery->whereHas('warehouse', function ($q) use ($user) {
                     $q->where('company_id', $user->company_id);
                 });
             }
 
+            $totalProducts = (clone $baseQuery)->count();
+            $activeProducts = (clone $baseQuery)->where('is_active', true)->count();
+            $inStock = (clone $baseQuery)->where('quantity', '>', 0)->count();
+            $lowStock = (clone $baseQuery)->where('quantity', '<=', 10)->where('quantity', '>', 0)->count();
+            $outOfStock = (clone $baseQuery)->where('quantity', '<=', 0)->count();
+            $totalQuantity = (clone $baseQuery)->sum('quantity');
+            $totalVolume = (clone $baseQuery)->sum('calculated_volume');
+
             return [
-                'total_products' => $query->count(),
-                'active_products' => $query->where('is_active', true)->count(),
-                'in_stock' => $query->where('quantity', '>', 0)->count(),
-                'low_stock' => $query->where('quantity', '<=', 10)->where('quantity', '>', 0)->count(),
-                'out_of_stock' => $query->where('quantity', '<=', 0)->count(),
-                'total_quantity' => $query->sum('quantity'),
-                'total_volume' => $query->sum('calculated_volume'),
+                'total_products' => $totalProducts,
+                'active_products' => $activeProducts,
+                'in_stock' => $inStock,
+                'low_stock' => $lowStock,
+                'out_of_stock' => $outOfStock,
+                'total_quantity' => $totalQuantity,
+                'total_volume' => $totalVolume,
             ];
         });
 
