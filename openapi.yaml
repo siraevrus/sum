@@ -1,0 +1,1267 @@
+openapi: 3.0.3
+info:
+  title: Sklad API
+  version: 1.0.0
+  description: |
+    Машиночитаемая спецификация API для склада. Использует аутентификацию Laravel Sanctum через Bearer токен.
+servers:
+  - url: http://localhost:8000/api
+    description: Локальный сервер разработки
+tags:
+  - name: Auth
+  - name: Products
+  - name: Sales
+  - name: Requests
+  - name: Users
+  - name: Warehouses
+  - name: ProductTemplates
+security:
+  - bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '201':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Успех
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  token: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Текущий пользователь
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/profile:
+    put:
+      tags: [Auth]
+      summary: Обновление профиля
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Профиль обновлен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Список товаров
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+        - name: template_id
+          in: query
+          schema: { type: integer }
+        - name: producer
+          in: query
+          schema: { type: string }
+        - name: in_stock
+          in: query
+          schema: { type: boolean }
+        - name: low_stock
+          in: query
+          schema: { type: boolean }
+        - name: active
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedProducts' }
+    post:
+      tags: [Products]
+      summary: Создать товар
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductRequest' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/Product' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /products/stats:
+    get:
+      tags: [Products]
+      summary: Статистика товаров
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductStats' }
+
+  /products/popular:
+    get:
+      tags: [Products]
+      summary: Популярные товары
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        total_sales: { type: integer }
+                        total_revenue: { type: string }
+
+  /products/export:
+    get:
+      tags: [Products]
+      summary: Экспорт товаров
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductExportRow' }
+                  total: { type: integer }
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Товар по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Products]
+      summary: Обновить товар
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProductRequest' }
+      responses:
+        '200': { description: OK }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Products]
+      summary: Удалить товар
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /sales:
+    get:
+      tags: [Sales]
+      summary: Список продаж
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+        - name: payment_status
+          in: query
+          schema: { type: string }
+        - name: delivery_status
+          in: query
+          schema: { type: string }
+        - name: payment_method
+          in: query
+          schema: { type: string }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedSales' }
+    post:
+      tags: [Sales]
+      summary: Создать продажу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSaleRequest' }
+      responses:
+        '201': { description: Создано }
+        '400': { description: Неверные данные }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /sales/{id}:
+    get:
+      tags: [Sales]
+      summary: Продажа по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Sales]
+      summary: Обновить продажу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateSaleRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Sales]
+      summary: Удалить продажу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /sales/{id}/process:
+    post:
+      tags: [Sales]
+      summary: Оформить продажу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Оформлено }
+        '400': { description: Недостаточный остаток }
+
+  /sales/{id}/cancel:
+    post:
+      tags: [Sales]
+      summary: Отменить продажу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Отменено }
+
+  /sales/stats:
+    get:
+      tags: [Sales]
+      summary: Статистика продаж
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SalesStats' } } } }
+
+  /sales/export:
+    get:
+      tags: [Sales]
+      summary: Экспорт продаж
+      responses:
+        '200': { description: OK }
+
+  /requests:
+    get:
+      tags: [Requests]
+      summary: Список запросов
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string, enum: [low, normal, high, urgent] }
+        - name: user_id
+          in: query
+          schema: { type: integer }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+        - name: product_template_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Requests]
+      summary: Создать запрос
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRequestRequest' }
+      responses:
+        '201': { description: Создано }
+
+  /requests/{id}:
+    get:
+      tags: [Requests]
+      summary: Запрос по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Requests]
+      summary: Обновить запрос
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRequestRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Requests]
+      summary: Удалить запрос
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /requests/{id}/process:
+    post:
+      tags: [Requests]
+      summary: Обработать запрос
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /requests/{id}/reject:
+    post:
+      tags: [Requests]
+      summary: Отклонить запрос
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Список пользователей
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: company_id
+          in: query
+          schema: { type: integer }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+        - name: is_blocked
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Users]
+      summary: Создать пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateUserRequest' }
+      responses:
+        '201': { description: Создано }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Пользователь по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      summary: Обновить пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateUserRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Users]
+      summary: Удалить пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /users/{id}/block:
+    post:
+      tags: [Users]
+      summary: Заблокировать пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /users/{id}/unblock:
+    post:
+      tags: [Users]
+      summary: Разблокировать пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /users/profile:
+    get:
+      tags: [Users]
+      summary: Профиль текущего пользователя
+      responses:
+        '200': { description: OK }
+    put:
+      tags: [Users]
+      summary: Обновить профиль текущего пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+      responses:
+        '200': { description: OK }
+
+  /users/stats:
+    get:
+      tags: [Users]
+      summary: Статистика пользователей
+      responses:
+        '200': { description: OK }
+
+  /warehouses:
+    get:
+      tags: [Warehouses]
+      summary: Список складов
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: company_id
+          in: query
+          schema: { type: integer }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Warehouses]
+      summary: Создать склад
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateWarehouseRequest' }
+      responses:
+        '201': { description: Создано }
+
+  /warehouses/{id}:
+    get:
+      tags: [Warehouses]
+      summary: Склад по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Warehouses]
+      summary: Обновить склад
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateWarehouseRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Warehouses]
+      summary: Удалить склад
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /warehouses/{id}/stats:
+    get:
+      tags: [Warehouses]
+      summary: Статистика склада
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /warehouses/{id}/products:
+    get:
+      tags: [Warehouses]
+      summary: Товары склада
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /warehouses/{id}/employees:
+    get:
+      tags: [Warehouses]
+      summary: Сотрудники склада
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /warehouses/{id}/activate:
+    post:
+      tags: [Warehouses]
+      summary: Активировать склад
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /warehouses/{id}/deactivate:
+    post:
+      tags: [Warehouses]
+      summary: Деактивировать склад
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /warehouses/stats:
+    get:
+      tags: [Warehouses]
+      summary: Статистика всех складов
+      responses:
+        '200': { description: OK }
+
+  /product-templates:
+    get:
+      tags: [ProductTemplates]
+      summary: Список шаблонов товаров
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [ProductTemplates]
+      summary: Создать шаблон
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductTemplateRequest' }
+      responses:
+        '201': { description: Создано }
+
+  /product-templates/{id}:
+    get:
+      tags: [ProductTemplates]
+      summary: Шаблон по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [ProductTemplates]
+      summary: Обновить шаблон
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProductTemplateRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [ProductTemplates]
+      summary: Удалить шаблон
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /product-templates/{id}/activate:
+    post:
+      tags: [ProductTemplates]
+      summary: Активировать шаблон
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /product-templates/{id}/deactivate:
+    post:
+      tags: [ProductTemplates]
+      summary: Деактивировать шаблон
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /product-templates/{id}/test-formula:
+    post:
+      tags: [ProductTemplates]
+      summary: Тест формулы расчета
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                values:
+                  type: object
+                  additionalProperties: { type: number }
+      responses:
+        '200': { description: OK }
+
+  /product-templates/{id}/attributes:
+    get:
+      tags: [ProductTemplates]
+      summary: Список атрибутов шаблона
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [ProductTemplates]
+      summary: Создать атрибут шаблона
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTemplateAttributeRequest' }
+      responses:
+        '201': { description: Создано }
+
+  /product-templates/{id}/attributes/{attributeId}:
+    put:
+      tags: [ProductTemplates]
+      summary: Обновить атрибут шаблона
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: attributeId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateTemplateAttributeRequest' }
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [ProductTemplates]
+      summary: Удалить атрибут шаблона
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: attributeId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /product-templates/{id}/products:
+    get:
+      tags: [ProductTemplates]
+      summary: Товары по шаблону
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /product-templates/units:
+    get:
+      tags: [ProductTemplates]
+      summary: Доступные единицы измерения
+      responses:
+        '200': { description: OK }
+
+  /product-templates/stats:
+    get:
+      tags: [ProductTemplates]
+      summary: Статистика шаблонов
+      responses:
+        '200': { description: OK }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1 }
+      required: false
+    per_page:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200 }
+      required: false
+
+  responses:
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+    NotFound:
+      description: Не найдено
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+    ValidationError:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: { type: string }
+    MessageOk:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        username: { type: string, nullable: true }
+        email: { type: string, format: email }
+        role: { type: string }
+        company_id: { type: integer, nullable: true }
+        warehouse_id: { type: integer, nullable: true }
+        is_blocked: { type: boolean, nullable: true }
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name: { type: string }
+        username: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        password: { type: string, format: password }
+        password_confirmation: { type: string, format: password }
+        current_password: { type: string, format: password }
+        new_password: { type: string, format: password }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        quantity: { type: number }
+        attributes: { type: object, additionalProperties: true, nullable: true }
+        producer: { type: string, nullable: true }
+        arrival_date: { type: string, format: date, nullable: true }
+        is_active: { type: boolean }
+        calculated_volume: { type: number, nullable: true }
+        template:
+          type: object
+          properties:
+            id: { type: integer }
+        warehouse:
+          type: object
+          properties:
+            id: { type: integer }
+        creator:
+          type: object
+          properties:
+            id: { type: integer }
+
+    CreateProductRequest:
+      type: object
+      required: [product_template_id, warehouse_id, name, quantity]
+      properties:
+        product_template_id: { type: integer }
+        warehouse_id: { type: integer }
+        name: { type: string }
+        quantity: { type: number }
+        description: { type: string }
+        attributes: { type: object, additionalProperties: true }
+        producer: { type: string }
+        arrival_date: { type: string, format: date }
+        is_active: { type: boolean }
+
+    UpdateProductRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductRequest'
+
+    ProductExportRow:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        quantity: { type: number }
+        calculated_volume: { type: number }
+        warehouse: { type: string }
+        template: { type: string }
+        arrival_date: { type: string, format: date }
+        is_active: { type: string, description: 'Да/Нет' }
+
+    PaginatedProducts:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Product' }
+        links: { $ref: '#/components/schemas/PaginationLinks' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    ProductStats:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            total_products: { type: integer }
+            active_products: { type: integer }
+            in_stock: { type: integer }
+            low_stock: { type: integer }
+            out_of_stock: { type: integer }
+            total_quantity: { type: number }
+            total_volume: { type: number }
+
+    Sale:
+      type: object
+      properties:
+        id: { type: integer }
+        sale_number: { type: string }
+        product: { type: object, properties: { id: { type: integer } } }
+        warehouse: { type: object, properties: { id: { type: integer } } }
+        user: { type: object, properties: { id: { type: integer } } }
+
+    CreateSaleRequest:
+      type: object
+      required: [product_id, warehouse_id, quantity, unit_price, payment_method, sale_date]
+      properties:
+        product_id: { type: integer }
+        warehouse_id: { type: integer }
+        quantity: { type: number }
+        unit_price: { type: number }
+        payment_method: { type: string }
+        sale_date: { type: string, format: date }
+        customer_name: { type: string }
+        customer_phone: { type: string }
+        customer_email: { type: string, format: email }
+        customer_address: { type: string }
+        vat_rate: { type: number }
+        payment_status: { type: string }
+        delivery_status: { type: string }
+        notes: { type: string }
+        is_active: { type: boolean }
+
+    UpdateSaleRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateSaleRequest'
+
+    PaginatedSales:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Sale' }
+        links: { $ref: '#/components/schemas/PaginationLinks' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    SalesStats:
+      type: object
+      properties:
+        total_sales: { type: integer }
+        paid_sales: { type: integer }
+        pending_payments: { type: integer }
+        today_sales: { type: integer }
+        month_revenue: { type: number }
+        total_revenue: { type: number }
+        total_quantity: { type: number }
+        average_sale: { type: number }
+        in_delivery: { type: integer }
+
+    Request:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        quantity: { type: number }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        status: { type: string }
+        warehouse: { type: object, properties: { id: { type: integer } } }
+        product_template: { type: object, properties: { id: { type: integer } } }
+        user: { type: object, properties: { id: { type: integer } } }
+
+    CreateRequestRequest:
+      type: object
+      required: [warehouse_id, product_template_id, title, quantity, priority]
+      properties:
+        warehouse_id: { type: integer }
+        product_template_id: { type: integer }
+        title: { type: string }
+        quantity: { type: number }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        description: { type: string }
+        status: { type: string }
+
+    UpdateRequestRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateRequestRequest'
+
+    Warehouse:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        address: { type: string }
+        company_id: { type: integer }
+        is_active: { type: boolean }
+
+    CreateWarehouseRequest:
+      type: object
+      required: [name, address, company_id]
+      properties:
+        name: { type: string }
+        address: { type: string }
+        company_id: { type: integer }
+
+    UpdateWarehouseRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateWarehouseRequest'
+
+    ProductTemplate:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        unit: { type: string }
+        description: { type: string, nullable: true }
+        formula: { type: string, nullable: true }
+        is_active: { type: boolean }
+
+    CreateProductTemplateRequest:
+      type: object
+      required: [name, unit]
+      properties:
+        name: { type: string }
+        unit: { type: string }
+        description: { type: string }
+        formula: { type: string }
+        is_active: { type: boolean }
+
+    UpdateProductTemplateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateProductTemplateRequest'
+
+    CreateTemplateAttributeRequest:
+      type: object
+      required: [name, variable, type]
+      properties:
+        name: { type: string }
+        variable: { type: string, pattern: '^[A-Za-z][A-Za-z0-9_]*$' }
+        type: { type: string, enum: [number, text, select] }
+        value: {}
+        unit: { type: string }
+        is_required: { type: boolean }
+        is_in_formula: { type: boolean }
+        sort_order: { type: integer }
+
+    UpdateTemplateAttributeRequest:
+      allOf:
+        - $ref: '#/components/schemas/CreateTemplateAttributeRequest'
+
+    PaginationLinks:
+      type: object
+      properties:
+        first: { type: string, nullable: true }
+        last: { type: string, nullable: true }
+        prev: { type: string, nullable: true }
+        next: { type: string, nullable: true }
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page: { type: integer }
+        last_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+
+

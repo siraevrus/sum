@@ -1,16 +1,19 @@
 # API Документация
 
 ## Базовый URL
-```
-http://localhost:8000/api
-```
+`http://localhost:8000/api`
+
+## Общие сведения
+- Все защищенные эндпойнты требуют заголовок: `Authorization: Bearer {token}` (Laravel Sanctum)
+- Тело запросов и ответы — JSON. Используйте заголовок: `Content-Type: application/json`
+- Пагинация: списки возвращают поля `data` и `pagination` или `links`/`meta` в зависимости от ресурса (см. примеры ниже)
 
 ## Аутентификация
 
 ### Регистрация
 POST `/auth/register`
 
-Параметры:
+Тело:
 ```json
 {
   "name": "Иван Иванов",
@@ -19,34 +22,7 @@ POST `/auth/register`
 }
 ```
 
-Ответ:
-```json
-{
-  "user": {
-    "id": 1,
-    "name": "Иван Иванов",
-    "email": "ivan@example.com",
-    "role": "admin"
-  },
-  "token": "1|abc123..."
-}
-```
-
-Примечания:
-- Валидация: 422 с ошибками полей.
-
-### Вход
-POST `/auth/login`
-
-Параметры:
-```json
-{
-  "email": "ivan@example.com",
-  "password": "password123"
-}
-```
-
-Ответ (успех):
+Ответ 201:
 ```json
 {
   "user": { "id": 1, "name": "Иван Иванов", "email": "ivan@example.com", "role": "admin" },
@@ -54,377 +30,339 @@ POST `/auth/login`
 }
 ```
 
-Ответ (ошибка):
+Примечание: 422 при ошибках валидации.
+
+### Вход
+POST `/auth/login`
+
+Тело:
 ```json
-{ "message": "Неверные учетные данные" } // 401
-{ "message": "Ваш аккаунт заблокирован" } // 401
+{ "email": "ivan@example.com", "password": "password123" }
 ```
+
+Ответ 200:
+```json
+{ "user": { "id": 1, "name": "Иван Иванов", "email": "ivan@example.com" }, "token": "1|abc123..." }
+```
+
+Ошибки: 401 `{"message":"Неверные учетные данные"}` или `{ "message": "Ваш аккаунт заблокирован" }`.
 
 ### Выход
 POST `/auth/logout`
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ:
+Ответ 200:
 ```json
 { "message": "Успешно вышли из системы" }
 ```
 
-### Профиль
+### Текущий пользователь
 GET `/auth/me`
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: объект пользователя (без обертки):
-```json
-{ "id": 1, "name": "Иван Иванов", "email": "ivan@example.com", "role": "admin" }
-```
+Ответ 200: объект пользователя без обертки.
 
 ### Обновление профиля
 PUT `/auth/profile`
 
-Заголовки: `Authorization: Bearer {token}`
+Тело: любые из полей `name`, `username`, `email`, `password` (+ `password_confirmation`), валидация уникальности для `username` и `email`.
 
-Тело (любые из полей): `name`, `username`, `email`, `password` (+подтверждение)
-
-Ответ:
+Ответ 200:
 ```json
 { "message": "Профиль обновлен", "user": { "id": 1, "name": "..." } }
 ```
 
 ## Товары
 
-### Получение списка товаров
+### Список товаров
 GET `/products`
 
-**Параметры запроса:**
-- `search` - поиск по названию, описанию, производителю
-- `warehouse_id` - фильтр по складу
-- `template_id` - фильтр по шаблону
-- `producer` - фильтр по производителю
-- `in_stock` - только с остатками
-- `low_stock` - заканчивающиеся товары (≤10)
-- `active` - только активные
-- `per_page` - количество на странице (по умолчанию 15)
-- `page` - номер страницы
+Параметры: `search`, `warehouse_id`, `template_id`, `producer`, `in_stock`, `low_stock`, `active`, `per_page`, `page`.
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ:
+Ответ 200:
 ```json
 {
-    "data": [
-        {
-            "id": 1,
-            "name": "Доска обрезная 6м",
-            "description": "Обрезная доска 6 метров длиной",
-            "attributes": {
-                "length": 6.0,
-                "width": 15.0,
-                "height": 25.0,
-                "grade": "A"
-            },
-            "quantity": 50,
-            "calculated_volume": 0.0225,
-            "producer": "ООО Лесопилка",
-            "arrival_date": "2024-01-15",
-            "is_active": true,
-            "template": {
-                "id": 1,
-                "name": "Доска обрезная"
-            },
-            "warehouse": {
-                "id": 1,
-                "name": "Основной склад"
-            },
-            "creator": {
-                "id": 1,
-                "name": "Администратор"
-            }
-        }
-    ],
-    "links": {
-        "first": "...",
-        "last": "...",
-        "prev": null,
-        "next": null
-    },
-    "meta": {
-        "current_page": 1,
-        "last_page": 1,
-        "per_page": 15,
-        "total": 1
-    }
+  "data": [ { "id": 1, "name": "...", "quantity": 50, "template": {"id":1}, "warehouse": {"id":1}, "creator": {"id":1} } ],
+  "links": { "first": "...", "last": "...", "prev": null, "next": null },
+  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 }
 }
 ```
 
-### Получение товара по ID
-GET `/products/{id}`
+### Товар по ID
+GET `/products/{id}` — возвращает объект товара. Ошибки: 404, 403.
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: объект товара. Ошибки: 404 `{ "message": "Товар не найден" }`, 403 `{ "message": "Доступ запрещен" }`.
-
-### Создание товара
+### Создать товар
 POST `/products`
 
-Заголовки: `Authorization: Bearer {token}`
+Тело (обязательные): `product_template_id`, `warehouse_id`, `name`, `quantity`.
+Дополнительно: `description`, `attributes` (object), `producer`, `arrival_date`, `is_active`.
 
-Параметры:
-```json
-{
-    "product_template_id": 1,
-    "warehouse_id": 1,
-    "name": "Доска обрезная 4м",
-    "description": "Обрезная доска 4 метра",
-    "attributes": {
-        "length": 4.0,
-        "width": 15.0,
-        "height": 25.0,
-        "grade": "B"
-    },
-    "quantity": 30,
-    "producer": "ООО Лесопилка",
-    "arrival_date": "2024-01-20",
-    "is_active": true
-}
-```
-
-Ответ:
+Ответ 201:
 ```json
 { "message": "Товар успешно создан", "data": { "id": 1, "name": "..." } }
 ```
 
-### Обновление товара
-PUT `/products/{id}`
+### Обновить товар
+PUT `/products/{id}` — частичное обновление, как валидация `store`.
 
-Заголовки: `Authorization: Bearer {token}`
+Ответ 200: `{ "message": "Товар успешно обновлен", "data": { ... } }`
 
-Ответ: `{ "message": "Товар успешно обновлен", "data": { ... } }`
-
-### Удаление товара
-DELETE `/products/{id}`
-
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: `{ "message": "Товар успешно удален" }`
+### Удалить товар
+DELETE `/products/{id}` — `{ "message": "Товар успешно удален" }`
 
 ### Статистика товаров
 GET `/products/stats`
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ:
+Ответ 200:
 ```json
-{
-  "success": true,
-  "data": {
-    "total_products": 10,
-    "active_products": 8,
-    "in_stock": 7,
-    "low_stock": 2,
-    "out_of_stock": 1,
-    "total_quantity": 150,
-    "total_volume": 3.45
-  }
-}
+{ "success": true, "data": { "total_products": 10, "active_products": 8, "in_stock": 7, "low_stock": 2, "out_of_stock": 1, "total_quantity": 150, "total_volume": 3.45 } }
 ```
 
 ### Популярные товары
 GET `/products/popular`
 
-Заголовки: `Authorization: Bearer {token}`
+Ответ 200: `{ "success": true, "data": [ { "id": 1, "total_sales": 12, "total_revenue": "10000.00" } ] }`
 
-Ответ:
+### Экспорт товаров
+GET `/products/export`
+
+Те же параметры фильтрации, что и у списка. Ответ 200:
 ```json
-{ "success": true, "data": [ { "id": 1, "name": "...", "total_sales": 12, "total_revenue": "10000.00" } ] }
+{ "success": true, "data": [ { "id": 1, "name": "...", "quantity": 10, "calculated_volume": 0.22, "warehouse": "...", "template": "...", "arrival_date": "YYYY-MM-DD", "is_active": "Да" } ], "total": 1 }
 ```
 
 ## Продажи
 
-### Получение списка продаж
+### Список продаж
 GET `/sales`
 
-**Параметры запроса:**
-- `search` - поиск по номеру продажи, клиенту, телефону
-- `warehouse_id` - фильтр по складу
-- `payment_status` - статус оплаты
-- `delivery_status` - статус доставки
-- `payment_method` - способ оплаты
-- `date_from` - дата с
-- `date_to` - дата по
-- `active` - только активные
-- `per_page` - количество на странице
-- `page` - номер страницы
+Параметры: `search`, `warehouse_id`, `payment_status`, `delivery_status`, `payment_method`, `date_from`, `date_to`, `active`, `per_page`, `page`.
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ:
+Ответ 200:
 ```json
-{
-    "data": [
-        {
-            "id": 1,
-            "sale_number": "SALE-202401-0001",
-            "customer_name": "Иванов Иван",
-            "customer_phone": "+7 (495) 123-45-67",
-            "quantity": 5,
-            "unit_price": 2500.00,
-            "total_price": 15000.00,
-            "payment_status": "paid",
-            "delivery_status": "delivered",
-            "sale_date": "2024-01-15",
-            "product": {
-                "id": 1,
-                "name": "Доска обрезная 6м"
-            },
-            "warehouse": {
-                "id": 1,
-                "name": "Основной склад"
-            },
-            "user": {
-                "id": 1,
-                "name": "Оператор"
-            }
-        }
-    ],
-    "links": {
-        "first": "...",
-        "last": "...",
-        "prev": null,
-        "next": null
-    },
-    "meta": {
-        "current_page": 1,
-        "last_page": 1,
-        "per_page": 15,
-        "total": 1
-    }
-}
+{ "data": [ { "id": 1, "sale_number": "...", "product": {"id":1}, "warehouse": {"id":1}, "user": {"id":1} } ], "links": { ... }, "meta": { ... } }
 ```
 
-### Получение продажи по ID
-GET `/sales/{id}`
+### Продажа по ID
+GET `/sales/{id}` — объект продажи. Ошибки: 404, 403.
 
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: объект продажи. Ошибки: 404 `{ "message": "Продажа не найдена" }`.
-
-### Создание продажи
+### Создать продажу
 POST `/sales`
 
-Заголовки: `Authorization: Bearer {token}`
+Обязательные: `product_id`, `warehouse_id`, `quantity`, `unit_price`, `payment_method`, `sale_date`.
+Дополнительно: `customer_name`, `customer_phone`, `customer_email`, `customer_address`, `vat_rate`, `payment_status`, `delivery_status`, `notes`, `is_active`.
 
-Параметры:
-```json
-{
-    "product_id": 1,
-    "warehouse_id": 1,
-    "customer_name": "Петров Петр",
-    "customer_phone": "+7 (495) 987-65-43",
-    "customer_email": "petrov@example.com",
-    "customer_address": "г. Москва, ул. Примерная, д. 1",
-    "quantity": 3,
-    "unit_price": 2500.00,
-    "vat_rate": 20.00,
-    "payment_method": "card",
-    "payment_status": "pending",
-    "delivery_status": "pending",
-    "notes": "Доставка на строительную площадку",
-    "sale_date": "2024-01-20",
-    "is_active": true
-}
-```
+Ответ 201: `{ "message": "Продажа успешно создана", "sale": { ... } }`
 
-Ответ: `{ "message": "Продажа успешно создана", "sale": { ... } }`
+Ошибки: 400 при недостаточном остатке, 403 при доступе к чужому складу.
 
-### Обновление продажи
-PUT `/sales/{id}`
+### Обновить продажу
+PUT `/sales/{id}` — частичное обновление. Пересчет сумм при изменении `quantity`/`unit_price`/`vat_rate`.
 
-Заголовки: `Authorization: Bearer {token}`
+### Удалить продажу
+DELETE `/sales/{id}` — `{ "message": "Продажа удалена" }`
 
-Ответ: `{ "message": "Продажа успешно обновлена", "sale": { ... } }`
+### Оформить продажу
+POST `/sales/{id}/process` — списывает товар, проверяет остаток. Успех: `{ "message": "Продажа оформлена", "sale": { ... } }`
 
-### Удаление продажи
-DELETE `/sales/{id}`
-
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: `{ "message": "Продажа удалена" }`
-
-### Оформление продажи
-POST `/sales/{id}/process`
-
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: `{ "message": "Продажа оформлена", "sale": { ... } }`
-
-### Отмена продажи
-POST `/sales/{id}/cancel`
-
-Заголовки: `Authorization: Bearer {token}`
-
-Ответ: `{ "message": "Продажа отменена", "sale": { ... } }`
+### Отменить продажу
+POST `/sales/{id}/cancel` — `{ "message": "Продажа отменена", "sale": { ... } }`
 
 ### Статистика продаж
 GET `/sales/stats`
 
-Заголовки: `Authorization: Bearer {token}`
+Ответ 200: объект без обертки с ключами `total_sales`, `paid_sales`, `pending_payments`, `today_sales`, `month_revenue`, `total_revenue`, `total_quantity`, `average_sale`, `in_delivery`.
 
-Ответ (объект без обертки):
+### Экспорт продаж
+GET `/sales/export`
+
+Параметры, как у списка. Ответ 200: `{ "success": true, "data": [ ... ], "total": 123 }`
+
+## Запросы (requests)
+
+### Список запросов
+GET `/requests`
+
+Параметры: `status`, `priority`, `user_id`, `warehouse_id`, `product_template_id`, `sort`, `order`, `per_page`, `page`.
+
+Ответ 200:
 ```json
-{
-  "total_sales": 25,
-  "paid_sales": 20,
-  "pending_payments": 3,
-  "today_sales": 2,
-  "month_revenue": 150000.00,
-  "total_revenue": 500000.00,
-  "total_quantity": 150,
-  "average_sale": 12000.00,
-  "in_delivery": 4
-}
+{ "success": true, "data": [ { "id": 1, "status": "pending", "warehouse": {"id":1}, "product_template": {"id":1}, "user": {"id":1} } ], "pagination": { ... } }
 ```
 
+### Запрос по ID
+GET `/requests/{id}` — `{ "success": true, "data": { ... } }`
+
+### Создать запрос
+POST `/requests`
+
+Обязательные: `warehouse_id`, `product_template_id`, `title`, `quantity`, `priority` (`low|normal|high|urgent`). Опционально: `description`, `status`.
+
+Ответ 201: `{ "success": true, "message": "Запрос успешно создан", "data": { ... } }`
+
+### Обновить запрос
+PUT `/requests/{id}` — частичное обновление полей, включая `admin_notes`.
+
+### Удалить запрос
+DELETE `/requests/{id}` — `{ "success": true, "message": "Запрос успешно удален" }`
+
+### Обработать запрос
+POST `/requests/{id}/process` — устанавливает `status = completed`.
+
+### Отклонить запрос
+POST `/requests/{id}/reject` — устанавливает `status = rejected`.
+
+### Статистика запросов
+GET `/requests/stats` — `{ "success": true, "data": { "total": 10, "pending": 3, ... } }`
+
+## Пользователи
+
+### Список пользователей
+GET `/users`
+
+Параметры: `role`, `company_id`, `warehouse_id`, `is_blocked`, `search`, `sort`, `order`, `per_page`, `page`.
+
+Ответ 200: `{ "success": true, "data": [ ... ], "pagination": { ... } }`
+
+### Пользователь по ID
+GET `/users/{id}` — `{ "success": true, "data": { ... } }`
+
+### Создать пользователя
+POST `/users`
+
+Обязательные: `name`, `email` (уникальный), `password`, `role` (одно из `UserRole::cases()`), опционально `company_id`, `warehouse_id`, `phone`, `is_blocked`.
+
+Ответ 201: `{ "success": true, "message": "Пользователь успешно создан", "data": { ... } }`
+
+### Обновить пользователя
+PUT `/users/{id}` — частичное обновление. При смене `password` — хеширование на сервере.
+
+### Удалить пользователя
+DELETE `/users/{id}` — нельзя удалить себя (400). Успех: `{ "success": true, "message": "Пользователь успешно удален" }`
+
+### Заблокировать/Разблокировать
+POST `/users/{id}/block` и `/users/{id}/unblock` — возвращают `{ "success": true, "message": "...", "data": { ... } }`
+
+### Профиль текущего пользователя
+GET `/users/profile` — `{ "success": true, "data": { ... } }`
+
+### Обновление профиля текущего пользователя
+PUT `/users/profile`
+
+Поля: `name`, `username`, `email`, `phone`, а также `current_password` и `new_password` для смены пароля (проверяется текущий пароль). Ответ: `{ "success": true, "message": "Профиль успешно обновлен", "data": { ... } }`
+
+### Статистика пользователей
+GET `/users/stats` — `{ "success": true, "data": { "total": 10, "active": 9, "blocked": 1, "by_role": { ... } } }`
+
+## Склады
+
+### Список складов
+GET `/warehouses`
+
+Параметры: `company_id`, `is_active`, `search`, `sort`, `order`, `per_page`, `page`.
+
+Ответ 200: `{ "success": true, "data": [ ... ], "pagination": { ... } }`
+
+### Склад по ID
+GET `/warehouses/{id}` — `{ "success": true, "data": { ... } }`
+
+### Создать склад
+POST `/warehouses` — обязательные: `name`, `address`, `company_id`. Ответ 201: `{ "success": true, "message": "Склад успешно создан", "data": { ... } }`
+
+### Обновить склад
+PUT `/warehouses/{id}` — частичное обновление.
+
+### Удалить склад
+DELETE `/warehouses/{id}` — 400 если есть товары или сотрудники. Иначе: `{ "success": true, "message": "Склад успешно удален" }`
+
+### Активировать/Деактивировать
+POST `/warehouses/{id}/activate` и `/warehouses/{id}/deactivate` — возвращают `{ "success": true, "message": "...", "data": { ... } }`
+
+### Статистика склада
+GET `/warehouses/{id}/stats` — `{ "success": true, "data": { "total_products": ..., ... } }`
+
+### Товары склада
+GET `/warehouses/{id}/products` — параметры: `is_active`, `product_template_id`, `search`, `sort`, `order`, `per_page`, `page`.
+
+### Сотрудники склада
+GET `/warehouses/{id}/employees` — параметры: `role`, `is_blocked`, `search`, `sort`, `order`, `per_page`, `page`.
+
+### Статистика всех складов
+GET `/warehouses/stats` — `{ "success": true, "data": { "total": 3, "active": 2, "inactive": 1 } }`
+
+## Шаблоны товаров (product-templates)
+
+### Список шаблонов
+GET `/product-templates` — параметры: `is_active`, `search`, `sort`, `order`, `per_page`.
+
+Ответ 200: `{ "success": true, "data": [ ... ], "pagination": { ... } }`
+
+### Шаблон по ID
+GET `/product-templates/{id}` — `{ "success": true, "data": { ... } }`
+
+### Создать шаблон
+POST `/product-templates` — обязательные: `name`, `unit`; опционально: `description`, `formula`, `is_active`.
+
+Ответ 201: `{ "success": true, "message": "Шаблон товара успешно создан", "data": { ... } }`
+
+### Обновить шаблон
+PUT `/product-templates/{id}` — частичное обновление.
+
+### Удалить шаблон
+DELETE `/product-templates/{id}` — 400 если есть связанные товары. Иначе: `{ "success": true, "message": "Шаблон товара успешно удален" }`
+
+### Активировать/Деактивировать шаблон
+POST `/product-templates/{id}/activate` и `/product-templates/{id}/deactivate`
+
+### Тест формулы
+POST `/product-templates/{id}/test-formula`
+
+Тело:
+```json
+{ "values": { "length": 6, "width": 15, "height": 25 } }
+```
+Ответ 200: `{ "success": true|false, "data": { ... } }`
+
+### Характеристики шаблона
+GET `/product-templates/{id}/attributes` — список атрибутов с сортировкой по `sort_order`.
+
+POST `/product-templates/{id}/attributes` — создать атрибут. Поля: `name`, `variable` (a-zA-Z0-9_ с буквы), `type` (`number|text|select`), `value`, `unit`, `is_required`, `is_in_formula`, `sort_order`.
+
+PUT `/product-templates/{id}/attributes/{attributeId}` — обновить атрибут.
+
+DELETE `/product-templates/{id}/attributes/{attributeId}` — удалить атрибут.
+
+### Товары по шаблону
+GET `/product-templates/{id}/products` — параметры: `is_active`, `warehouse_id`, `search`, `sort`, `order`, `per_page`.
+
+### Доступные единицы измерения
+GET `/product-templates/units` — `{ "success": true, "data": [ "м3", "шт", ... ] }`
+
 ## Коды ошибок
+- 400 — Неверные данные/логические ограничения
+- 401 — Не авторизован
+- 403 — Доступ запрещен
+- 404 — Не найдено
+- 422 — Ошибка валидации
+- 500 — Внутренняя ошибка сервера
 
-- `400` - Неверные данные
-- `401` - Не авторизован
-- `403` - Доступ запрещен
-- `404` - Не найдено
-- `422` - Ошибка валидации
-- `500` - Внутренняя ошибка сервера
+## Примеры
 
-## Примеры использования
-
-### Получение токена
+### Войти и получить токен
 ```bash
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@sklad.ru",
-    "password": "password"
-  }'
+  -d '{"email":"admin@sklad.ru","password":"password"}'
 ```
 
-### Получение товаров
+### Получить товары
 ```bash
-curl -X GET http://localhost:8000/api/products \
+curl -X GET "http://localhost:8000/api/products?in_stock=1&per_page=20" \
   -H "Authorization: Bearer {token}"
 ```
 
-### Создание продажи
+### Создать продажу
 ```bash
 curl -X POST http://localhost:8000/api/sales \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "product_id": 1,
-    "warehouse_id": 1,
-    "customer_name": "Клиент",
-    "quantity": 2,
-    "unit_price": 1000.00,
-    "payment_method": "cash",
-    "sale_date": "2024-01-20"
-  }'
-``` 
+  -d '{"product_id":1,"warehouse_id":1,"quantity":2,"unit_price":1000,"payment_method":"cash","sale_date":"2024-01-20"}'
+```
