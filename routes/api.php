@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarehouseController;
 use App\Http\Controllers\Api\ProductTemplateController;
+use App\Http\Controllers\Api\CompanyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +83,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{user}', [UserController::class, 'destroy']);
         Route::post('/{user}/block', [UserController::class, 'block']);
         Route::post('/{user}/unblock', [UserController::class, 'unblock']);
+    });
+
+    // Компании
+    Route::prefix('companies')->group(function () {
+        Route::get('/', [CompanyController::class, 'index']);
     });
 
     // Склады
