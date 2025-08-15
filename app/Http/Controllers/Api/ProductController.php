@@ -187,14 +187,14 @@ class ProductController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $product->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
         $product->delete();
 
         return response()->json([
-            'message' => 'Товар успешно удален',
+            'message' => 'Товар удален',
         ]);
     }
 

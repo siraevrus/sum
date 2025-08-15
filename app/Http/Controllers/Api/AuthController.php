@@ -19,15 +19,16 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'sometimes|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'sometimes|string|in:admin,operator,manager',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'sometimes|string|in:admin,operator,warehouse_worker,sales_manager',
             'company_id' => 'sometimes|integer|exists:companies,id',
         ]);
 
         $user = User::create([
             'name' => $request->name,
-            'username' => $request->name,
+            'username' => $request->get('username', $request->name),
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->get('role', 'admin'),
@@ -49,15 +50,17 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|string|email',
+            'login' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $login = $request->input('email');
+        $login = $request->input('login');
         $password = $request->input('password');
 
         // Пытаемся найти пользователя по email или username
-        $user = User::where('email', $login)->first();
+        $user = User::where('email', $login)
+            ->orWhere('username', $login)
+            ->first();
 
         if ($user && $user->is_blocked) {
             return response()->json([
@@ -67,8 +70,9 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($password, $user->password)) {
             return response()->json([
-                'message' => 'Неверные учетные данные.',
-            ], 422);
+                'message' => 'Неверные учетные данные',
+                'errors' => ['login' => ['Invalid login or password']],
+            ], 401);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;

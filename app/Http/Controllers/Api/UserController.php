@@ -99,6 +99,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'nullable|string|max:255|unique:users,username',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'role' => ['required', Rule::in(UserRole::cases())],
@@ -107,6 +108,11 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'is_blocked' => 'boolean',
         ]);
+
+        // Если username не передан — используем name
+        if (empty($validated['username'])) {
+            $validated['username'] = $validated['name'];
+        }
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_blocked'] = $validated['is_blocked'] ?? false;
@@ -128,6 +134,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'username' => ['sometimes', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'sometimes|string|min:8',
             'role' => ['sometimes', Rule::in(UserRole::cases())],

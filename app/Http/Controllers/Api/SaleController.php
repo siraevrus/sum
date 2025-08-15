@@ -86,7 +86,7 @@ class SaleController extends Controller
             return response()->json(['message' => 'Продажа не найдена'], 404);
         }
         
-        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -101,7 +101,7 @@ class SaleController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'customer_name' => 'nullable|string|max:255',
+            'customer_name' => 'required|string|max:255',
             'customer_phone' => 'nullable|string|max:255',
             'customer_email' => 'nullable|email|max:255',
             'customer_address' => 'nullable|string',
@@ -158,7 +158,7 @@ class SaleController extends Controller
         // Пересчёт не требуется, значения уже установлены
 
         return response()->json([
-            'message' => 'Продажа успешно создана',
+            'message' => 'Продажа создана',
             'sale' => $sale->load(['product', 'warehouse', 'user']),
         ], 201);
     }
@@ -205,7 +205,7 @@ class SaleController extends Controller
         }
 
         return response()->json([
-            'message' => 'Продажа успешно обновлена',
+            'message' => 'Продажа обновлена',
             'sale' => $sale->load(['product', 'warehouse', 'user']),
         ]);
     }
@@ -247,7 +247,7 @@ class SaleController extends Controller
             return response()->json(['message' => 'Товар не найден'], 404);
         }
         if ($product->quantity < $sale->quantity) {
-            return response()->json(['message' => 'Недостаточно товара для продажи'], 400);
+            return response()->json(['message' => 'Недостаточно товара на складе'], 400);
         }
 
         if ($sale->processSale()) {
@@ -268,7 +268,7 @@ class SaleController extends Controller
         $user = Auth::user();
         
         // Проверяем права доступа
-        if ($user->role !== 'admin' && $sale->warehouse->company_id !== $user->company_id) {
+        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
