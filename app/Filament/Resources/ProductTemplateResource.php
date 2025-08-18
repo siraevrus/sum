@@ -178,6 +178,9 @@ class ProductTemplateResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->visible(fn () => Auth::user() && Auth::user()->role->value === 'admin'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
