@@ -37,11 +37,6 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('success'),
 
-            Stat::make('Остатки', Product::active()->where('quantity', '>', 0)->sum('quantity'))
-                ->description('Общее количество')
-                ->descriptionIcon('heroicon-m-archive-box')
-                ->color('info'),
-
             Stat::make('В пути', ProductInTransit::whereIn('status', [
                     ProductInTransit::STATUS_ORDERED,
                     ProductInTransit::STATUS_IN_TRANSIT,
