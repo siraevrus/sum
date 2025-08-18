@@ -148,6 +148,17 @@ class CompanyResource extends Resource
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_archived')
                     ->label('Архивированные'),
+                Tables\Filters\TernaryFilter::make('trashed')
+                    ->label('Удаленные')
+                    ->query(function (Builder $query, array $data): Builder {
+                        if ($data['value'] === true) {
+                            return $query->onlyTrashed();
+                        }
+                        if ($data['value'] === false) {
+                            return $query->whereNull('deleted_at');
+                        }
+                        return $query;
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label(''),
@@ -171,6 +182,20 @@ class CompanyResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (Company $record): bool => $record->is_archived)
+                    ->action(function (Company $record): void {
+                        $record->restore();
+                    }),
+
+                Tables\Actions\Action::make('restore_deleted')
+                    ->label('')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Восстановить удаленную компанию?')
+                    ->modalDescription('Вы хотите восстановить удаленную компанию?')
+                    ->modalSubmitActionLabel('Да, восстановить')
+                    ->modalCancelActionLabel('Отмена')
+                    ->visible(fn (Company $record): bool => $record->trashed())
                     ->action(function (Company $record): void {
                         $record->restore();
                     }),
@@ -200,9 +225,6 @@ class CompanyResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        return parent::getEloquentQuery();
     }
 }
