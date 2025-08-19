@@ -26,6 +26,7 @@ use Filament\Forms\Set;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SaleResource extends Resource
 {
@@ -92,9 +93,46 @@ class SaleResource extends Resource
                                         if (!$warehouseId) {
                                             return [];
                                         }
-                                        return Product::where('warehouse_id', $warehouseId)
-                                            ->where('quantity', '>', 0)
-                                            ->pluck('name', 'id');
+                                        
+                                        // Получаем товары из агрегированных остатков
+                                        $query = Product::query()
+                                            ->select([
+                                                'product_template_id',
+                                                'warehouse_id',
+                                                'producer',
+                                                'name',
+                                                DB::raw('SUM(quantity) as total_quantity'),
+                                                DB::raw('SUM(calculated_volume * quantity) as total_volume'),
+                                            ])
+                                            ->where('warehouse_id', $warehouseId)
+                                            ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
+                                            ->having('total_quantity', '>', 0);
+                                        
+                                        // Вычитаем проданные товары для расчета реальных остатков
+                                        $query->addSelect([
+                                            DB::raw('(SUM(quantity) - COALESCE((
+                                                SELECT SUM(s.quantity) 
+                                                FROM sales s 
+                                                INNER JOIN products p2 ON s.product_id = p2.id 
+                                                WHERE p2.product_template_id = products.product_template_id 
+                                                AND p2.warehouse_id = products.warehouse_id 
+                                                AND p2.producer = products.producer 
+                                                AND p2.name = products.name
+                                                AND s.is_active = 1
+                                            ), 0)) as available_quantity')
+                                        ]);
+                                        
+                                        $availableProducts = $query->get();
+                                        
+                                        $options = [];
+                                        foreach ($availableProducts as $product) {
+                                            if ($product->available_quantity > 0) {
+                                                $key = "{$product->product_template_id}_{$product->warehouse_id}_{$product->producer}_{$product->name}";
+                                                $options[$key] = "{$product->name} ({$product->producer}) - Доступно: {$product->available_quantity}";
+                                            }
+                                        }
+                                        
+                                        return $options;
                                     })
                                     ->required()
                                     ->searchable()
@@ -114,19 +152,67 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $productId = $get('product_id');
                                         $quantity = $get('quantity');
-                                        if ($productId && $quantity) {
-                                            $product = Product::find($productId);
-                                            if ($product && $product->quantity < (int)$quantity) {
-                                                $set('quantity', $product->quantity);
+                                        if ($productId && $quantity && str_contains($productId, '_')) {
+                                            $parts = explode('_', $productId);
+                                            if (count($parts) >= 4) {
+                                                $productTemplateId = $parts[0];
+                                                $warehouseId = $parts[1];
+                                                $producer = $parts[2];
+                                                $name = $parts[3];
+                                                
+                                                // Получаем доступное количество из агрегированных остатков
+                                                $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
+                                                    ->where('warehouse_id', $warehouseId)
+                                                    ->where('producer', $producer)
+                                                    ->where('name', $name)
+                                                    ->sum('quantity');
+                                                
+                                                // Вычитаем проданные товары
+                                                $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
+                                                    $query->where('product_template_id', $productTemplateId)
+                                                        ->where('warehouse_id', $warehouseId)
+                                                        ->where('producer', $producer)
+                                                        ->where('name', $name);
+                                                })->where('is_active', 1)->sum('quantity');
+                                                
+                                                $availableQuantity -= $soldQuantity;
+                                                
+                                                if ($availableQuantity < (int)$quantity) {
+                                                    $set('quantity', max(1, $availableQuantity));
+                                                }
                                             }
                                         }
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         $productId = $get('product_id');
-                                        if ($productId && $state) {
-                                            $product = Product::find($productId);
-                                            if ($product && $product->quantity < (int)$state) {
-                                                throw new \Exception("Недостаточно товара на складе. Доступно: {$product->quantity}");
+                                        if ($productId && $state && str_contains($productId, '_')) {
+                                            $parts = explode('_', $productId);
+                                            if (count($parts) >= 4) {
+                                                $productTemplateId = $parts[0];
+                                                $warehouseId = $parts[1];
+                                                $producer = $parts[2];
+                                                $name = $parts[3];
+                                                
+                                                // Получаем доступное количество из агрегированных остатков
+                                                $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
+                                                    ->where('warehouse_id', $warehouseId)
+                                                    ->where('producer', $producer)
+                                                    ->where('name', $name)
+                                                    ->sum('quantity');
+                                                
+                                                // Вычитаем проданные товары
+                                                $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
+                                                    $query->where('product_template_id', $productTemplateId)
+                                                        ->where('warehouse_id', $warehouseId)
+                                                        ->where('producer', $producer)
+                                                        ->where('name', $name);
+                                                })->where('is_active', 1)->sum('quantity');
+                                                
+                                                $availableQuantity -= $soldQuantity;
+                                                
+                                                if ($availableQuantity < (int)$state) {
+                                                    throw new \Exception("Недостаточно товара на складе. Доступно: {$availableQuantity}");
+                                                }
                                             }
                                         }
                                         return $state;

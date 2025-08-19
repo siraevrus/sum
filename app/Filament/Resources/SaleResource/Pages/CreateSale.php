@@ -19,6 +19,32 @@ class CreateSale extends CreateRecord
         
         // warehouse_id уже выбран пользователем в форме
         
+        // Обрабатываем составной ключ товара
+        if (isset($data['product_id']) && str_contains($data['product_id'], '_')) {
+            $parts = explode('_', $data['product_id']);
+            if (count($parts) >= 4) {
+                $productTemplateId = $parts[0];
+                $warehouseId = $parts[1];
+                $producer = $parts[2];
+                $name = $parts[3];
+                
+                // Находим конкретный товар для списания
+                $product = \App\Models\Product::where('product_template_id', $productTemplateId)
+                    ->where('warehouse_id', $warehouseId)
+                    ->where('producer', $producer)
+                    ->where('name', $name)
+                    ->where('quantity', '>', 0)
+                    ->first();
+                
+                if ($product) {
+                    $data['product_id'] = $product->id;
+                    Log::info('Найден товар для продажи', ['product_id' => $product->id]);
+                } else {
+                    throw new \Exception('Товар не найден или отсутствует на складе');
+                }
+            }
+        }
+        
         // Рассчитываем общую сумму
         $data['total_price'] = ($data['cash_amount'] ?? 0) + ($data['nocash_amount'] ?? 0);
         
