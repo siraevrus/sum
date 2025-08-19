@@ -128,10 +128,7 @@ class StockResource extends Resource
                     ->label('Последнее поступление')
                     ->date()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Статус')
-                    ->boolean()
-                    ->sortable(),
+                // Убираем колонку статуса, так как работаем с агрегированными данными
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
@@ -140,11 +137,7 @@ class StockResource extends Resource
                 Tables\Filters\SelectFilter::make('producer')
                     ->label('Производитель')
                     ->options(fn () => Product::distinct()->pluck('producer', 'producer')->filter()),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Статус')
-                    ->placeholder('Все')
-                    ->trueLabel('Активные')
-                    ->falseLabel('Неактивные'),
+                // Убираем фильтр по статусу, так как работаем с агрегированными данными
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(fn (Builder $query): Builder => $query->having('available_quantity', '>', 0)),
@@ -153,13 +146,10 @@ class StockResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->having('available_quantity', '<=', 10)->having('available_quantity', '>', 0)),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(''),
-                Tables\Actions\EditAction::make()->label(''),
+                // Убираем View и Edit, так как работаем с агрегированными данными
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Убираем bulk actions для агрегированных данных
             ])
             ->defaultSort('available_quantity', 'desc');
     }
@@ -228,9 +218,7 @@ class StockResource extends Resource
     {
         return [
             'index' => Pages\ListStocks::route('/'),
-            'create' => Pages\CreateStock::route('/create'),
-            'view' => Pages\ViewStock::route('/{record}'),
-            'edit' => Pages\EditStock::route('/{record}/edit'),
+            // Убираем create, view, edit - работаем только со списком остатков
         ];
     }
 } 
