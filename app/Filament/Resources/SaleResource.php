@@ -67,26 +67,42 @@ class SaleResource extends Resource
                                     ->disabled()
                                     ->required(),
 
-                                Select::make('product_id')
-                                    ->label('Товар')
-                                    ->options(Product::where('quantity', '>', 0)->pluck('name', 'id'))
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $productId = $get('product_id');
-                                        if ($productId) {
-                                            $product = Product::find($productId);
-                                            if ($product) {
-                                                $set('warehouse_id', $product->warehouse_id);
-                                            }
-                                        }
-                                    }),
-
                                 Select::make('warehouse_id')
                                     ->label('Склад')
-                                    ->options(Warehouse::pluck('name', 'id'))
+                                    ->options(function () {
+                                        $user = Auth::user();
+                                        if ($user->role->value === 'warehouse_worker') {
+                                            // Работник склада видит только свой склад
+                                            return Warehouse::where('id', $user->warehouse_id)->pluck('name', 'id');
+                                        }
+                                        // Админ и менеджер видят все склады
+                                        return Warehouse::pluck('name', 'id');
+                                    })
                                     ->required()
-                                    ->disabled(),
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set) {
+                                        // Очищаем товар при смене склада
+                                        $set('product_id', null);
+                                    }),
+
+                                Select::make('product_id')
+                                    ->label('Товар')
+                                    ->options(function (Get $get) {
+                                        $warehouseId = $get('warehouse_id');
+                                        if (!$warehouseId) {
+                                            return [];
+                                        }
+                                        return Product::where('warehouse_id', $warehouseId)
+                                            ->where('quantity', '>', 0)
+                                            ->pluck('name', 'id');
+                                    })
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Очищаем количество при смене товара
+                                        $set('quantity', 1);
+                                    }),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
