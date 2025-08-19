@@ -228,10 +228,19 @@ class ProductResource extends Resource
                 $set('name', $generatedName);
             }
             
-            // Рассчитываем объем
-            $testResult = $template->testFormula($attributes);
-            if ($testResult['success']) {
-                $set('calculated_volume', $testResult['result']);
+            // Рассчитываем объем только для числовых характеристик
+            $numericAttributes = [];
+            foreach ($attributes as $key => $value) {
+                if (is_numeric($value)) {
+                    $numericAttributes[$key] = $value;
+                }
+            }
+            
+            if (!empty($numericAttributes)) {
+                $testResult = $template->testFormula($numericAttributes);
+                if ($testResult['success']) {
+                    $set('calculated_volume', $testResult['result']);
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class ProductTemplate extends Model
 {
@@ -92,8 +93,21 @@ class ProductTemplate extends Model
             // Заменяем переменные на значения
             $expression = $this->formula;
             foreach ($values as $variable => $value) {
-                $expression = str_replace($variable, $value, $expression);
+                // Проверяем, что значение числовое для числовых переменных
+                if (is_numeric($value)) {
+                    $expression = str_replace($variable, $value, $expression);
+                } else {
+                    // Если значение не числовое, пропускаем эту переменную
+                    continue;
+                }
             }
+            
+            // Логируем для отладки
+            \Log::info('Formula calculation', [
+                'original_formula' => $this->formula,
+                'values' => $values,
+                'final_expression' => $expression
+            ]);
 
             // Вычисляем результат
             $result = $this->evaluateExpression($expression);
@@ -159,6 +173,8 @@ class ProductTemplate extends Model
             
         } catch (\ParseError $e) {
             throw new \Exception('Синтаксическая ошибка в выражении: ' . $e->getMessage());
+        } catch (\DivisionByZeroError $e) {
+            throw new \Exception('Деление на ноль');
         } catch (\Exception $e) {
             throw new \Exception('Ошибка вычисления выражения: ' . $e->getMessage());
         }
