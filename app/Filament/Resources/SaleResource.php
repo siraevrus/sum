@@ -54,6 +54,55 @@ class SaleResource extends Resource
         ]);
     }
 
+    /**
+     * Рассчитать общую сумму продажи
+     */
+    private static function calculateTotalPrice(Set $set, Get $get): void
+    {
+        $cashAmount = (float) ($get('cash_amount') ?? 0);
+        $nocashAmount = (float) ($get('nocash_amount') ?? 0);
+        $totalPrice = $cashAmount + $nocashAmount;
+        
+        $set('total_price', $totalPrice);
+    }
+
+    /**
+     * Получить максимальное доступное количество товара
+     */
+    private static function getMaxAvailableQuantity(string $productId): int
+    {
+        if (!str_contains($productId, '|')) {
+            return 0;
+        }
+
+        $parts = explode('|', $productId);
+        if (count($parts) < 4) {
+            return 0;
+        }
+
+        $productTemplateId = $parts[0];
+        $warehouseId = $parts[1];
+        $producer = $parts[2];
+        $name = base64_decode($parts[3]);
+
+        // Получаем доступное количество из агрегированных остатков
+        $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('producer', $producer)
+            ->where('name', $name)
+            ->sum('quantity');
+
+        // Вычитаем проданные товары
+        $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
+            $query->where('product_template_id', $productTemplateId)
+                ->where('warehouse_id', $warehouseId)
+                ->where('producer', $producer)
+                ->where('name', $name);
+        })->where('is_active', 1)->sum('quantity');
+
+        return max(0, $availableQuantity - $soldQuantity);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -79,7 +128,15 @@ class SaleResource extends Resource
                                         // Админ и менеджер видят все склады
                                         return Warehouse::pluck('name', 'id');
                                     })
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Сбрасываем выбор товара при смене склада
+                                        $set('product_id', null);
+                                        $set('quantity', 1);
+                                        // Обновляем общую сумму
+                                        $this->calculateTotalPrice($set, $get);
+                                    }),
 
                                 Select::make('product_id')
                                     ->label('Товар')
@@ -131,7 +188,14 @@ class SaleResource extends Resource
                                         return $options;
                                     })
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Сбрасываем количество при смене товара
+                                        $set('quantity', 1);
+                                        // Обновляем общую сумму
+                                        $this->calculateTotalPrice($set, $get);
+                                    }),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -139,40 +203,28 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->dehydrateStateUsing(function ($state, Get $get) {
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $this->calculateTotalPrice($set, $get);
+                                    })
+                                    ->maxValue(function (Get $get) {
                                         $productId = $get('product_id');
-                                        if ($productId && $state && str_contains($productId, '|')) {
-                                            $parts = explode('|', $productId);
-                                            if (count($parts) >= 4) {
-                                                $productTemplateId = $parts[0];
-                                                $warehouseId = $parts[1];
-                                                $producer = $parts[2];
-                                                $name = base64_decode($parts[3]);
-                                                
-                                                // Получаем доступное количество из агрегированных остатков
-                                                $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
-                                                    ->where('warehouse_id', $warehouseId)
-                                                    ->where('producer', $producer)
-                                                    ->where('name', $name)
-                                                    ->sum('quantity');
-                                                
-                                                // Вычитаем проданные товары
-                                                $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
-                                                    $query->where('product_template_id', $productTemplateId)
-                                                        ->where('warehouse_id', $warehouseId)
-                                                        ->where('producer', $producer)
-                                                        ->where('name', $name);
-                                                })->where('is_active', 1)->sum('quantity');
-                                                
-                                                $availableQuantity -= $soldQuantity;
-                                                
-                                                if ($availableQuantity < (int)$state) {
-                                                    throw new \Exception("Недостаточно товара на складе. Доступно: {$availableQuantity}");
+                                        if ($productId) {
+                                            return static::getMaxAvailableQuantity($productId);
+                                        }
+                                        return 999999;
+                                    })
+                                    ->rules([
+                                        function (string $attribute, $value, \Closure $fail, Get $get) {
+                                            $productId = $get('product_id');
+                                            if ($productId && $value) {
+                                                $maxQuantity = static::getMaxAvailableQuantity($productId);
+                                                if ($value > $maxQuantity) {
+                                                    $fail("Недостаточно товара на складе. Доступно: {$maxQuantity}");
                                                 }
                                             }
                                         }
-                                        return $state;
-                                    }),
+                                    ]),
 
 
 
@@ -180,13 +232,21 @@ class SaleResource extends Resource
                                     ->label('Сумма (нал)')
                                     ->numeric()
                                     ->default(0)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $this->calculateTotalPrice($set, $get);
+                                    }),
 
                                 TextInput::make('nocash_amount')
                                     ->label('Сумма (безнал)')
                                     ->numeric()
                                     ->default(0)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $this->calculateTotalPrice($set, $get);
+                                    }),
 
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')
