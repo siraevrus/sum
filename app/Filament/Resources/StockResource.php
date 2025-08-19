@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StockResource extends Resource
 {
@@ -93,23 +94,38 @@ class StockResource extends Resource
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('quantity')
-                    ->label('Количество')
+                Tables\Columns\TextColumn::make('total_quantity')
+                    ->label('Общее количество')
                     ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('calculated_volume')
-                    ->label('Объем (м³)')
+                    ->sortable()
+                    ->badge()
+                    ->color(function (string $state): string {
+                        if ($state > 10) return 'success';
+                        if ($state > 0) return 'warning';
+                        return 'danger';
+                    }),
+                Tables\Columns\TextColumn::make('total_volume')
+                    ->label('Общий объем (м³)')
                     ->numeric(
                         decimalPlaces: 2,
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
                     ->sortable(),
+                Tables\Columns\TextColumn::make('items_count')
+                    ->label('Позиций')
+                    ->numeric()
+                    ->sortable()
+                    ->badge(),
                 Tables\Columns\TextColumn::make('productTemplate.name')
                     ->label('Шаблон')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('arrival_date')
-                    ->label('Дата поступления')
+                Tables\Columns\TextColumn::make('first_arrival')
+                    ->label('Первое поступление')
+                    ->date()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('last_arrival')
+                    ->label('Последнее поступление')
                     ->date()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')
@@ -131,10 +147,10 @@ class StockResource extends Resource
                     ->falseLabel('Неактивные'),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity', '>', 0)),
+                    ->query(fn (Builder $query): Builder => $query->having('total_quantity', '>', 0)),
                 Tables\Filters\Filter::make('low_stock')
                     ->label('Мало остатков')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity', '<=', 10)->where('quantity', '>', 0)),
+                    ->query(fn (Builder $query): Builder => $query->having('total_quantity', '<=', 10)->having('total_quantity', '>', 0)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
@@ -145,7 +161,7 @@ class StockResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('total_quantity', 'desc');
     }
 
     public static function getEloquentQuery(): Builder
@@ -159,6 +175,20 @@ class StockResource extends Resource
                 $q->where('company_id', $user->company_id);
             });
         }
+
+        // Группируем товары по производителю, складу и шаблону
+        $query->select([
+            'product_template_id',
+            'warehouse_id',
+            'producer',
+            'name',
+            DB::raw('SUM(quantity) as total_quantity'),
+            DB::raw('SUM(calculated_volume * quantity) as total_volume'),
+            DB::raw('COUNT(*) as items_count'),
+            DB::raw('MIN(arrival_date) as first_arrival'),
+            DB::raw('MAX(arrival_date) as last_arrival'),
+        ])
+        ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name']);
 
         return $query;
     }
