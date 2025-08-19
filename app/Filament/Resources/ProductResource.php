@@ -206,6 +206,13 @@ class ProductResource extends Resource
                                             if ($template && $template->formula) {
                                                 self::calculateAndSetVolume($set, $get, $template);
                                             }
+                                        })
+                                        ->dehydrateStateUsing(function ($state, $get) use ($options) {
+                                            // Преобразуем индекс в значение для селектов
+                                            if ($state !== null && is_numeric($state) && isset($options[$state])) {
+                                                return $options[$state];
+                                            }
+                                            return $state;
                                         });
                                     break;
                             }

@@ -44,6 +44,21 @@ class CreateProduct extends CreateRecord
                 $attributes = $data['attributes'];
                 $attributes['quantity'] = $data['quantity'] ?? 1;
                 
+                // Формируем наименование из характеристик
+                $nameParts = [];
+                foreach ($template->attributes as $templateAttribute) {
+                    $attributeKey = $templateAttribute->variable;
+                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                        $nameParts[] = $attributes[$attributeKey];
+                    }
+                }
+                
+                if (!empty($nameParts)) {
+                    // Добавляем название шаблона в начало
+                    $templateName = $template->name ?? 'Товар';
+                    $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                }
+                
                 $testResult = $template->testFormula($attributes);
                 if ($testResult['success']) {
                     $data['calculated_volume'] = $testResult['result'];
