@@ -6,7 +6,7 @@ use App\Http\Controllers\SaleExportController;
 use App\Http\Controllers\ProductWebController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin/login');
 });
 
 Route::get('/products/export', [ProductExportController::class, 'export'])
