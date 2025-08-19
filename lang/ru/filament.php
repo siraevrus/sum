@@ -15,6 +15,8 @@ return [
             'create_form_title' => 'Создать компанию',
             'edit_form_title' => 'Редактировать компанию',
             'view_form_title' => 'Просмотр компании',
+            'no_records_found' => 'Не найдено компаний',
+            'no_items_found' => 'Не найдено компаний',
         ],
         'users' => [
             'label' => 'Пользователи',
@@ -23,6 +25,8 @@ return [
             'create_form_title' => 'Создать пользователя',
             'edit_form_title' => 'Редактировать пользователя',
             'view_form_title' => 'Просмотр пользователя',
+            'no_records_found' => 'Не найдено пользователей',
+            'no_items_found' => 'Не найдено пользователей',
         ],
         'warehouses' => [
             'label' => 'Склады',
@@ -31,6 +35,8 @@ return [
             'create_form_title' => 'Создать склад',
             'edit_form_title' => 'Редактировать склад',
             'view_form_title' => 'Просмотр склада',
+            'no_records_found' => 'Не найдено складов',
+            'no_items_found' => 'Не найдено складов',
         ],
         'product-templates' => [
             'label' => 'Шаблоны товаров',
@@ -39,6 +45,8 @@ return [
             'create_form_title' => 'Создать шаблон товара',
             'edit_form_title' => 'Редактировать шаблон товара',
             'view_form_title' => 'Просмотр шаблона товара',
+            'no_records_found' => 'Не найдено шаблонов товаров',
+            'no_items_found' => 'Не найдено шаблонов товаров',
         ],
         'products' => [
             'label' => 'Товары',
@@ -47,6 +55,8 @@ return [
             'create_form_title' => 'Создать товар',
             'edit_form_title' => 'Редактировать товар',
             'view_form_title' => 'Просмотр товара',
+            'no_records_found' => 'Не найдено товаров',
+            'no_items_found' => 'Не найдено товаров',
         ],
         'product-in-transit' => [
             'label' => 'Товары в пути',
@@ -55,6 +65,8 @@ return [
             'create_form_title' => 'Создать товар в пути',
             'edit_form_title' => 'Редактировать товар в пути',
             'view_form_title' => 'Просмотр товара в пути',
+            'no_records_found' => 'Не найдено товаров в пути',
+            'no_items_found' => 'Не найдено товаров в пути',
         ],
         'requests' => [
             'label' => 'Запросы',
@@ -63,6 +75,8 @@ return [
             'create_form_title' => 'Создать запрос',
             'edit_form_title' => 'Редактировать запрос',
             'view_form_title' => 'Просмотр запроса',
+            'no_records_found' => 'Не найдено запросов',
+            'no_items_found' => 'Не найдено запросов',
         ],
         'sales' => [
             'label' => 'Продажи',
@@ -71,6 +85,8 @@ return [
             'create_form_title' => 'Создать продажу',
             'edit_form_title' => 'Редактировать продажу',
             'view_form_title' => 'Просмотр продажи',
+            'no_records_found' => 'Не найдено продаж',
+            'no_items_found' => 'Не найдено продаж',
         ],
     ],
 
@@ -134,6 +150,9 @@ return [
         'no_items_found' => 'Нет элементов',
         'no_records_found_for' => 'Нет элементов для',
         'no_items_found_for' => 'Нет элементов для',
+        'no_records_found_for_label' => 'Не найдено :label',
+        'no_items_found_for_label' => 'Не найдено :label',
+        'no_label_found' => 'Не найдено :label',
         'loading' => 'Загрузка...',
     ],
 

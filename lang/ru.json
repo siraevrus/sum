@@ -41,5 +41,9 @@
     "No records found.": "Нет элементов",
     "No items found.": "Нет элементов",
     "No records found for": "Нет элементов для",
-    "No items found for": "Нет элементов для"
+    "No items found for": "Нет элементов для",
+    "No records found for :label": "Не найдено :label",
+    "No items found for :label": "Не найдено :label",
+    "No :label found": "Не найдено :label",
+    "No :label found.": "Не найдено :label"
 } 
