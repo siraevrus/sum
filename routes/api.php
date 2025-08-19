@@ -88,6 +88,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Компании
     Route::prefix('companies')->group(function () {
         Route::get('/', [CompanyController::class, 'index']);
+        Route::get('/{company}', [CompanyController::class, 'show']);
+        Route::get('/{company}/warehouses', [CompanyController::class, 'warehouses']);
     });
 
     // Склады
