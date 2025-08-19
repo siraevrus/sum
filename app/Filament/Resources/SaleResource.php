@@ -79,12 +79,7 @@ class SaleResource extends Resource
                                         // Админ и менеджер видят все склады
                                         return Warehouse::pluck('name', 'id');
                                     })
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set) {
-                                        // Очищаем товар при смене склада
-                                        $set('product_id', null);
-                                    }),
+                                    ->required(),
 
                                 Select::make('product_id')
                                     ->label('Товар')
@@ -136,12 +131,7 @@ class SaleResource extends Resource
                                         return $options;
                                     })
                                     ->required()
-                                    ->searchable()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        // Очищаем количество при смене товара
-                                        $set('quantity', 1);
-                                    }),
+                                    ->searchable(),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -149,41 +139,6 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $productId = $get('product_id');
-                                        $quantity = $get('quantity');
-                                        if ($productId && $quantity && str_contains($productId, '|')) {
-                                            $parts = explode('|', $productId);
-                                            if (count($parts) >= 4) {
-                                                $productTemplateId = $parts[0];
-                                                $warehouseId = $parts[1];
-                                                $producer = $parts[2];
-                                                $name = base64_decode($parts[3]);
-                                                
-                                                // Получаем доступное количество из агрегированных остатков
-                                                $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
-                                                    ->where('warehouse_id', $warehouseId)
-                                                    ->where('producer', $producer)
-                                                    ->where('name', $name)
-                                                    ->sum('quantity');
-                                                
-                                                // Вычитаем проданные товары
-                                                $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
-                                                    $query->where('product_template_id', $productTemplateId)
-                                                        ->where('warehouse_id', $warehouseId)
-                                                        ->where('producer', $producer)
-                                                        ->where('name', $name);
-                                                })->where('is_active', 1)->sum('quantity');
-                                                
-                                                $availableQuantity -= $soldQuantity;
-                                                
-                                                if ($availableQuantity < (int)$quantity) {
-                                                    $set('quantity', max(1, $availableQuantity));
-                                                }
-                                            }
-                                        }
-                                    })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         $productId = $get('product_id');
                                         if ($productId && $state && str_contains($productId, '|')) {
@@ -225,25 +180,13 @@ class SaleResource extends Resource
                                     ->label('Сумма (нал)')
                                     ->numeric()
                                     ->default(0)
-                                    ->required()
-                                    ->live(500)
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $cashAmount = $get('cash_amount') ?? 0;
-                                        $nocashAmount = $get('nocash_amount') ?? 0;
-                                        $set('total_price', (float)$cashAmount + (float)$nocashAmount);
-                                    }),
+                                    ->required(),
 
                                 TextInput::make('nocash_amount')
                                     ->label('Сумма (безнал)')
                                     ->numeric()
                                     ->default(0)
-                                    ->required()
-                                    ->live(500)
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $cashAmount = $get('cash_amount') ?? 0;
-                                        $nocashAmount = $get('nocash_amount') ?? 0;
-                                        $set('total_price', (float)$cashAmount + (float)$nocashAmount);
-                                    }),
+                                    ->required(),
 
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')

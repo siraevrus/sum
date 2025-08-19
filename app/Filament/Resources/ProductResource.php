@@ -64,25 +64,7 @@ class ProductResource extends Resource
                                     ->label('Шаблон товара')
                                     ->options(ProductTemplate::pluck('name', 'id'))
                                     ->required()
-                                    ->searchable()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        // Очищаем старые характеристики при смене шаблона
-                                        $set('calculated_volume', null);
-                                        $set('name', null);
-                                        
-                                        // Добавляем динамические поля характеристик
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::with('attributes')->find($templateId);
-                                            if ($template) {
-                                                // Очищаем старые поля характеристик
-                                                foreach ($template->attributes as $attribute) {
-                                                    $set("attribute_{$attribute->variable}", null);
-                                                }
-                                            }
-                                        }
-                                    }),
+                                    ->searchable(),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
@@ -98,34 +80,14 @@ class ProductResource extends Resource
 
                                 TextInput::make('producer')
                                     ->label('Производитель')
-                                    ->maxLength(255)
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::find($templateId);
-                                            if ($template && $template->formula) {
-                                                self::calculateAndSetVolume($set, $get, $template);
-                                            }
-                                        }
-                                    }),
+                                    ->maxLength(255),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::find($templateId);
-                                            if ($template && $template->formula) {
-                                                self::calculateAndSetVolume($set, $get, $template);
-                                            }
-                                        }
-                                    }),
+                                    ->required(),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспортного средства')
@@ -153,7 +115,6 @@ class ProductResource extends Resource
                         // Динамические поля характеристик будут добавляться здесь
                     ])
                     ->visible(fn (Get $get) => $get('product_template_id') !== null)
-                    ->live()
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
                         if (!$templateId) {
@@ -174,25 +135,13 @@ class ProductResource extends Resource
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->numeric()
-                                        ->required($attribute->is_required)
-                                        ->live()
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            if ($template && $template->formula) {
-                                                self::calculateAndSetVolume($set, $get, $template);
-                                            }
-                                        });
+                                        ->required($attribute->is_required);
                                     break;
                                     
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
-                                        ->required($attribute->is_required)
-                                        ->live()
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            if ($template && $template->formula) {
-                                                self::calculateAndSetVolume($set, $get, $template);
-                                            }
-                                        });
+                                        ->required($attribute->is_required);
                                     break;
                                     
                                 case 'select':
@@ -201,12 +150,6 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->options($options)
                                         ->required($attribute->is_required)
-                                        ->live()
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            if ($template && $template->formula) {
-                                                self::calculateAndSetVolume($set, $get, $template);
-                                            }
-                                        })
                                         ->dehydrateStateUsing(function ($state, $get) use ($options) {
                                             // Преобразуем индекс в значение для селектов
                                             if ($state !== null && is_numeric($state) && isset($options[$state])) {
