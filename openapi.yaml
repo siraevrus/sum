@@ -243,6 +243,15 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaginatedStocks' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /products/export:
+    get:
+      tags: [Products]
+      summary: Экспорт товаров
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: search
           in: query
           schema: { type: string }
       responses:
