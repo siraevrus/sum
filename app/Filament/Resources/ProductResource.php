@@ -64,7 +64,13 @@ class ProductResource extends Resource
                                     ->label('Шаблон товара')
                                     ->options(ProductTemplate::pluck('name', 'id'))
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set) {
+                                        // Очищаем старые характеристики при смене шаблона
+                                        $set('calculated_volume', null);
+                                        $set('name', null);
+                                    }),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
@@ -115,6 +121,7 @@ class ProductResource extends Resource
                         // Динамические поля характеристик будут добавляться здесь
                     ])
                     ->visible(fn (Get $get) => $get('product_template_id') !== null)
+                    ->live()
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
                         if (!$templateId) {
