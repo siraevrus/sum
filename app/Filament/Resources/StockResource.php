@@ -94,8 +94,8 @@ class StockResource extends Resource
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('total_quantity')
-                    ->label('Общее количество')
+                Tables\Columns\TextColumn::make('available_quantity')
+                    ->label('Доступное количество')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -104,8 +104,8 @@ class StockResource extends Resource
                         if ($state > 0) return 'warning';
                         return 'danger';
                     }),
-                Tables\Columns\TextColumn::make('total_volume')
-                    ->label('Общий объем (м³)')
+                Tables\Columns\TextColumn::make('available_volume')
+                    ->label('Доступный объем (м³)')
                     ->numeric(
                         decimalPlaces: 2,
                         decimalSeparator: '.',
@@ -147,10 +147,10 @@ class StockResource extends Resource
                     ->falseLabel('Неактивные'),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
-                    ->query(fn (Builder $query): Builder => $query->having('total_quantity', '>', 0)),
+                    ->query(fn (Builder $query): Builder => $query->having('available_quantity', '>', 0)),
                 Tables\Filters\Filter::make('low_stock')
                     ->label('Мало остатков')
-                    ->query(fn (Builder $query): Builder => $query->having('total_quantity', '<=', 10)->having('total_quantity', '>', 0)),
+                    ->query(fn (Builder $query): Builder => $query->having('available_quantity', '<=', 10)->having('available_quantity', '>', 0)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
@@ -161,7 +161,7 @@ class StockResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('total_quantity', 'desc');
+            ->defaultSort('available_quantity', 'desc');
     }
 
     public static function getEloquentQuery(): Builder
@@ -189,6 +189,30 @@ class StockResource extends Resource
             DB::raw('MAX(arrival_date) as last_arrival'),
         ])
         ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name']);
+
+        // Теперь вычитаем проданные товары для расчета реальных остатков
+        $query->addSelect([
+            DB::raw('(SUM(quantity) - COALESCE((
+                SELECT SUM(s.quantity) 
+                FROM sales s 
+                INNER JOIN products p2 ON s.product_id = p2.id 
+                WHERE p2.product_template_id = products.product_template_id 
+                AND p2.warehouse_id = products.warehouse_id 
+                AND p2.producer = products.producer 
+                AND p2.name = products.name
+                AND s.is_active = 1
+            ), 0)) as available_quantity'),
+            DB::raw('(SUM(calculated_volume * quantity) - COALESCE((
+                SELECT SUM(s.quantity * p2.calculated_volume) 
+                FROM sales s 
+                INNER JOIN products p2 ON s.product_id = p2.id 
+                WHERE p2.product_template_id = products.product_template_id 
+                AND p2.warehouse_id = products.warehouse_id 
+                AND p2.producer = products.producer 
+                AND p2.name = products.name
+                AND s.is_active = 1
+            ), 0)) as available_volume')
+        ]);
 
         return $query;
     }

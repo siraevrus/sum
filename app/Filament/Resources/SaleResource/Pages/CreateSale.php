@@ -44,22 +44,10 @@ class CreateSale extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Списываем товар со склада после создания продажи
-        $sale = $this->record;
-        if ($sale->product && $sale->quantity > 0) {
-            try {
-                $success = $sale->product->decreaseQuantity($sale->quantity);
-                
-                if (!$success) {
-                    // Если не удалось списать товар, показываем ошибку
-                    $this->notify('error', 'Недостаточно товара на складе для продажи');
-                }
-            } catch (\Exception $e) {
-                // Логируем ошибку и показываем пользователю
-                Log::error('Ошибка при списании товара: ' . $e->getMessage());
-                $this->notify('error', 'Ошибка при списании товара со склада');
-            }
-        }
+        // Продажа создана, но количество товара НЕ списывается из Product
+        // Это позволяет сохранить историю добавления товаров
+        // Остатки рассчитываются с учетом продаж в StockResource
+        Log::info('Продажа создана успешно', ['sale_id' => $this->record->id]);
     }
 
     protected function getRedirectUrl(): string
