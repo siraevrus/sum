@@ -158,10 +158,6 @@ class ProductInTransitResource extends Resource
                                                 self::calculateVolumeForItem($set, $get);
                                             }),
 
-                                        TextInput::make('shipment_number')
-                                            ->label('Номер партии')
-                                            ->maxLength(255),
-
                                         Textarea::make('description')
                                             ->label('Описание')
                                             ->rows(2)
