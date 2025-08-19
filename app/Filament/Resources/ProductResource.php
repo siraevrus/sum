@@ -103,7 +103,17 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+                                            if ($template && $template->formula) {
+                                                self::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспортного средства')
@@ -132,30 +142,6 @@ class ProductResource extends Resource
                     ])
                     ->visible(fn (Get $get) => $get('product_template_id') !== null)
                     ->live()
-                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
-                        // Автоматически рассчитываем объем при изменении характеристик
-                        $templateId = $get('product_template_id');
-                        if ($templateId) {
-                            $template = ProductTemplate::find($templateId);
-                            if ($template && $template->formula) {
-                                // Собираем все значения характеристик
-                                $attributes = [];
-                                foreach ($state as $key => $value) {
-                                    if (str_starts_with($key, 'attribute_')) {
-                                        $attributeName = str_replace('attribute_', '', $key);
-                                        $attributes[$attributeName] = $value;
-                                    }
-                                }
-                                
-                                if (!empty($attributes)) {
-                                    $testResult = $template->testFormula($attributes);
-                                    if ($testResult['success']) {
-                                        $set('calculated_volume', $testResult['result']);
-                                    }
-                                }
-                            }
-                        }
-                    })
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
                         if (!$templateId) {
@@ -177,14 +163,24 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->numeric()
                                         ->required($attribute->is_required)
-                                        ->live();
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            if ($template && $template->formula) {
+                                                self::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        });
                                     break;
                                     
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->required($attribute->is_required)
-                                        ->live();
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            if ($template && $template->formula) {
+                                                self::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        });
                                     break;
                                     
                                 case 'select':
@@ -193,7 +189,12 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->options($options)
                                         ->required($attribute->is_required)
-                                        ->live();
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            if ($template && $template->formula) {
+                                                self::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        });
                                     break;
                             }
                         }
@@ -219,6 +220,34 @@ class ProductResource extends Resource
                         return $get('product_template_id') !== null;
                     }),
             ]);
+    }
+
+    /**
+     * Рассчитать и установить объем товара
+     */
+    private static function calculateAndSetVolume(Set $set, Get $get, $template): void
+    {
+        // Собираем все значения характеристик
+        $attributes = [];
+        $formData = $get();
+        
+        foreach ($formData as $key => $value) {
+            if (str_starts_with($key, 'attribute_') && $value !== null) {
+                $attributeName = str_replace('attribute_', '', $key);
+                $attributes[$attributeName] = $value;
+            }
+        }
+        
+        // Добавляем количество
+        $quantity = $get('quantity') ?? 1;
+        $attributes['quantity'] = $quantity;
+        
+        if (!empty($attributes)) {
+            $testResult = $template->testFormula($attributes);
+            if ($testResult['success']) {
+                $set('calculated_volume', $testResult['result']);
+            }
+        }
     }
 
     public static function table(Table $table): Table
