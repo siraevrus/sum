@@ -112,7 +112,13 @@ class StockOverview extends Page implements HasTable
             });
         }
 
-        return $query->distinct()->pluck('producer')->filter()->toArray();
+        // Группируем по производителю, не учитывая наименование и характеристики
+        return $query->select('producer')
+            ->distinct()
+            ->whereNotNull('producer')
+            ->pluck('producer')
+            ->filter()
+            ->toArray();
     }
 
     public function getWarehouses(): \Illuminate\Database\Eloquent\Collection
@@ -128,6 +134,56 @@ class StockOverview extends Page implements HasTable
         return $query->get();
     }
 
+    /**
+     * Получить агрегированные данные по производителям
+     */
+    public function getProducerStats(): array
+    {
+        $user = Auth::user();
+        $query = Product::query();
 
+        // Фильтрация по компании пользователя
+        if ($user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
 
+        // Группируем по производителю, не учитывая наименование и характеристики
+        return $query->select('producer')
+            ->selectRaw('COUNT(*) as total_products')
+            ->selectRaw('SUM(quantity) as total_quantity')
+            ->selectRaw('SUM(calculated_volume * quantity) as total_volume')
+            ->whereNotNull('producer')
+            ->groupBy('producer')
+            ->get()
+            ->keyBy('producer')
+            ->toArray();
+    }
+
+    /**
+     * Получить агрегированные данные по складам
+     */
+    public function getWarehouseStats(): array
+    {
+        $user = Auth::user();
+        $query = Product::query();
+
+        // Фильтрация по компании пользователя
+        if ($user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        // Группируем по складу, не учитывая наименование и характеристики
+        return $query->select('warehouse_id')
+            ->selectRaw('COUNT(*) as total_products')
+            ->selectRaw('SUM(quantity) as total_quantity')
+            ->selectRaw('SUM(calculated_volume * quantity) as total_volume')
+            ->groupBy('warehouse_id')
+            ->get()
+            ->keyBy('warehouse_id')
+            ->toArray();
+    }
 }
