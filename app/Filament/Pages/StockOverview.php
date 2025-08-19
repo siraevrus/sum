@@ -115,6 +115,19 @@ class StockOverview extends Page implements HasTable
         return $query->distinct()->pluck('producer')->filter()->toArray();
     }
 
+    public function getWarehouses(): \Illuminate\Database\Eloquent\Collection
+    {
+        $user = Auth::user();
+        $query = Warehouse::query();
+
+        // Фильтрация по компании пользователя
+        if ($user->company_id) {
+            $query->where('company_id', $user->company_id);
+        }
+
+        return $query->get();
+    }
+
 
 
 }
