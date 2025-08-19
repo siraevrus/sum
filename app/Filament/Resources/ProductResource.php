@@ -69,6 +69,7 @@ class ProductResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Очищаем старые характеристики при смене шаблона
                                         $set('calculated_volume', null);
+                                        $set('name', null);
                                         
                                         // Добавляем динамические поля характеристик
                                         $templateId = $get('product_template_id');
@@ -91,12 +92,22 @@ class ProductResource extends Resource
 
                                 TextInput::make('name')
                                     ->label('Наименование')
-                                    ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->helperText('Автоматически формируется из характеристик товара'),
 
                                 TextInput::make('producer')
                                     ->label('Производитель')
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+                                            if ($template && $template->formula) {
+                                                self::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -242,7 +253,22 @@ class ProductResource extends Resource
         $quantity = $get('quantity') ?? 1;
         $attributes['quantity'] = $quantity;
         
+        // Формируем наименование из характеристик
         if (!empty($attributes)) {
+            $nameParts = [];
+            foreach ($template->attributes as $templateAttribute) {
+                $attributeKey = $templateAttribute->variable;
+                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                    $nameParts[] = $attributes[$attributeKey];
+                }
+            }
+            
+            if (!empty($nameParts)) {
+                $generatedName = implode(', ', $nameParts);
+                $set('name', $generatedName);
+            }
+            
+            // Рассчитываем объем
             $testResult = $template->testFormula($attributes);
             if ($testResult['success']) {
                 $set('calculated_volume', $testResult['result']);
