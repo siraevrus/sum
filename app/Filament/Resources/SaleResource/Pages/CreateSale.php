@@ -20,13 +20,13 @@ class CreateSale extends CreateRecord
         // warehouse_id уже выбран пользователем в форме
         
         // Обрабатываем составной ключ товара
-        if (isset($data['product_id']) && str_contains($data['product_id'], '_')) {
-            $parts = explode('_', $data['product_id']);
+        if (isset($data['product_id']) && str_contains($data['product_id'], '|')) {
+            $parts = explode('|', $data['product_id']);
             if (count($parts) >= 4) {
                 $productTemplateId = $parts[0];
                 $warehouseId = $parts[1];
                 $producer = $parts[2];
-                $name = $parts[3];
+                $name = base64_decode($parts[3]);
                 
                 // Находим конкретный товар для списания
                 $product = \App\Models\Product::where('product_template_id', $productTemplateId)

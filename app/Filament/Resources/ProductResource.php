@@ -93,7 +93,8 @@ class ProductResource extends Resource
                                 TextInput::make('name')
                                     ->label('Наименование')
                                     ->maxLength(255)
-                                    ->helperText('Автоматически формируется из характеристик товара'),
+                                    ->disabled()
+                                    ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
                                 TextInput::make('producer')
                                     ->label('Производитель')
@@ -264,7 +265,9 @@ class ProductResource extends Resource
             }
             
             if (!empty($nameParts)) {
-                $generatedName = implode(', ', $nameParts);
+                // Добавляем название шаблона в начало
+                $templateName = $template->name ?? 'Товар';
+                $generatedName = $templateName . ': ' . implode(', ', $nameParts);
                 $set('name', $generatedName);
             }
             

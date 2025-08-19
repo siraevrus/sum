@@ -127,7 +127,8 @@ class SaleResource extends Resource
                                         $options = [];
                                         foreach ($availableProducts as $product) {
                                             if ($product->available_quantity > 0) {
-                                                $key = "{$product->product_template_id}_{$product->warehouse_id}_{$product->producer}_{$product->name}";
+                                                // Используем более надежный разделитель для составного ключа
+                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|" . base64_encode($product->name);
                                                 $options[$key] = "{$product->name} ({$product->producer}) - Доступно: {$product->available_quantity}";
                                             }
                                         }
@@ -152,13 +153,13 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $productId = $get('product_id');
                                         $quantity = $get('quantity');
-                                        if ($productId && $quantity && str_contains($productId, '_')) {
-                                            $parts = explode('_', $productId);
+                                        if ($productId && $quantity && str_contains($productId, '|')) {
+                                            $parts = explode('|', $productId);
                                             if (count($parts) >= 4) {
                                                 $productTemplateId = $parts[0];
                                                 $warehouseId = $parts[1];
                                                 $producer = $parts[2];
-                                                $name = $parts[3];
+                                                $name = base64_decode($parts[3]);
                                                 
                                                 // Получаем доступное количество из агрегированных остатков
                                                 $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
@@ -185,13 +186,13 @@ class SaleResource extends Resource
                                     })
                                     ->dehydrateStateUsing(function ($state, Get $get) {
                                         $productId = $get('product_id');
-                                        if ($productId && $state && str_contains($productId, '_')) {
-                                            $parts = explode('_', $productId);
+                                        if ($productId && $state && str_contains($productId, '|')) {
+                                            $parts = explode('|', $productId);
                                             if (count($parts) >= 4) {
                                                 $productTemplateId = $parts[0];
                                                 $warehouseId = $parts[1];
                                                 $producer = $parts[2];
-                                                $name = $parts[3];
+                                                $name = base64_decode($parts[3]);
                                                 
                                                 // Получаем доступное количество из агрегированных остатков
                                                 $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
