@@ -124,7 +124,20 @@ class ProductInTransitResource extends Resource
                             ->schema([
                                 Grid::make(2)
                                     ->schema([
-                                  
+                                        Select::make('product_template_id')
+                                            ->label('Шаблон товара')
+                                            ->options(ProductTemplate::pluck('name', 'id'))
+                                            ->required()
+                                            ->searchable()
+                                            ->live()
+                                            ->afterStateUpdated(function (Set $set, Get $get, $context) {
+                                                // Очищаем характеристики при смене шаблона
+                                                if ($context === 'create') {
+                                                    $set('attributes', []);
+                                                    $set('calculated_volume', null);
+                                                }
+                                            }),
+
                                         TextInput::make('name')
                                             ->label('Наименование')
                                             ->required()
@@ -134,8 +147,101 @@ class ProductInTransitResource extends Resource
                                             ->label('Производитель')
                                             ->maxLength(255),
 
+                                        TextInput::make('quantity')
+                                            ->label('Количество')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->minValue(1)
+                                            ->required()
+                                            ->live()
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                                self::calculateVolumeForItem($set, $get);
+                                            }),
+
+                                        TextInput::make('shipment_number')
+                                            ->label('Номер партии')
+                                            ->maxLength(255),
+
+                                        Textarea::make('description')
+                                            ->label('Описание')
+                                            ->rows(2)
+                                            ->maxLength(1000)
+                                            ->columnSpan(2),
                                     ]),
 
+                                // Динамические поля характеристик
+                                Grid::make(3)
+                                    ->schema(function (Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if (!$templateId) {
+                                            return [];
+                                        }
+
+                                        $template = ProductTemplate::with('attributes')->find($templateId);
+                                        if (!$template) {
+                                            return [];
+                                        }
+
+                                        $fields = [];
+                                        foreach ($template->attributes as $attribute) {
+                                            $fieldName = "attribute_{$attribute->variable}";
+                                            
+                                            switch ($attribute->type) {
+                                                case 'number':
+                                                    $fields[] = TextInput::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->numeric()
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            self::calculateVolumeForItem($set, $get);
+                                                        });
+                                                    break;
+                                                    
+                                                case 'text':
+                                                    $fields[] = TextInput::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            self::calculateVolumeForItem($set, $get);
+                                                        });
+                                                    break;
+                                                    
+                                                case 'select':
+                                                    $options = $attribute->options_array;
+                                                    $fields[] = Select::make($fieldName)
+                                                        ->label($attribute->full_name)
+                                                        ->options($options)
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            self::calculateVolumeForItem($set, $get);
+                                                        });
+                                                    break;
+                                            }
+                                        }
+
+                                        return $fields;
+                                    })
+                                    ->visible(fn (Get $get) => $get('product_template_id') !== null),
+
+                                // Поле для рассчитанного объема
+                                Grid::make(2)
+                                    ->schema([
+                                        TextInput::make('calculated_volume')
+                                            ->label('Рассчитанный объем')
+                                            ->disabled()
+                                            ->suffix(function (Get $get) {
+                                                $templateId = $get('product_template_id');
+                                                if ($templateId) {
+                                                    $template = ProductTemplate::find($templateId);
+                                                    return $template ? $template->unit : '';
+                                                }
+                                                return '';
+                                            }),
+                                    ])
+                                    ->visible(fn (Get $get) => $get('product_template_id') !== null),
                             ]),
                     ]),
 
@@ -289,6 +395,44 @@ class ProductInTransitResource extends Resource
             'view' => Pages\ViewProductInTransit::route('/{record}'),
             'edit' => Pages\EditProductInTransit::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Рассчитать объем для элемента товара
+     */
+    private static function calculateVolumeForItem(Set $set, Get $get): void
+    {
+        $templateId = $get('product_template_id');
+        if (!$templateId) {
+            return;
+        }
+
+        $template = ProductTemplate::find($templateId);
+        if (!$template || !$template->formula) {
+            return;
+        }
+
+        // Собираем все значения характеристик
+        $attributes = [];
+        $formData = $get();
+        
+        foreach ($formData as $key => $value) {
+            if (str_starts_with($key, 'attribute_') && $value !== null) {
+                $attributeName = str_replace('attribute_', '', $key);
+                $attributes[$attributeName] = $value;
+            }
+        }
+        
+        // Добавляем количество
+        $quantity = $get('quantity') ?? 1;
+        $attributes['quantity'] = $quantity;
+        
+        if (!empty($attributes)) {
+            $testResult = $template->testFormula($attributes);
+            if ($testResult['success']) {
+                $set('calculated_volume', $testResult['result']);
+            }
+        }
     }
 
     public static function getEloquentQuery(): Builder
