@@ -106,6 +106,7 @@ class ProductTemplateResource extends Resource
                                 Forms\Components\Select::make('unit')
                                     ->label('Единица измерения')
                                     ->options([
+                                        'шт' => 'шт',
                                         'мм' => 'мм',
                                         'см' => 'см',
                                         'метр' => 'метр',
