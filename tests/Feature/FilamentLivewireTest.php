@@ -46,7 +46,6 @@ class FilamentLivewireTest extends TestCase
         $productData = [
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'Livewire Test Product',
             'quantity' => 10,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
@@ -59,7 +58,6 @@ class FilamentLivewireTest extends TestCase
 
         // Проверяем, что товар создался
         $this->assertDatabaseHas('products', [
-            'name' => 'Livewire Test Product',
             'warehouse_id' => $this->warehouse->id,
             'product_template_id' => $this->template->id,
         ]);

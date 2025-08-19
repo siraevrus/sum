@@ -11,6 +11,7 @@ tags:
   - name: Auth
   - name: Products
   - name: Sales
+  - name: Stock
   - name: Requests
   - name: Users
   - name: Warehouses
@@ -211,6 +212,37 @@ paths:
         - { $ref: '#/components/parameters/page' }
         - { $ref: '#/components/parameters/per_page' }
         - name: search
+
+  /stocks:
+    get:
+      tags: [Stock]
+      summary: Список остатков (агрегированные данные)
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: warehouse_id
+          in: query
+          schema: { type: integer }
+          description: Фильтр по складу
+        - name: producer
+          in: query
+          schema: { type: string }
+          description: Фильтр по производителю
+        - name: in_stock
+          in: query
+          schema: { type: boolean }
+          description: Только с остатками
+        - name: low_stock
+          in: query
+          schema: { type: boolean }
+          description: Заканчивается (≤10)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedStocks' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
           in: query
           schema: { type: string }
       responses:
@@ -1050,14 +1082,14 @@ components:
 
     CreateProductRequest:
       type: object
-      required: [product_template_id, warehouse_id, name, quantity]
+      required: [product_template_id, warehouse_id, quantity]
       properties:
         product_template_id: { type: integer }
         warehouse_id: { type: integer }
-        name: { type: string }
+        name: { type: string, description: 'Автоматически формируется из характеристик товара (необязательное)' }
         quantity: { type: number }
         description: { type: string }
-        attributes: { type: object, additionalProperties: true }
+        attributes: { type: object, additionalProperties: true, description: 'Характеристики товара (обязательные для выбранного шаблона)' }
         producer: { type: string }
         arrival_date: { type: string, format: date }
         is_active: { type: boolean }
@@ -1110,26 +1142,45 @@ components:
         product: { type: object, properties: { id: { type: integer } } }
         warehouse: { type: object, properties: { id: { type: integer } } }
         user: { type: object, properties: { id: { type: integer } } }
+        quantity: { type: number }
+        cash_amount: { type: number }
+        nocash_amount: { type: number }
+        total_price: { type: number }
+        unit_price: { type: number }
+        price_without_vat: { type: number }
+        vat_amount: { type: number }
+        vat_rate: { type: number }
+        currency: { type: string }
+        exchange_rate: { type: number }
+        payment_status: { type: string }
+        delivery_status: { type: string }
+        sale_date: { type: string, format: date }
+        notes: { type: string, nullable: true }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
 
     CreateSaleRequest:
       type: object
-      required: [product_id, warehouse_id, quantity, unit_price, payment_method, sale_date]
+      required: [warehouse_id, quantity, cash_amount, nocash_amount, sale_date]
       properties:
-        product_id: { type: integer }
-        warehouse_id: { type: integer }
-        quantity: { type: number }
-        unit_price: { type: number }
-        payment_method: { type: string }
-        sale_date: { type: string, format: date }
-        customer_name: { type: string }
-        customer_phone: { type: string }
-        customer_email: { type: string, format: email }
-        customer_address: { type: string }
-        vat_rate: { type: number }
-        payment_status: { type: string }
-        delivery_status: { type: string }
-        notes: { type: string }
-        is_active: { type: boolean }
+        product_id: { type: string, description: 'Составной ключ товара из агрегированных остатков (формат: template_id|warehouse_id|producer|encoded_name)' }
+        warehouse_id: { type: integer, description: 'ID склада для продажи' }
+        quantity: { type: number, description: 'Количество товара для продажи' }
+        cash_amount: { type: number, description: 'Сумма наличными' }
+        nocash_amount: { type: number, description: 'Сумма безналичными' }
+        total_price: { type: number, description: 'Общая сумма (автоматически рассчитывается)' }
+        unit_price: { type: number, description: 'Цена за единицу (автоматически рассчитывается)' }
+        price_without_vat: { type: number, description: 'Цена без НДС (автоматически рассчитывается)' }
+        vat_amount: { type: number, description: 'Сумма НДС (автоматически рассчитывается)' }
+        vat_rate: { type: number, description: 'Ставка НДС (по умолчанию 20%)' }
+        currency: { type: string, description: 'Валюта (по умолчанию RUB)' }
+        exchange_rate: { type: number, description: 'Курс обмена (по умолчанию 1.0)' }
+        payment_status: { type: string, description: 'Статус оплаты (по умолчанию pending)' }
+        delivery_status: { type: string, description: 'Статус доставки (по умолчанию pending)' }
+        sale_date: { type: string, format: date, description: 'Дата продажи' }
+        notes: { type: string, description: 'Дополнительные заметки' }
+        is_active: { type: boolean, description: 'Статус активности (по умолчанию true)' }
 
     UpdateSaleRequest:
       allOf:
@@ -1141,6 +1192,15 @@ components:
         data:
           type: array
           items: { $ref: '#/components/schemas/Sale' }
+        links: { $ref: '#/components/schemas/PaginationLinks' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaginatedStocks:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Stock' }
         links: { $ref: '#/components/schemas/PaginationLinks' }
         meta: { $ref: '#/components/schemas/PaginationMeta' }
 
@@ -1156,6 +1216,22 @@ components:
         total_quantity: { type: number }
         average_sale: { type: number }
         in_delivery: { type: integer }
+
+    Stock:
+      type: object
+      properties:
+        id: { type: string, description: 'Составной ключ для агрегированных данных' }
+        product_template_id: { type: integer }
+        warehouse_id: { type: integer }
+        producer: { type: string }
+        name: { type: string, description: 'Наименование товара (шаблон + характеристики)' }
+        available_quantity: { type: number, description: 'Доступное количество с учетом продаж' }
+        available_volume: { type: number, description: 'Доступный объем с учетом продаж' }
+        items_count: { type: integer, description: 'Количество позиций товара' }
+        first_arrival: { type: string, format: date, description: 'Дата первого поступления' }
+        last_arrival: { type: string, format: date, description: 'Дата последнего поступления' }
+        template: { type: object, properties: { id: { type: integer }, name: { type: string } } }
+        warehouse: { type: object, properties: { id: { type: integer }, name: { type: string } } }
 
     Request:
       type: object
@@ -1263,6 +1339,5 @@ components:
         last_page: { type: integer }
         per_page: { type: integer }
         total: { type: integer }
-
 
 

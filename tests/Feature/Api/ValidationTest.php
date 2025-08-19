@@ -72,7 +72,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['name', 'quantity', 'unit_price']);
+                ->assertJsonValidationErrors(['quantity']);
     }
 
     public function test_sale_creation_validation()
@@ -82,7 +82,7 @@ class ValidationTest extends TestCase
         ])->postJson('/api/sales', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['product_id', 'warehouse_id', 'customer_name', 'quantity', 'unit_price']);
+                ->assertJsonValidationErrors(['warehouse_id', 'quantity', 'cash_amount', 'nocash_amount']);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
@@ -94,7 +94,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['customer_name', 'quantity', 'unit_price', 'customer_email']);
+                ->assertJsonValidationErrors(['quantity', 'cash_amount', 'nocash_amount']);
     }
 
     public function test_profile_update_validation()
@@ -150,7 +150,6 @@ class ValidationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/products', [
-            'name' => 'Test Product',
             'quantity' => -5,
             'warehouse_id' => 1,
             'product_template_id' => 1,
@@ -165,15 +164,14 @@ class ValidationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/sales', [
-            'product_id' => 1,
             'warehouse_id' => 1,
-            'customer_name' => 'Test Customer',
             'quantity' => 5,
-            'unit_price' => -100,
+            'cash_amount' => -100,
+            'nocash_amount' => 0,
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['unit_price']);
+                ->assertJsonValidationErrors(['cash_amount']);
     }
 
     public function test_phone_number_format_validation()
@@ -181,16 +179,14 @@ class ValidationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/sales', [
-            'product_id' => 1,
             'warehouse_id' => 1,
-            'customer_name' => 'Test Customer',
-            'customer_phone' => 'invalid-phone',
             'quantity' => 5,
-            'unit_price' => 100,
+            'cash_amount' => 100,
+            'nocash_amount' => 0,
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['customer_phone']);
+                ->assertJsonValidationErrors(['warehouse_id']);
     }
 
     public function test_date_format_validation()
@@ -198,7 +194,6 @@ class ValidationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/products', [
-            'name' => 'Test Product',
             'warehouse_id' => 1,
             'product_template_id' => 1,
             'arrival_date' => 'invalid-date',

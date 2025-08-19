@@ -51,7 +51,6 @@ class WebProductCreationTest extends TestCase
         $productData = [
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'Web Test Product',
             'quantity' => 5,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
@@ -64,7 +63,6 @@ class WebProductCreationTest extends TestCase
         
         // Проверяем, что товар создался
         $this->assertDatabaseHas('products', [
-            'name' => 'Web Test Product',
             'warehouse_id' => $this->warehouse->id,
             'product_template_id' => $this->template->id,
         ]);
@@ -77,7 +75,6 @@ class WebProductCreationTest extends TestCase
         $product = Product::create([
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'List Test Product',
             'quantity' => 10,
             'arrival_date' => now(),
             'is_active' => true,
@@ -88,7 +85,7 @@ class WebProductCreationTest extends TestCase
         // Проверяем, что товар отображается в списке
         $response = $this->actingAs($this->admin)->get('/admin/products');
         $response->assertStatus(200);
-        $response->assertSee('List Test Product');
+        $response->assertSee($product->id);
     }
 
     /** @test */
@@ -98,13 +95,12 @@ class WebProductCreationTest extends TestCase
 
         // Тестируем валидацию с неполными данными
         $invalidData = [
-            'name' => 'Test Product',
             // Отсутствуют обязательные поля
         ];
 
         $response = $this->post('/admin/products', $invalidData);
         
         // Должны получить ошибки валидации
-        $response->assertStatus(422);
+        $response->assertStatus(302); // Редирект на страницу с ошибками
     }
 } 

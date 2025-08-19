@@ -48,7 +48,6 @@ class FilamentProductCreationTest extends TestCase
         $productData = [
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'Livewire Test Product',
             'producer' => 'Test Producer',
             'quantity' => 10,
             'transport_number' => 'TR-001',
@@ -67,7 +66,6 @@ class FilamentProductCreationTest extends TestCase
 
         // Проверяем, что товар создался
         $this->assertDatabaseHas('products', [
-            'name' => 'Livewire Test Product',
             'warehouse_id' => $this->warehouse->id,
             'product_template_id' => $this->template->id,
             'created_by' => $this->admin->id,
@@ -82,7 +80,6 @@ class FilamentProductCreationTest extends TestCase
         $productData = [
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'Minimal Test Product',
             'quantity' => 1,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
@@ -96,13 +93,12 @@ class FilamentProductCreationTest extends TestCase
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,
-            'name' => 'Minimal Test Product',
         ]);
 
         // Проверяем, что товар отображается в списке
         $response = $this->get('/admin/products');
         $response->assertStatus(200);
-        $response->assertSee('Minimal Test Product');
+        $response->assertSee($product->id);
     }
 
     /** @test */
@@ -112,7 +108,6 @@ class FilamentProductCreationTest extends TestCase
         $rules = [
             'product_template_id' => 'required|exists:product_templates,id',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'name' => 'required|string|max:255',
             'quantity' => 'required|integer|min:1',
             'arrival_date' => 'required|date',
             'is_active' => 'boolean',
@@ -121,7 +116,6 @@ class FilamentProductCreationTest extends TestCase
         $validData = [
             'product_template_id' => $this->template->id,
             'warehouse_id' => $this->warehouse->id,
-            'name' => 'Valid Test Product',
             'quantity' => 5,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
