@@ -49,6 +49,7 @@ class FilamentLivewireTest extends TestCase
             'quantity' => 10,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
+            'attributes' => ['test' => 'value'], // Добавляем характеристики для формирования наименования
         ];
 
         // Создаем товар через Livewire компонент

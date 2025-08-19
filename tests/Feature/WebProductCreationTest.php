@@ -54,6 +54,7 @@ class WebProductCreationTest extends TestCase
             'quantity' => 5,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
+            'attributes' => ['test' => 'value'], // Добавляем характеристики для формирования наименования
         ];
 
         $response = $this->post('/admin/products', $productData);
@@ -78,7 +79,8 @@ class WebProductCreationTest extends TestCase
             'quantity' => 10,
             'arrival_date' => now(),
             'is_active' => true,
-            'attributes' => [],
+            'attributes' => ['test' => 'value'], // Добавляем характеристики для формирования наименования
+            'name' => 'Test Product', // Добавляем наименование вручную для теста
             'created_by' => $this->admin->id,
         ]);
 

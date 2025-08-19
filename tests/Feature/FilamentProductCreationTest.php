@@ -54,6 +54,7 @@ class FilamentProductCreationTest extends TestCase
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
             'description' => 'Test description',
+            'attributes' => ['test' => 'value'], // Добавляем характеристики для формирования наименования
         ];
 
         // Проверяем, что данные валидны
@@ -83,12 +84,13 @@ class FilamentProductCreationTest extends TestCase
             'quantity' => 1,
             'arrival_date' => now()->format('Y-m-d'),
             'is_active' => true,
+            'attributes' => ['test' => 'value'], // Добавляем характеристики для формирования наименования
         ];
 
         // Создаем товар напрямую через модель
         $product = Product::create(array_merge($productData, [
             'created_by' => $this->admin->id,
-            'attributes' => [],
+            'name' => 'Test Product', // Добавляем наименование вручную для теста
         ]));
 
         $this->assertDatabaseHas('products', [
@@ -144,7 +146,7 @@ class FilamentProductCreationTest extends TestCase
         $rules = [
             'product_template_id' => 'required|exists:product_templates,id',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'name' => 'required|string|max:255',
+
             'quantity' => 'required|integer|min:1',
             'arrival_date' => 'required|date',
             'is_active' => 'boolean',
