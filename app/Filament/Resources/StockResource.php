@@ -168,6 +168,7 @@ class StockResource extends Resource
 
         // Группируем товары по производителю, складу и шаблону
         $query->select([
+            DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", COALESCE(producer, "unknown"), "_", COALESCE(name, "unnamed")) as id'),
             'product_template_id',
             'warehouse_id',
             'producer',
@@ -220,5 +221,22 @@ class StockResource extends Resource
             'index' => Pages\ListStocks::route('/'),
             // Убираем create, view, edit - работаем только со списком остатков
         ];
+    }
+
+    /**
+     * Получить ключ записи для таблицы
+     * Используем составной ключ для агрегированных данных
+     */
+    public static function getTableRecordKey($record): string
+    {
+        if (is_array($record)) {
+            return $record['id'] ?? 'unknown';
+        }
+        
+        if (is_object($record) && method_exists($record, 'getAttribute')) {
+            return $record->getAttribute('id') ?? 'unknown';
+        }
+        
+        return 'unknown';
     }
 } 
