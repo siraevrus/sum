@@ -100,6 +100,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'attributes' => 'sometimes|array',
             'quantity' => 'required|integer|min:1',
+            'transport_number' => 'nullable|string|max:255', // Номер транспортного средства
             'producer' => 'nullable|string|max:255',
             'arrival_date' => 'sometimes|date',
             'is_active' => 'boolean',
@@ -136,6 +137,7 @@ class ProductController extends Controller
             'description' => $request->description,
             'attributes' => $request->get('attributes', []),
             'quantity' => $request->quantity,
+            'transport_number' => $request->get('transport_number'), // Номер транспортного средства
             'producer' => $request->producer,
             'arrival_date' => $request->get('arrival_date', now()->toDateString()),
             'is_active' => $request->get('is_active', true),
@@ -167,6 +169,7 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'attributes' => 'sometimes|array',
             'quantity' => 'sometimes|integer|min:0',
+            'transport_number' => 'nullable|string|max:255', // Номер транспортного средства
             'producer' => 'nullable|string|max:255',
             'arrival_date' => 'sometimes|date',
             'is_active' => 'boolean',
@@ -174,7 +177,7 @@ class ProductController extends Controller
 
         $product->update($request->only([
             'name', 'description', 'attributes', 'quantity', 
-            'producer', 'arrival_date', 'is_active'
+            'transport_number', 'producer', 'arrival_date', 'is_active'
         ]));
 
         // Пересчитываем объем если изменились атрибуты

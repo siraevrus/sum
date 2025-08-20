@@ -1229,6 +1229,7 @@ components:
         description: { type: string, nullable: true }
         quantity: { type: number }
         attributes: { type: object, additionalProperties: true, nullable: true }
+        transport_number: { type: string, nullable: true }
         producer: { type: string, nullable: true }
         arrival_date: { type: string, format: date, nullable: true }
         is_active: { type: boolean }
@@ -1256,6 +1257,7 @@ components:
         quantity: { type: number }
         description: { type: string }
         attributes: { type: object, additionalProperties: true, description: 'Характеристики товара (обязательные для выбранного шаблона)' }
+        transport_number: { type: string, description: 'Номер транспортного средства' }
         producer: { type: string }
         arrival_date: { type: string, format: date }
         is_active: { type: boolean }
@@ -1270,6 +1272,7 @@ components:
         id: { type: integer }
         name: { type: string }
         quantity: { type: number }
+        transport_number: { type: string, nullable: true }
         calculated_volume: { type: number }
         warehouse: { type: string }
         template: { type: string }
