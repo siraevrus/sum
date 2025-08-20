@@ -14,6 +14,7 @@ tags:
   - name: Stock
   - name: Requests
   - name: Users
+  - name: Companies
   - name: Warehouses
   - name: ProductTemplates
 security:
@@ -649,6 +650,105 @@ paths:
       responses:
         '200': { description: OK }
 
+  /companies:
+    get:
+      tags: [Companies]
+      summary: Список компаний
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Companies]
+      summary: Создать компанию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCompanyRequest' }
+      responses:
+        '201': { description: Создано }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Компания по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Companies]
+      summary: Обновить компанию
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateCompanyRequest' }
+      responses:
+        '200': { description: OK }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Companies]
+      summary: Удалить компанию
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+
+  /companies/{id}/warehouses:
+    get:
+      tags: [Companies]
+      summary: Склады компании
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /warehouses:
     get:
       tags: [Warehouses]
@@ -1063,6 +1163,63 @@ components:
         password_confirmation: { type: string, format: password }
         current_password: { type: string, format: password }
         new_password: { type: string, format: password }
+
+    Company:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        legal_address: { type: string, nullable: true }
+        postal_address: { type: string, nullable: true }
+        phone_fax: { type: string, nullable: true }
+        general_director: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true }
+        inn: { type: string, nullable: true }
+        kpp: { type: string, nullable: true }
+        ogrn: { type: string, nullable: true }
+        bank: { type: string, nullable: true }
+        account_number: { type: string, nullable: true }
+        correspondent_account: { type: string, nullable: true }
+        bik: { type: string, nullable: true }
+        is_archived: { type: boolean }
+        archived_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateCompanyRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 255, description: "Название компании" }
+        legal_address: { type: string, maxLength: 500, nullable: true, description: "Юридический адрес" }
+        postal_address: { type: string, maxLength: 500, nullable: true, description: "Почтовый адрес" }
+        phone_fax: { type: string, maxLength: 100, nullable: true, description: "Телефон/факс" }
+        general_director: { type: string, maxLength: 255, nullable: true, description: "Генеральный директор" }
+        email: { type: string, format: email, maxLength: 255, nullable: true, description: "Email компании" }
+        inn: { type: string, maxLength: 12, nullable: true, description: "ИНН" }
+        kpp: { type: string, maxLength: 9, nullable: true, description: "КПП" }
+        ogrn: { type: string, maxLength: 15, nullable: true, description: "ОГРН" }
+        bank: { type: string, maxLength: 255, nullable: true, description: "Банк" }
+        account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
+        correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
+        bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
+
+    UpdateCompanyRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255, nullable: true, description: "Название компании" }
+        legal_address: { type: string, maxLength: 500, nullable: true, description: "Юридический адрес" }
+        postal_address: { type: string, maxLength: 500, nullable: true, description: "Почтовый адрес" }
+        phone_fax: { type: string, maxLength: 100, nullable: true, description: "Телефон/факс" }
+        general_director: { type: string, maxLength: 255, nullable: true, description: "Генеральный директор" }
+        email: { type: string, format: email, maxLength: 255, nullable: true, description: "Email компании" }
+        inn: { type: string, maxLength: 12, nullable: true, description: "ИНН" }
+        kpp: { type: string, maxLength: 9, nullable: true, description: "КПП" }
+        ogrn: { type: string, maxLength: 15, nullable: true, description: "ОГРН" }
+        bank: { type: string, maxLength: 255, nullable: true, description: "Банк" }
+        account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
+        correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
+        bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
 
     Product:
       type: object

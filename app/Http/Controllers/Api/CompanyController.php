@@ -74,6 +74,127 @@ class CompanyController extends Controller
 	}
 
 	/**
+	 * Создать новую компанию
+	 */
+	public function store(Request $request): JsonResponse
+	{
+		// Валидация данных
+		$validated = $request->validate([
+			'name' => 'required|string|max:255',
+			'legal_address' => 'nullable|string|max:500',
+			'postal_address' => 'nullable|string|max:500',
+			'phone_fax' => 'nullable|string|max:100',
+			'general_director' => 'nullable|string|max:255',
+			'email' => 'nullable|email|max:255',
+			'inn' => 'nullable|string|max:12|unique:companies,inn',
+			'kpp' => 'nullable|string|max:9',
+			'ogrn' => 'nullable|string|max:15',
+			'bank' => 'nullable|string|max:255',
+			'account_number' => 'nullable|string|max:20',
+			'correspondent_account' => 'nullable|string|max:20',
+			'bik' => 'nullable|string|max:9',
+		]);
+
+		try {
+			// Создаем компанию
+			$company = Company::create($validated);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Компания успешно создана',
+				'data' => $company,
+			], 201);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Ошибка при создании компании',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
+
+	/**
+	 * Обновить компанию
+	 */
+	public function update(Request $request, Company $company): JsonResponse
+	{
+		// Проверяем, что компания не архивирована
+		if ($company->is_archived) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Компания архивирована',
+			], 404);
+		}
+
+		// Валидация данных
+		$validated = $request->validate([
+			'name' => 'sometimes|required|string|max:255',
+			'legal_address' => 'nullable|string|max:500',
+			'postal_address' => 'nullable|string|max:500',
+			'phone_fax' => 'nullable|string|max:100',
+			'general_director' => 'nullable|string|max:255',
+			'email' => 'nullable|email|max:255',
+			'inn' => 'nullable|string|max:12|unique:companies,inn,' . $company->id,
+			'kpp' => 'nullable|string|max:9',
+			'ogrn' => 'nullable|string|max:15',
+			'bank' => 'nullable|string|max:255',
+			'account_number' => 'nullable|string|max:20',
+			'correspondent_account' => 'nullable|string|max:20',
+			'bik' => 'nullable|string|max:9',
+		]);
+
+		try {
+			// Обновляем компанию
+			$company->update($validated);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Компания успешно обновлена',
+				'data' => $company->fresh(),
+			]);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Ошибка при обновлении компании',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
+
+	/**
+	 * Удалить компанию
+	 */
+	public function destroy(Company $company): JsonResponse
+	{
+		// Проверяем, что компания не архивирована
+		if ($company->is_archived) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Компания не найдена',
+			], 404);
+		}
+
+		try {
+			// Архивируем компанию (soft delete)
+			$company->archive();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Компания успешно удалена',
+			]);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Ошибка при удалении компании',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
+
+	/**
 	 * Получить склады компании
 	 */
 	public function warehouses(Request $request, Company $company): JsonResponse
