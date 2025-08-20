@@ -107,7 +107,7 @@ class ProductCreationDebugTest extends TestCase
         $validator = Validator::make($formData, [
             'product_template_id' => 'required|exists:product_templates,id',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255', // Теперь не обязательно
             'quantity' => 'required|integer|min:1',
             'arrival_date' => 'required|date',
             'is_active' => 'boolean',

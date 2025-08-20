@@ -233,7 +233,7 @@ class ProductApiTest extends TestCase
         ])->postJson('/api/products', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['name', 'warehouse_id', 'product_template_id']);
+                ->assertJsonValidationErrors(['warehouse_id', 'product_template_id']);
     }
 
     public function test_product_not_found()

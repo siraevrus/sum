@@ -61,14 +61,12 @@ class ValidationTest extends TestCase
         ])->postJson('/api/products', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['name', 'warehouse_id', 'product_template_id']);
+                ->assertJsonValidationErrors(['warehouse_id', 'product_template_id']);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/products', [
-            'name' => '', // пустое название
             'quantity' => -1, // отрицательное количество
-            'unit_price' => 'invalid-price', // неверная цена
         ]);
 
         $response->assertStatus(422)

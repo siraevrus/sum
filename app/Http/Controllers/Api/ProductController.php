@@ -96,7 +96,7 @@ class ProductController extends Controller
         $request->validate([
             'product_template_id' => 'required|exists:product_templates,id',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255', // Теперь не обязательно, генерируется автоматически
             'description' => 'nullable|string',
             'attributes' => 'sometimes|array',
             'quantity' => 'required|integer|min:1',
@@ -119,11 +119,20 @@ class ProductController extends Controller
             }
         }
 
+        // Генерируем имя из атрибутов, если оно не предоставлено
+        $name = $request->name;
+        if (!$name && $request->has('attributes')) {
+            $template = ProductTemplate::find($request->product_template_id);
+            if ($template) {
+                $name = $template->name . ': ' . implode(', ', array_values($request->get('attributes', [])));
+            }
+        }
+
         $product = Product::create([
             'product_template_id' => $request->product_template_id,
             'warehouse_id' => $request->warehouse_id,
             'created_by' => $user->id,
-            'name' => $request->name,
+            'name' => $name ?? 'Товар без названия',
             'description' => $request->description,
             'attributes' => $request->get('attributes', []),
             'quantity' => $request->quantity,

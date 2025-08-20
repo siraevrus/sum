@@ -5,3 +5,4 @@ alwaysApply: false
 ---
 
 laravel 12 + filament
+если что то меняешь в filament то сразу проверяй в api
