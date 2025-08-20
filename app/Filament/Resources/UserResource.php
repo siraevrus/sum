@@ -192,11 +192,6 @@ class UserResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('ФИО')
                     ->searchable(['first_name', 'last_name', 'middle_name'])
