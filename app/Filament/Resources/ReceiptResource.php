@@ -181,11 +181,6 @@ class ReceiptResource extends Resource
                     ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
-                SelectFilter::make('product_template_id')
-                    ->label('Шаблон')
-                    ->options(ProductTemplate::pluck('name', 'id'))
-                    ->searchable(),
-
                 SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {

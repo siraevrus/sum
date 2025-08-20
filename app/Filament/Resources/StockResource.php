@@ -121,10 +121,6 @@ class StockResource extends Resource
                 Tables\Filters\SelectFilter::make('producer')
                     ->label('Производитель')
                     ->options(fn () => Product::distinct()->pluck('producer', 'producer')->filter()),
-                // Убираем фильтр по статусу, так как работаем с агрегированными данными
-                Tables\Filters\Filter::make('in_stock')
-                    ->label('В наличии')
-                    ->query(fn (Builder $query): Builder => $query->having('available_quantity', '>', 0)),
 
             ])
             ->actions([
