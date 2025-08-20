@@ -125,9 +125,7 @@ class StockResource extends Resource
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(fn (Builder $query): Builder => $query->having('available_quantity', '>', 0)),
-                Tables\Filters\Filter::make('low_stock')
-                    ->label('Мало остатков')
-                    ->query(fn (Builder $query): Builder => $query->having('available_quantity', '<=', 10)->having('available_quantity', '>', 0)),
+
             ])
             ->actions([
                 // Убираем View и Edit, так как работаем с агрегированными данными

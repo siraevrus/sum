@@ -309,11 +309,6 @@ class ProductResource extends Resource
                     ->options(Warehouse::pluck('name', 'id'))
                     ->searchable(),
 
-                SelectFilter::make('product_template_id')
-                    ->label('Шаблон')
-                    ->options(ProductTemplate::pluck('name', 'id'))
-                    ->searchable(),
-
                 SelectFilter::make('producer')
                     ->label('Производитель')
                     ->options(function () {
@@ -322,34 +317,18 @@ class ProductResource extends Resource
                     })
                     ->searchable(),
 
-                Filter::make('in_stock')
-                    ->label('Только с остатками')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('quantity', '>', 0);
-                    }),
-
-                Filter::make('low_stock')
-                    ->label('Заканчивается (≤10)')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('quantity', '<=', 10)->where('quantity', '>', 0);
-                    }),
-
-                Filter::make('out_of_stock')
-                    ->label('Нет в наличии')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('quantity', '<=', 0);
-                    }),
-
-                Filter::make('active')
-                    ->label('Только активные')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('is_active', true);
-                    }),
-
-                Filter::make('recent_arrivals')
-                    ->label('Недавно поступившие (30 дней)')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('arrival_date', '>=', now()->subDays(30));
+                Filter::make('arrival_date_from')
+                    ->label('Дата поступления от')
+                    ->form([
+                        Forms\Components\DatePicker::make('date_from')
+                            ->label('С даты'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn (Builder $query, $date): Builder => $query->where('arrival_date', '>=', $date),
+                            );
                     }),
             ])
             ->actions([

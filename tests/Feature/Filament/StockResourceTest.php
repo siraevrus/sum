@@ -218,19 +218,7 @@ class StockResourceTest extends TestCase
         $response->assertSee('В наличии');
     }
 
-    /** @test */
-    public function stock_list_shows_low_stock_filter()
-    {
-        $admin = User::factory()->create([
-            'role' => UserRole::ADMIN,
-        ]);
 
-        $response = $this->actingAs($admin)
-            ->get('/admin/stocks');
-
-        $response->assertStatus(200);
-        $response->assertSee('Мало остатков');
-    }
 
     /** @test */
     public function stock_list_shows_calculated_volume()
