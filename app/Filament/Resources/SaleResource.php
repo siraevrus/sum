@@ -135,7 +135,7 @@ class SaleResource extends Resource
                                         $set('product_id', null);
                                         $set('quantity', 1);
                                         // Обновляем общую сумму
-                                        $this->calculateTotalPrice($set, $get);
+                                        static::calculateTotalPrice($set, $get);
                                     }),
 
                                 Select::make('product_id')
@@ -194,7 +194,7 @@ class SaleResource extends Resource
                                         // Сбрасываем количество при смене товара
                                         $set('quantity', 1);
                                         // Обновляем общую сумму
-                                        $this->calculateTotalPrice($set, $get);
+                                        static::calculateTotalPrice($set, $get);
                                     }),
 
                                 TextInput::make('quantity')
@@ -205,7 +205,7 @@ class SaleResource extends Resource
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $this->calculateTotalPrice($set, $get);
+                                        static::calculateTotalPrice($set, $get);
                                     })
                                     ->maxValue(function (Get $get) {
                                         $productId = $get('product_id');
@@ -235,7 +235,7 @@ class SaleResource extends Resource
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $this->calculateTotalPrice($set, $get);
+                                        static::calculateTotalPrice($set, $get);
                                     }),
 
                                 TextInput::make('nocash_amount')
@@ -245,7 +245,7 @@ class SaleResource extends Resource
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $this->calculateTotalPrice($set, $get);
+                                        static::calculateTotalPrice($set, $get);
                                     }),
 
                                 TextInput::make('total_price')
