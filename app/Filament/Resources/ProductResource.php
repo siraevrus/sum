@@ -254,10 +254,6 @@ class ProductResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('template.name')
-                    ->label('Шаблон')
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
