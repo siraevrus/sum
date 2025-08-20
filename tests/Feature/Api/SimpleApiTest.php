@@ -182,23 +182,25 @@ class SimpleApiTest extends TestCase
     {
         // Тест на неверные учетные данные
         $response = $this->postJson('/api/auth/login', [
-            'email' => 'nonexistent@example.com',
+            'login' => 'nonexistent@example.com',
             'password' => 'wrongpassword',
         ]);
 
-        $response->assertStatus(422)
+        $response->assertStatus(401)
                 ->assertJson([
-                    'message' => 'The login field is required.',
+                    'message' => 'Неверные учетные данные',
                 ]);
 
-        // Тест на неверный формат email
+        // Тест на неверный формат login
         $response = $this->postJson('/api/auth/login', [
-            'email' => 'invalid-email',
+            'login' => 'invalid-email',
             'password' => 'password',
         ]);
 
-        $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email']);
+        $response->assertStatus(401)
+                ->assertJson([
+                    'message' => 'Неверные учетные данные',
+                ]);
     }
 
     public function test_api_supports_json_responses()
