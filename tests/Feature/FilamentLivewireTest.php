@@ -71,7 +71,8 @@ class FilamentLivewireTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get('/admin/products/create');
         $response->assertStatus(200);
-        $response->assertSee('Создать товар');
+        // Filament автоматически генерирует заголовок из modelLabel
+        $response->assertSee('Создать Товар');
     }
 
     /** @test */

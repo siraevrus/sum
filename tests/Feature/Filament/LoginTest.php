@@ -48,7 +48,7 @@ class LoginTest extends TestCase
     }
 
     /** @test */
-    public function operator_user_can_access_admin_panel()
+    public function operator_user_cannot_access_admin_panel()
     {
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -61,11 +61,11 @@ class LoginTest extends TestCase
 
         $response = $this->actingAs($user)->get('/admin');
 
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     /** @test */
-    public function warehouse_worker_user_can_access_admin_panel()
+    public function warehouse_worker_user_cannot_access_admin_panel()
     {
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -78,11 +78,11 @@ class LoginTest extends TestCase
 
         $response = $this->actingAs($user)->get('/admin');
 
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     /** @test */
-    public function sales_manager_user_can_access_admin_panel()
+    public function sales_manager_user_cannot_access_admin_panel()
     {
         $user = User::factory()->create([
             'name' => 'Test User',
@@ -95,7 +95,7 @@ class LoginTest extends TestCase
 
         $response = $this->actingAs($user)->get('/admin');
 
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     /** @test */

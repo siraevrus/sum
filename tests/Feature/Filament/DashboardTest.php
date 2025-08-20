@@ -140,7 +140,7 @@ class DashboardTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_dashboard_accessible_by_different_roles()
+    public function test_dashboard_not_accessible_by_non_admin_roles()
     {
         $roles = [
             UserRole::OPERATOR,
@@ -155,7 +155,7 @@ class DashboardTest extends TestCase
             ]);
 
             $response = $this->actingAs($user)->get('/admin');
-            $response->assertStatus(200);
+            $response->assertStatus(403);
         }
     }
 

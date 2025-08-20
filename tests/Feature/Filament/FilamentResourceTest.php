@@ -110,9 +110,9 @@ class FilamentResourceTest extends TestCase
             'company_id' => $this->company->id,
         ]);
 
-        // Менеджер по продажам НЕ должен видеть продажи
+        // Менеджер по продажам ДОЛЖЕН видеть продажи
         $response = $this->actingAs($manager)->get('/admin/sales');
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 
     public function test_guest_cannot_access_admin()

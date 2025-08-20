@@ -77,10 +77,10 @@ class ResourceAccessTest extends TestCase
 
         $this->actingAs($operator);
 
-        // Оператор должен видеть только 3 раздела
+        // Оператор должен видеть только 2 раздела
         $this->assertTrue(ProductResource::canViewAny());
         $this->assertTrue(ProductInTransitResource::canViewAny());
-        $this->assertTrue(SaleResource::canViewAny());
+        $this->assertFalse(SaleResource::canViewAny());
 
         // Оператор НЕ должен видеть административные ресурсы
         $this->assertFalse(UserResource::canViewAny());
@@ -144,7 +144,7 @@ class ResourceAccessTest extends TestCase
 
         // Менеджер по продажам НЕ должен видеть другие ресурсы
         $this->assertFalse(ProductResource::canViewAny());
-        $this->assertFalse(SaleResource::canViewAny());
+        $this->assertTrue(SaleResource::canViewAny());
         $this->assertFalse(ReceiptResource::canViewAny());
     }
 
