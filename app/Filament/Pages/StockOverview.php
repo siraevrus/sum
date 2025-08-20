@@ -75,9 +75,6 @@ class StockOverview extends Page implements HasTable
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(fn (Builder $query): Builder => $query->where('quantity', '>', 0)),
-                Tables\Filters\Filter::make('low_stock')
-                    ->label('Мало остатков')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity', '<=', 10)->where('quantity', '>', 0)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
