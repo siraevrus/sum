@@ -38,6 +38,8 @@ class CompanyFactory extends Factory
             'account_number' => $this->faker->numerify('##################'),
             'correspondent_account' => $this->faker->numerify('##################'),
             'bik' => $this->faker->numerify('#########'),
+            'employees_count' => $this->faker->numberBetween(0, 100),
+            'warehouses_count' => $this->faker->numberBetween(0, 10),
             'is_archived' => false,
             'archived_at' => null,
         ];

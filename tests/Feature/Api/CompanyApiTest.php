@@ -255,4 +255,76 @@ class CompanyApiTest extends TestCase
         $this->assertCount(1, $responseData);
         $this->assertStringContainsString('Alpha', $responseData[0]['name']);
     }
+
+    public function test_can_create_company_with_counts(): void
+    {
+        $companyData = [
+            'name' => 'ООО "Компания с количеством"',
+            'employees_count' => 25,
+            'warehouses_count' => 3,
+        ];
+
+        $response = $this->postJson('/api/companies', $companyData);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data',
+            ])
+            ->assertJson([
+                'success' => true,
+                'message' => 'Компания успешно создана',
+            ]);
+
+        $this->assertDatabaseHas('companies', [
+            'name' => 'ООО "Компания с количеством"',
+            'employees_count' => 25,
+            'warehouses_count' => 3,
+        ]);
+    }
+
+    public function test_can_update_company_counts(): void
+    {
+        $company = Company::factory()->create([
+            'employees_count' => 10,
+            'warehouses_count' => 1,
+        ]);
+
+        $updateData = [
+            'employees_count' => 50,
+            'warehouses_count' => 5,
+        ];
+
+        $response = $this->putJson("/api/companies/{$company->id}", $updateData);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data',
+            ])
+            ->assertJson([
+                'success' => true,
+                'message' => 'Компания успешно обновлена',
+            ]);
+
+        $this->assertDatabaseHas('companies', [
+            'id' => $company->id,
+            'employees_count' => 50,
+            'warehouses_count' => 5,
+        ]);
+    }
+
+    public function test_company_counts_validation(): void
+    {
+        $response = $this->postJson('/api/companies', [
+            'name' => 'Тестовая компания',
+            'employees_count' => -5, // Отрицательное значение
+            'warehouses_count' => 'invalid', // Неверный тип
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['employees_count', 'warehouses_count']);
+    }
 }
