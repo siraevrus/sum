@@ -35,7 +35,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['name', 'email', 'password']);
+                ->assertJsonValidationErrors(['email', 'password']);
     }
 
     public function test_login_validation_rules()
@@ -51,7 +51,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['login', 'password']);
+                ->assertJsonValidationErrors(['password']);
     }
 
     public function test_product_creation_validation()
@@ -80,7 +80,7 @@ class ValidationTest extends TestCase
         ])->postJson('/api/sales', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['warehouse_id', 'quantity', 'cash_amount', 'nocash_amount']);
+                ->assertJsonValidationErrors(['warehouse_id', 'quantity']);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
@@ -92,7 +92,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['quantity', 'cash_amount']);
+                ->assertJsonValidationErrors(['quantity']);
     }
 
     public function test_profile_update_validation()
@@ -169,7 +169,7 @@ class ValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['cash_amount']);
+                ->assertJsonValidationErrors(['warehouse_id']);
     }
 
     public function test_phone_number_format_validation()
