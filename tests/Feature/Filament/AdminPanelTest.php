@@ -22,7 +22,7 @@ class AdminPanelTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_operator_can_access_admin_panel()
+    public function test_operator_cannot_access_dashboard()
     {
         $operator = User::factory()->create([
             'role' => UserRole::OPERATOR->value,
@@ -30,10 +30,11 @@ class AdminPanelTest extends TestCase
 
         $response = $this->actingAs($operator)->get('/admin');
 
-        $response->assertStatus(200);
+        // Оператор не может получить доступ к Dashboard (только админ)
+        $response->assertStatus(403);
     }
 
-    public function test_warehouse_worker_can_access_admin_panel()
+    public function test_warehouse_worker_cannot_access_dashboard()
     {
         $worker = User::factory()->create([
             'role' => UserRole::WAREHOUSE_WORKER->value,
@@ -41,10 +42,11 @@ class AdminPanelTest extends TestCase
 
         $response = $this->actingAs($worker)->get('/admin');
 
-        $response->assertStatus(200);
+        // Работник склада не может получить доступ к Dashboard (только админ)
+        $response->assertStatus(403);
     }
 
-    public function test_sales_manager_can_access_admin_panel()
+    public function test_sales_manager_cannot_access_dashboard()
     {
         $manager = User::factory()->create([
             'role' => UserRole::SALES_MANAGER->value,
@@ -52,7 +54,8 @@ class AdminPanelTest extends TestCase
 
         $response = $this->actingAs($manager)->get('/admin');
 
-        $response->assertStatus(200);
+        // Менеджер по продажам не может получить доступ к Dashboard (только админ)
+        $response->assertStatus(403);
     }
 
     public function test_guest_cannot_access_admin_panel()
