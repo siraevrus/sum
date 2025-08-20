@@ -25,11 +25,15 @@ class Company extends Model
         'account_number',
         'correspondent_account',
         'bik',
+        'employees_count',
+        'warehouses_count',
         'is_archived',
         'archived_at',
     ];
 
     protected $casts = [
+        'employees_count' => 'integer',
+        'warehouses_count' => 'integer',
         'is_archived' => 'boolean',
         'archived_at' => 'datetime',
     ];
@@ -51,11 +55,19 @@ class Company extends Model
     }
 
     /**
-     * Get the employees count for the company.
+     * Get the dynamic employees count for the company.
      */
-    public function getEmployeesCountAttribute(): int
+    public function getDynamicEmployeesCountAttribute(): int
     {
         return $this->employees()->count();
+    }
+
+    /**
+     * Get the dynamic warehouses count for the company.
+     */
+    public function getDynamicWarehousesCountAttribute(): int
+    {
+        return $this->warehouses()->count();
     }
 
     /**
@@ -86,5 +98,30 @@ class Company extends Model
             'is_archived' => false,
             'archived_at' => null,
         ]);
+    }
+
+    /**
+     * Update employees count
+     */
+    public function updateEmployeesCount(): void
+    {
+        $this->update(['employees_count' => $this->employees()->count()]);
+    }
+
+    /**
+     * Update warehouses count
+     */
+    public function updateWarehousesCount(): void
+    {
+        $this->update(['warehouses_count' => $this->warehouses()->count()]);
+    }
+
+    /**
+     * Update both counts
+     */
+    public function updateCounts(): void
+    {
+        $this->updateEmployeesCount();
+        $this->updateWarehousesCount();
     }
 }

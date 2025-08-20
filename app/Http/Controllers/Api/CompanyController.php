@@ -93,6 +93,8 @@ class CompanyController extends Controller
 			'account_number' => 'nullable|string|max:20',
 			'correspondent_account' => 'nullable|string|max:20',
 			'bik' => 'nullable|string|max:9',
+			'employees_count' => 'nullable|integer|min:0',
+			'warehouses_count' => 'nullable|integer|min:0',
 		]);
 
 		try {
@@ -134,7 +136,7 @@ class CompanyController extends Controller
 			'postal_address' => 'nullable|string|max:500',
 			'phone_fax' => 'nullable|string|max:100',
 			'general_director' => 'nullable|string|max:255',
-			'email' => 'nullable|email|max:255',
+			'email' => 'nullable|string|max:255',
 			'inn' => 'nullable|string|max:12|unique:companies,inn,' . $company->id,
 			'kpp' => 'nullable|string|max:9',
 			'ogrn' => 'nullable|string|max:15',
@@ -142,6 +144,8 @@ class CompanyController extends Controller
 			'account_number' => 'nullable|string|max:20',
 			'correspondent_account' => 'nullable|string|max:20',
 			'bik' => 'nullable|string|max:9',
+			'employees_count' => 'nullable|integer|min:0',
+			'warehouses_count' => 'nullable|integer|min:0',
 		]);
 
 		try {

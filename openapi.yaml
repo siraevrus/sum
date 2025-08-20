@@ -1181,6 +1181,8 @@ components:
         account_number: { type: string, nullable: true }
         correspondent_account: { type: string, nullable: true }
         bik: { type: string, nullable: true }
+        employees_count: { type: integer, nullable: true, description: 'Количество сотрудников' }
+        warehouses_count: { type: integer, nullable: true, description: 'Количество складов' }
         is_archived: { type: boolean }
         archived_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
@@ -1203,6 +1205,8 @@ components:
         account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
         correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
         bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
+        employees_count: { type: integer, nullable: true, description: "Количество сотрудников" }
+        warehouses_count: { type: integer, nullable: true, description: "Количество складов" }
 
     UpdateCompanyRequest:
       type: object
@@ -1220,6 +1224,8 @@ components:
         account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
         correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
         bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
+        employees_count: { type: integer, nullable: true, description: "Количество сотрудников" }
+        warehouses_count: { type: integer, nullable: true, description: "Количество складов" }
 
     Product:
       type: object
