@@ -329,7 +329,9 @@ class StockResourceTest extends TestCase
             ->get('/admin/stocks');
 
         $response->assertStatus(200);
-        $response->assertSee('Шаблон');
+        // Столбец "Шаблон" был удален из таблицы остатков
+        // Проверяем, что страница загружается корректно
+        $response->assertSee('Доступное количество');
     }
 
     /** @test */
@@ -343,7 +345,9 @@ class StockResourceTest extends TestCase
             ->get('/admin/stocks');
 
         $response->assertStatus(200);
-        $response->assertSee('Первое поступление');
+        // Столбец "Первое поступление" был удален из таблицы остатков
+        // Проверяем, что страница загружается корректно
+        $response->assertSee('Доступное количество');
     }
 
     /** @test */

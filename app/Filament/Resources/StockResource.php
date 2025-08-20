@@ -112,22 +112,6 @@ class StockResource extends Resource
                         thousandsSeparator: ' ',
                     )
                     ->sortable(),
-                Tables\Columns\TextColumn::make('items_count')
-                    ->label('Позиций')
-                    ->numeric()
-                    ->sortable()
-                    ->badge(),
-                Tables\Columns\TextColumn::make('productTemplate.name')
-                    ->label('Шаблон')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('first_arrival')
-                    ->label('Первое поступление')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('last_arrival')
-                    ->label('Последнее поступление')
-                    ->date()
-                    ->sortable(),
                 // Убираем колонку статуса, так как работаем с агрегированными данными
             ])
             ->filters([
