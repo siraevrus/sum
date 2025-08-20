@@ -47,7 +47,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $loginData = [
-            'email' => 'test@example.com',
+            'login' => 'test@example.com',
             'password' => 'password123',
         ];
 
@@ -74,7 +74,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $loginData = [
-            'email' => 'test@example.com',
+            'login' => 'test@example.com',
             'password' => 'wrongpassword',
         ];
 
@@ -161,7 +161,7 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/auth/login', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email', 'password']);
+                ->assertJsonValidationErrors(['login', 'password']);
     }
 
     public function test_blocked_user_cannot_login()
@@ -174,7 +174,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $loginData = [
-            'email' => 'test@example.com',
+            'login' => 'test@example.com',
             'password' => 'password123',
         ];
 

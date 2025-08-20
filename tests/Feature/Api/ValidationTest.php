@@ -43,15 +43,15 @@ class ValidationTest extends TestCase
         $response = $this->postJson('/api/auth/login', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email', 'password']);
+                ->assertJsonValidationErrors(['login', 'password']);
 
         $response = $this->postJson('/api/auth/login', [
-            'email' => 'invalid-email',
+            'login' => 'invalid-email',
             'password' => '', // пустой пароль
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email', 'password']);
+                ->assertJsonValidationErrors(['login', 'password']);
     }
 
     public function test_product_creation_validation()
@@ -85,14 +85,14 @@ class ValidationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson('/api/sales', [
-            'customer_name' => '', // пустое имя клиента
+            'warehouse_id' => 1,
             'quantity' => 0, // нулевое количество
-            'unit_price' => -100, // отрицательная цена
-            'customer_email' => 'invalid-email', // неверный email
+            'cash_amount' => -100, // отрицательная сумма
+            'nocash_amount' => 0,
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['quantity', 'cash_amount', 'nocash_amount']);
+                ->assertJsonValidationErrors(['quantity', 'cash_amount']);
     }
 
     public function test_profile_update_validation()

@@ -99,8 +99,10 @@ class LoginByUsernameTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['login']);
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Неверные учетные данные',
+            ]);
     }
 
     /** @test */
@@ -119,8 +121,10 @@ class LoginByUsernameTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['login']);
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Неверные учетные данные',
+            ]);
     }
 
     /** @test */
@@ -150,8 +154,10 @@ class LoginByUsernameTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['login']);
+        $response->assertStatus(401)
+            ->assertJson([
+                'message' => 'Неверные учетные данные',
+            ]);
     }
 
     /** @test */

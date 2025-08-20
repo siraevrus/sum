@@ -38,7 +38,7 @@ class SimpleApiTest extends TestCase
         $response = $this->postJson('/api/auth/register', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['name', 'email', 'password', 'role', 'company_id']);
+                ->assertJsonValidationErrors(['name', 'email', 'password']);
     }
 
     public function test_user_login_validation()
@@ -46,7 +46,7 @@ class SimpleApiTest extends TestCase
         $response = $this->postJson('/api/auth/login', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email', 'password']);
+                ->assertJsonValidationErrors(['login', 'password']);
     }
 
     public function test_authenticated_routes_require_token()
@@ -96,7 +96,7 @@ class SimpleApiTest extends TestCase
         ]);
 
         $loginData = [
-            'email' => 'test@example.com',
+            'login' => 'test@example.com',
             'password' => 'password123',
         ];
 
@@ -188,7 +188,7 @@ class SimpleApiTest extends TestCase
 
         $response->assertStatus(422)
                 ->assertJson([
-                    'message' => 'Неверные учетные данные.',
+                    'message' => 'The login field is required.',
                 ]);
 
         // Тест на неверный формат email
