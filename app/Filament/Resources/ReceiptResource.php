@@ -212,7 +212,6 @@ class ReceiptResource extends Resource
                                     ->columnSpanFull(),
                             ])
                             ->addActionLabel('Добавить товар')
-                            ->removeActionLabel('Удалить товар')
                             ->reorderable()
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Товар')
