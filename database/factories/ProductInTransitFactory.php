@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -71,7 +71,7 @@ class ProductInTransitFactory extends Factory
             'quantity' => $this->faker->numberBetween(1, 50),
             'transport_number' => $this->faker->optional()->regexify('[A-Z]{2}\d{4}'),
             'producer' => $this->faker->optional()->company(),
-            'supplier' => $this->faker->company(),
+
             'tracking_number' => $this->faker->optional()->regexify('[A-Z]{2}\d{8}'),
             'expected_arrival_date' => $this->faker->dateTimeBetween('now', '+30 days'),
             'actual_arrival_date' => $this->faker->optional()->dateTimeBetween('-30 days', 'now'),
@@ -163,4 +163,4 @@ class ProductInTransitFactory extends Factory
             ];
         });
     }
-} 
+}
