@@ -238,8 +238,7 @@ class ProductInTransitResource extends Resource
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Товар')
                             ->defaultItems(1)
-                            ->minItems(1)
-                            ->maxItems(50),
+                            ->minItems(1),
                     ]),
 
                 Section::make('Документы')
