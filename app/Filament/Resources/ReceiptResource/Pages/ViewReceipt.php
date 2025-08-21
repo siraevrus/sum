@@ -22,7 +22,11 @@ class ViewReceipt extends ViewRecord
                     return $record->canBeReceived();
                 })
                 ->action(function (ProductInTransit $record): void {
-                    $record->receive();
+                    if ($record->receive()) {
+                        $this->notify('success', 'Товар успешно принят и добавлен в остатки на складе.');
+                    } else {
+                        $this->notify('danger', 'Ошибка при приемке товара. Попробуйте еще раз.');
+                    }
                     $this->redirect(ReceiptResource::getUrl('index'));
                 })
                 ->requiresConfirmation()

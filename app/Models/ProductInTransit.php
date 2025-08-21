@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Livewire\TestFormula;
 
 class ProductInTransit extends Model
@@ -183,30 +185,49 @@ class ProductInTransit extends Model
             return false;
         }
 
-        // Создаем товар в остатках
-        $product = Product::create([
-            'product_template_id' => $this->product_template_id,
-            'warehouse_id' => $this->warehouse_id,
-            'created_by' => $this->created_by,
-            'name' => $this->name,
-            'description' => $this->description,
-            'attributes' => $this->attributes,
-            'calculated_volume' => $this->calculated_volume,
-            'quantity' => $this->quantity,
-            'transport_number' => $this->transport_number,
-            'producer' => $this->producer,
-            'arrival_date' => $this->actual_arrival_date ?? now(),
-            'is_active' => true,
-        ]);
+        try {
+            // Начинаем транзакцию
+            DB::beginTransaction();
 
-        if ($product) {
-            $this->status = self::STATUS_RECEIVED;
-            $this->actual_arrival_date = now();
-            $this->save();
-            return true;
+            // Создаем товар в остатках
+            $product = Product::create([
+                'product_template_id' => $this->product_template_id,
+                'warehouse_id' => $this->warehouse_id,
+                'created_by' => $this->created_by,
+                'name' => $this->name,
+                'description' => $this->description,
+                'attributes' => $this->attributes,
+                'calculated_volume' => $this->calculated_volume,
+                'quantity' => $this->quantity,
+                'producer' => $this->producer,
+                'arrival_date' => $this->actual_arrival_date ?? now(),
+                'is_active' => true,
+            ]);
+
+            if ($product) {
+                // Обновляем статус товара в пути
+                $this->status = self::STATUS_RECEIVED;
+                $this->actual_arrival_date = now();
+                $this->save();
+
+                // Подтверждаем транзакцию
+                DB::commit();
+                return true;
+            }
+
+            // Откатываем транзакцию в случае ошибки
+            DB::rollBack();
+            return false;
+
+        } catch (\Exception $e) {
+            // Откатываем транзакцию в случае исключения
+            DB::rollBack();
+            Log::error('Ошибка при приемке товара: ' . $e->getMessage(), [
+                'product_in_transit_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
         }
-
-        return false;
     }
 
     /**

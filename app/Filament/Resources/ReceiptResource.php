@@ -150,7 +150,7 @@ class ReceiptResource extends Resource
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
                     ->numeric(
-                        decimalPlaces: 0,
+                        decimalPlaces: 2,
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
@@ -167,8 +167,24 @@ class ReceiptResource extends Resource
                         return $record->isOverdue() ? 'danger' : 'success';
                     }),
 
+                Tables\Columns\TextColumn::make('actual_arrival_date')
+                    ->label('Дата прибытия')
+                    ->date()
+                    ->sortable()
+                    ->color('success'),
+
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Создатель')
+                    ->sortable(),
+
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Статус')
+                    ->colors([
+                        'success' => ProductInTransit::STATUS_ARRIVED,
+                    ])
+                    ->formatStateUsing(function (ProductInTransit $record): string {
+                        return $record->getStatusLabel();
+                    })
                     ->sortable(),
             ])
             ->filters([
@@ -213,7 +229,18 @@ class ReceiptResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->where('status', ProductInTransit::STATUS_ARRIVED);
+        $user = Auth::user();
+        $query = parent::getEloquentQuery()
+            ->where('status', ProductInTransit::STATUS_ARRIVED)
+            ->where('is_active', true);
+
+        // Фильтрация по компании пользователя
+        if ($user && $user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        return $query;
     }
 }
