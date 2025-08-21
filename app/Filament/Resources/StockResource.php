@@ -152,7 +152,7 @@ class StockResource extends Resource
             'producer',
             'name',
             DB::raw('SUM(quantity) as total_quantity'),
-            DB::raw('SUM(calculated_volume * quantity) as total_volume'),
+            DB::raw('SUM(calculated_volume) as total_volume'),
             DB::raw('COUNT(*) as items_count'),
             DB::raw('MIN(arrival_date) as first_arrival'),
             DB::raw('MAX(arrival_date) as last_arrival'),
@@ -171,8 +171,8 @@ class StockResource extends Resource
                 AND p2.name = products.name
                 AND s.is_active = 1
             ), 0)) as available_quantity'),
-            DB::raw('(SUM(calculated_volume * quantity) - COALESCE((
-                SELECT SUM(s.quantity * p2.calculated_volume) 
+            DB::raw('(SUM(calculated_volume) - COALESCE((
+                SELECT SUM(p2.calculated_volume) 
                 FROM sales s 
                 INNER JOIN products p2 ON s.product_id = p2.id 
                 WHERE p2.product_template_id = products.product_template_id 
