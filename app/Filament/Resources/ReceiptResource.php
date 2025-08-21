@@ -85,10 +85,6 @@ class ReceiptResource extends Resource
                                     ->label('Номер транспорта')
                                     ->maxLength(255),
 
-                                TextInput::make('tracking_number')
-                                    ->label('Номер отслеживания')
-                                    ->maxLength(255),
-
                                 DatePicker::make('expected_arrival_date')
                                     ->label('Ожидаемая дата прибытия'),
 
