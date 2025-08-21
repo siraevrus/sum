@@ -1,8 +1,10 @@
 ---
 description: используемый стек
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 
 laravel 12 + filament
 если что то меняешь в filament то сразу проверяй в api
+сервер ssh my /var/www/sklad
+грузи в гит и подтягивай на боевом
