@@ -46,7 +46,6 @@ class CreateProductInTransit extends CreateRecord
             'created_by' => $createdBy,
             'is_active' => true,
             'attributes' => $attributes,
-            'name' => $this->generateProductName($data),
         ]);
 
         // Рассчет объема, если задана формула
@@ -64,6 +63,21 @@ class CreateProductInTransit extends CreateRecord
                 
                 // Добавляем количество
                 $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 1);
+                
+                // Формируем наименование из характеристик
+                $nameParts = [];
+                foreach ($template->attributes as $templateAttribute) {
+                    $attributeKey = $templateAttribute->variable;
+                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                        $nameParts[] = $attributes[$attributeKey];
+                    }
+                }
+                
+                if (!empty($nameParts)) {
+                    // Добавляем название шаблона в начало
+                    $templateName = $template->name ?? 'Товар';
+                    $recordData['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                }
                 
                 if (!empty($attrsForFormula)) {
                     $testResult = $template->testFormula($attrsForFormula);

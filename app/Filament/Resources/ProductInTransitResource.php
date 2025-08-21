@@ -126,7 +126,6 @@ class ProductInTransitResource extends Resource
                                         // Очищаем характеристики при смене шаблона
                                         $set('attributes', []);
                                         $set('calculated_volume', null);
-                                        $set('name', null);
                                     }),
 
                                 TextInput::make('name')
@@ -147,7 +146,6 @@ class ProductInTransitResource extends Resource
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $set('name', null); // Очищаем наименование перед пересчетом
                                         self::calculateVolumeForItem($set, $get);
                                     }),
 
@@ -183,7 +181,6 @@ class ProductInTransitResource extends Resource
                                                 ->required($attribute->is_required)
                                                 ->live()
                                                 ->afterStateUpdated(function (Set $set, Get $get) {
-                                                    $set('name', null); // Очищаем наименование перед пересчетом
                                                     self::calculateVolumeForItem($set, $get);
                                                 });
                                             break;
@@ -194,7 +191,6 @@ class ProductInTransitResource extends Resource
                                                 ->required($attribute->is_required)
                                                 ->live()
                                                 ->afterStateUpdated(function (Set $set, Get $get) {
-                                                    $set('name', null); // Очищаем наименование перед пересчетом
                                                     self::calculateVolumeForItem($set, $get);
                                                 });
                                             break;
@@ -207,7 +203,6 @@ class ProductInTransitResource extends Resource
                                                 ->required($attribute->is_required)
                                                 ->live()
                                                 ->afterStateUpdated(function (Set $set, Get $get) {
-                                                    $set('name', null); // Очищаем наименование перед пересчетом
                                                     self::calculateVolumeForItem($set, $get);
                                                 });
                                             break;
