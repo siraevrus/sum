@@ -420,8 +420,8 @@ class ProductInTransitResource extends Resource
             'warehouse_id' => $user->warehouse_id ?? 'none'
         ]);
 
-        // Фильтрация по компании пользователя
-        if ($user->company_id) {
+        // Админы видят все товары, обычные пользователи только по своей компании
+        if ($user->role->value !== 'admin' && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });

@@ -234,8 +234,8 @@ class ReceiptResource extends Resource
             ->where('status', ProductInTransit::STATUS_ARRIVED)
             ->where('is_active', true);
 
-        // Фильтрация по компании пользователя
-        if ($user && $user->company_id) {
+        // Админы видят все товары, обычные пользователи только по своей компании
+        if ($user && $user->role->value !== 'admin' && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
