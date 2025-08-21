@@ -256,10 +256,7 @@ class ProductInTransitResource extends Resource
                             ->downloadable()
                             ->openable()
                             ->previewable()
-                            ->imagePreviewHeight('250')
-                            ->loadingMessage('Загрузка файла...')
-                            ->uploadingMessage('Файл загружается...')
-                            ->uploadProgressIndicator(),
+                            ->imagePreviewHeight('250'),
                     ]),
             ]);
     }
