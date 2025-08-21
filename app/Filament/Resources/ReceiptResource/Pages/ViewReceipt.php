@@ -6,6 +6,7 @@ use App\Filament\Resources\ReceiptResource;
 use App\Models\ProductInTransit;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 
 class ViewReceipt extends ViewRecord
 {
@@ -23,9 +24,17 @@ class ViewReceipt extends ViewRecord
                 })
                 ->action(function (ProductInTransit $record): void {
                     if ($record->receive()) {
-                        $this->notify('success', 'Товар успешно принят и добавлен в остатки на складе.');
+                        Notification::make()
+                            ->title('Товар успешно принят')
+                            ->body('Товар добавлен в остатки на складе.')
+                            ->success()
+                            ->send();
                     } else {
-                        $this->notify('danger', 'Ошибка при приемке товара. Попробуйте еще раз.');
+                        Notification::make()
+                            ->title('Ошибка при приемке')
+                            ->body('Не удалось принять товар. Попробуйте еще раз.')
+                            ->danger()
+                            ->send();
                     }
                     $this->redirect(ReceiptResource::getUrl('index'));
                 })
