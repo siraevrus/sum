@@ -17,7 +17,23 @@ class CreateProductInTransit extends CreateRecord
     {
         $createdBy = Auth::id();
 
-        $common = [
+        // Собираем характеристики
+        $attributes = [];
+        foreach ($data as $key => $value) {
+            if (str_starts_with($key, 'attribute_') && $value !== null) {
+                $attributeName = str_replace('attribute_', '', $key);
+                $attributes[$attributeName] = $value;
+            }
+        }
+
+        // Удаляем временные поля характеристик
+        foreach ($data as $key => $value) {
+            if (str_starts_with($key, 'attribute_')) {
+                unset($data[$key]);
+            }
+        }
+
+        $recordData = array_merge($data, [
             'warehouse_id' => $data['warehouse_id'] ?? null,
             'shipping_location' => $data['shipping_location'] ?? null,
             'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
@@ -29,59 +45,36 @@ class CreateProductInTransit extends CreateRecord
             'document_path' => $data['document_path'] ?? null,
             'created_by' => $createdBy,
             'is_active' => true,
-        ];
+            'attributes' => $attributes,
+            'name' => $this->generateProductName($data),
+        ]);
 
-        $firstRecord = null;
-
-        foreach ($data['items'] as $item) {
-            $attributes = [];
-            foreach ($item as $key => $value) {
-                if (str_starts_with($key, 'attribute_') && $value !== null) {
-                    $attributeName = str_replace('attribute_', '', $key);
-                    $attributes[$attributeName] = $value;
-                }
-            }
-
-            $recordData = array_merge($common, [
-                'product_template_id' => $item['product_template_id'],
-                'name' => $this->generateProductName($item),
-                'producer' => $item['producer'] ?? null,
-                'quantity' => $item['quantity'] ?? 1,
-                'attributes' => $attributes,
-            ]);
-
-            // Рассчет объема, если задана формула (аналогично Product)
-            if (!empty($recordData['product_template_id'])) {
-                $template = ProductTemplate::find($recordData['product_template_id']);
-                if ($template && $template->formula) {
-                    $attrsForFormula = [];
-                    
-                    // Собираем числовые характеристики для формулы
-                    foreach ($attributes as $key => $value) {
-                        if (is_numeric($value)) {
-                            $attrsForFormula[$key] = (float) $value;
-                        }
-                    }
-                    
-                    // Добавляем количество
-                    $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 1);
-                    
-                    if (!empty($attrsForFormula)) {
-                        $testResult = $template->testFormula($attrsForFormula);
-                        if ($testResult['success']) {
-                            $recordData['calculated_volume'] = (float) $testResult['result'];
-                        }
+        // Рассчет объема, если задана формула
+        if (!empty($recordData['product_template_id'])) {
+            $template = ProductTemplate::find($recordData['product_template_id']);
+            if ($template && $template->formula) {
+                $attrsForFormula = [];
+                
+                // Собираем числовые характеристики для формулы
+                foreach ($attributes as $key => $value) {
+                    if (is_numeric($value)) {
+                        $attrsForFormula[$key] = (float) $value;
                     }
                 }
-            }
-
-            $created = ProductInTransit::create($recordData);
-            if ($firstRecord === null) {
-                $firstRecord = $created;
+                
+                // Добавляем количество
+                $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 1);
+                
+                if (!empty($attrsForFormula)) {
+                    $testResult = $template->testFormula($attrsForFormula);
+                    if ($testResult['success']) {
+                        $recordData['calculated_volume'] = (float) $testResult['result'];
+                    }
+                }
             }
         }
 
-        return $firstRecord ?? new ProductInTransit();
+        return ProductInTransit::create($recordData);
     }
 
     protected function getRedirectUrl(): string
@@ -89,27 +82,27 @@ class CreateProductInTransit extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
-    protected function generateProductName(array $item): string
+    protected function generateProductName(array $data): string
     {
         // Если наименование уже сгенерировано, используем его
-        if (!empty($item['name'])) {
-            return $item['name'];
+        if (!empty($data['name'])) {
+            return $data['name'];
         }
 
         // Иначе генерируем из характеристик
-        $templateId = $item['product_template_id'] ?? null;
+        $templateId = $data['product_template_id'] ?? null;
         if (!$templateId) {
-            return $item['producer'] ?? 'Товар';
+            return $data['producer'] ?? 'Товар';
         }
 
         $template = ProductTemplate::find($templateId);
         if (!$template) {
-            return $item['producer'] ?? 'Товар';
+            return $data['producer'] ?? 'Товар';
         }
 
         // Собираем характеристики
         $attributes = [];
-        foreach ($item as $key => $value) {
+        foreach ($data as $key => $value) {
             if (str_starts_with($key, 'attribute_') && $value !== null) {
                 $attributeName = str_replace('attribute_', '', $key);
                 $attributes[$attributeName] = $value;
