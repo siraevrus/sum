@@ -52,6 +52,14 @@ class ReceiptResourceTest extends TestCase
         $receipt = ProductInTransit::factory()->create([
             'warehouse_id' => $this->user->company->warehouses->first()->id,
             'status' => ProductInTransit::STATUS_ARRIVED,
+            'is_active' => true,
+        ]);
+
+        // Проверим, что товар создан
+        $this->assertDatabaseHas('product_in_transit', [
+            'id' => $receipt->id,
+            'status' => ProductInTransit::STATUS_ARRIVED,
+            'is_active' => true,
         ]);
 
         $this->actingAs($this->user)
@@ -63,9 +71,8 @@ class ReceiptResourceTest extends TestCase
     {
         $this->actingAs($this->user)
             ->get('/admin/receipts/create')
-            ->assertSee('Товар')
-            ->assertSee('Шаблон товара')
-            ->assertSee('Наименование')
+            ->assertSee('Информация о товаре')
+            ->assertSee('Наименование товара')
             ->assertSee('Производитель')
             ->assertSee('Количество');
     }

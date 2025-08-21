@@ -6,27 +6,21 @@ use App\Filament\Resources\ProductInTransitResource\Pages;
 use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
-use App\Models\User;
-use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Forms\Components\Repeater;
-use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -47,13 +41,15 @@ class ProductInTransitResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return in_array($user->role->value, [
             'admin',
             'operator',
             'warehouse_worker',
-            'sales_manager'
+            'sales_manager',
         ]);
     }
 
@@ -65,6 +61,12 @@ class ProductInTransitResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
+                                TextInput::make('shipment_number')
+                                    ->label('Номер поставки')
+                                    ->maxLength(255)
+                                    ->required()
+                                    ->helperText('Уникальный номер для группировки товаров в поставке'),
+
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -160,19 +162,19 @@ class ProductInTransitResource extends Resource
                         Grid::make(3)
                             ->schema(function (Get $get) {
                                 $templateId = $get('product_template_id');
-                                if (!$templateId) {
+                                if (! $templateId) {
                                     return [];
                                 }
 
                                 $template = ProductTemplate::with('attributes')->find($templateId);
-                                if (!$template) {
+                                if (! $template) {
                                     return [];
                                 }
 
                                 $fields = [];
                                 foreach ($template->attributes as $attribute) {
                                     $fieldName = "attribute_{$attribute->variable}";
-                                    
+
                                     switch ($attribute->type) {
                                         case 'number':
                                             $fields[] = TextInput::make($fieldName)
@@ -184,7 +186,7 @@ class ProductInTransitResource extends Resource
                                                     self::calculateVolumeForItem($set, $get);
                                                 });
                                             break;
-                                            
+
                                         case 'text':
                                             $fields[] = TextInput::make($fieldName)
                                                 ->label($attribute->full_name)
@@ -194,7 +196,7 @@ class ProductInTransitResource extends Resource
                                                     self::calculateVolumeForItem($set, $get);
                                                 });
                                             break;
-                                            
+
                                         case 'select':
                                             $options = $attribute->options_array;
                                             $fields[] = Select::make($fieldName)
@@ -223,8 +225,10 @@ class ProductInTransitResource extends Resource
                                         $templateId = $get('product_template_id');
                                         if ($templateId) {
                                             $template = ProductTemplate::find($templateId);
+
                                             return $template ? $template->unit : '';
                                         }
+
                                         return '';
                                     }),
                             ])
@@ -276,7 +280,6 @@ class ProductInTransitResource extends Resource
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),
-
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
@@ -348,36 +351,36 @@ class ProductInTransitResource extends Resource
     }
 
     /**
-     * Рассчитать объем для элемента товара
+     * Рассчитать объем для элемента товара в repeater
      */
     private static function calculateVolumeForItem(Set $set, Get $get): void
     {
         $templateId = $get('product_template_id');
-        if (!$templateId) {
+        if (! $templateId) {
             return;
         }
 
         $template = ProductTemplate::find($templateId);
-        if (!$template || !$template->formula) {
+        if (! $template || ! $template->formula) {
             return;
         }
 
         // Собираем все значения характеристик
         $attributes = [];
         $formData = $get();
-        
+
         foreach ($formData as $key => $value) {
             if (str_starts_with($key, 'attribute_') && $value !== null) {
                 $attributeName = str_replace('attribute_', '', $key);
                 $attributes[$attributeName] = $value;
             }
         }
-        
+
         // Добавляем количество
         $quantity = $get('quantity') ?? 1;
         $attributes['quantity'] = $quantity;
-        
-        if (!empty($attributes)) {
+
+        if (! empty($attributes)) {
             // Формируем наименование из характеристик
             $nameParts = [];
             foreach ($template->attributes as $templateAttribute) {
@@ -386,14 +389,14 @@ class ProductInTransitResource extends Resource
                     $nameParts[] = $attributes[$attributeKey];
                 }
             }
-            
-            if (!empty($nameParts)) {
+
+            if (! empty($nameParts)) {
                 // Добавляем название шаблона в начало
                 $templateName = $template->name ?? 'Товар';
-                $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                $generatedName = $templateName.': '.implode(', ', $nameParts);
                 $set('name', $generatedName);
             }
-            
+
             // Рассчитываем объем
             $testResult = $template->testFormula($attributes);
             if ($testResult['success']) {
@@ -406,8 +409,8 @@ class ProductInTransitResource extends Resource
     {
         $user = Auth::user();
         $query = parent::getEloquentQuery();
-        
-        if (!$user) {
+
+        if (! $user) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -420,4 +423,4 @@ class ProductInTransitResource extends Resource
 
         return $query;
     }
-} 
+}
