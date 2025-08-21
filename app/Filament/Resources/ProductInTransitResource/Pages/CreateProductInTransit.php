@@ -44,7 +44,7 @@ class CreateProductInTransit extends CreateRecord
 
             $recordData = array_merge($common, [
                 'product_template_id' => $item['product_template_id'],
-                'name' => $item['name'],
+                'name' => $this->generateProductName($item),
                 'producer' => $item['producer'] ?? null,
                 'quantity' => $item['quantity'] ?? 1,
                 'attributes' => $attributes,
@@ -54,11 +54,23 @@ class CreateProductInTransit extends CreateRecord
             if (!empty($recordData['product_template_id'])) {
                 $template = ProductTemplate::find($recordData['product_template_id']);
                 if ($template && $template->formula) {
-                    $attrsForFormula = is_array($attributes) ? $attributes : [];
-                    $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 0);
-                    $testResult = $template->testFormula($attrsForFormula);
-                    if ($testResult['success']) {
-                        $recordData['calculated_volume'] = (float) $testResult['result'];
+                    $attrsForFormula = [];
+                    
+                    // Собираем числовые характеристики для формулы
+                    foreach ($attributes as $key => $value) {
+                        if (is_numeric($value)) {
+                            $attrsForFormula[$key] = (float) $value;
+                        }
+                    }
+                    
+                    // Добавляем количество
+                    $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 1);
+                    
+                    if (!empty($attrsForFormula)) {
+                        $testResult = $template->testFormula($attrsForFormula);
+                        if ($testResult['success']) {
+                            $recordData['calculated_volume'] = (float) $testResult['result'];
+                        }
                     }
                 }
             }
@@ -75,5 +87,54 @@ class CreateProductInTransit extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function generateProductName(array $item): string
+    {
+        // Если наименование уже сгенерировано, используем его
+        if (!empty($item['name'])) {
+            return $item['name'];
+        }
+
+        // Иначе генерируем из характеристик
+        $templateId = $item['product_template_id'] ?? null;
+        if (!$templateId) {
+            return $item['producer'] ?? 'Товар';
+        }
+
+        $template = ProductTemplate::find($templateId);
+        if (!$template) {
+            return $item['producer'] ?? 'Товар';
+        }
+
+        // Собираем характеристики
+        $attributes = [];
+        foreach ($item as $key => $value) {
+            if (str_starts_with($key, 'attribute_') && $value !== null) {
+                $attributeName = str_replace('attribute_', '', $key);
+                $attributes[$attributeName] = $value;
+            }
+        }
+
+        if (empty($attributes)) {
+            return $template->name ?? 'Товар';
+        }
+
+        // Формируем наименование из характеристик
+        $nameParts = [];
+        foreach ($template->attributes as $templateAttribute) {
+            $attributeKey = $templateAttribute->variable;
+            if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                $nameParts[] = $attributes[$attributeKey];
+            }
+        }
+
+        if (empty($nameParts)) {
+            return $template->name ?? 'Товар';
+        }
+
+        // Добавляем название шаблона в начало
+        $templateName = $template->name ?? 'Товар';
+        return $templateName . ': ' . implode(', ', $nameParts);
     }
 } 
