@@ -29,7 +29,6 @@ use Filament\Forms\Components\Repeater;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class ProductInTransitResource extends Resource
 {
@@ -412,26 +411,12 @@ class ProductInTransitResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        // Отладочная информация
-        Log::info('ProductInTransitResource getEloquentQuery', [
-            'user_id' => $user->id,
-            'user_role' => $user->role->value ?? 'unknown',
-            'company_id' => $user->company_id,
-            'warehouse_id' => $user->warehouse_id ?? 'none'
-        ]);
-
         // Админы видят все товары, обычные пользователи только по своей компании
         if ($user->role->value !== 'admin' && $user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
         }
-
-        // Логируем финальный SQL запрос
-        Log::info('ProductInTransitResource SQL', [
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings()
-        ]);
 
         return $query;
     }
