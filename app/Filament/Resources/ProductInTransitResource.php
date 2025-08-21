@@ -250,7 +250,7 @@ class ProductInTransitResource extends Resource
                             ->directory('documents')
                             ->multiple()
                             ->maxFiles(5)
-                            ->maxSize(10240), // 10MB
+                            ->maxSize(51200), // 50MB
                     ]),
             ]);
     }
