@@ -1,0 +1,130 @@
+/* Кастомные стили для Filament - увеличение ширины контейнера */
+
+/* Переопределяем максимальную ширину основного контейнера */
+.filament-main-content {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для всех контейнеров Filament */
+.filament-panels-container,
+.filament-main,
+.filament-page,
+.filament-resource-page,
+.filament-widgets-container {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для таблиц */
+.filament-tables-container {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для форм */
+.filament-forms-container {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для страниц */
+.filament-page-content {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для дашборда */
+.filament-dashboard {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем максимальную ширину для виджетов */
+.filament-widgets-container {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Убираем ограничения по ширине для всех элементов с max-w-7xl */
+[class*="max-w-7xl"] {
+    max-width: none !important;
+}
+
+/* Дополнительно переопределяем для всех возможных контейнеров */
+.filament-app,
+.filament-panel,
+.filament-content {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Специфичные переопределения для Tailwind классов */
+.max-w-7xl {
+    max-width: none !important;
+}
+
+.max-w-6xl {
+    max-width: none !important;
+}
+
+.max-w-5xl {
+    max-width: none !important;
+}
+
+.max-w-4xl {
+    max-width: none !important;
+}
+
+/* Переопределяем для всех элементов с ограничением ширины */
+[class*="max-w-"] {
+    max-width: none !important;
+}
+
+/* Убираем ограничения для основного контента */
+.filament-main-content > div,
+.filament-page-content > div,
+.filament-resource-page > div {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем для таблиц */
+.filament-table {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем для форм */
+.filament-form {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем для панелей */
+.filament-panel {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем для основного контейнера приложения */
+.filament-app {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Переопределяем для всех дочерних элементов */
+.filament-app *,
+.filament-panel * {
+    max-width: none !important;
+}
+
+/* Специально для основного контента */
+.filament-main-content,
+.filament-page-content,
+.filament-resource-page-content {
+    max-width: none !important;
+    width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}

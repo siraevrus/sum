@@ -42,6 +42,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\DashboardStats::class,
                 \App\Filament\Widgets\PopularProducts::class,
             ])
+            ->maxContentWidth('full')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
