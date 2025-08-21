@@ -131,13 +131,15 @@ class ProductInTransitResource extends Resource
                                                 if ($context === 'create') {
                                                     $set('attributes', []);
                                                     $set('calculated_volume', null);
+                                                    $set('name', null);
                                                 }
                                             }),
 
                                         TextInput::make('name')
                                             ->label('Наименование')
-                                            ->required()
-                                            ->maxLength(255),
+                                            ->maxLength(255)
+                                            ->disabled()
+                                            ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
                                         TextInput::make('producer')
                                             ->label('Производитель')
@@ -151,6 +153,7 @@ class ProductInTransitResource extends Resource
                                             ->required()
                                             ->live()
                                             ->afterStateUpdated(function (Set $set, Get $get) {
+                                                $set('name', null); // Очищаем наименование перед пересчетом
                                                 self::calculateVolumeForItem($set, $get);
                                             }),
 
@@ -186,6 +189,7 @@ class ProductInTransitResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            $set('name', null); // Очищаем наименование перед пересчетом
                                                             self::calculateVolumeForItem($set, $get);
                                                         });
                                                     break;
@@ -196,6 +200,7 @@ class ProductInTransitResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            $set('name', null); // Очищаем наименование перед пересчетом
                                                             self::calculateVolumeForItem($set, $get);
                                                         });
                                                     break;
@@ -208,6 +213,7 @@ class ProductInTransitResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->afterStateUpdated(function (Set $set, Get $get) {
+                                                            $set('name', null); // Очищаем наименование перед пересчетом
                                                             self::calculateVolumeForItem($set, $get);
                                                         });
                                                     break;
@@ -378,6 +384,23 @@ class ProductInTransitResource extends Resource
         $attributes['quantity'] = $quantity;
         
         if (!empty($attributes)) {
+            // Формируем наименование из характеристик
+            $nameParts = [];
+            foreach ($template->attributes as $templateAttribute) {
+                $attributeKey = $templateAttribute->variable;
+                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                    $nameParts[] = $attributes[$attributeKey];
+                }
+            }
+            
+            if (!empty($nameParts)) {
+                // Добавляем название шаблона в начало
+                $templateName = $template->name ?? 'Товар';
+                $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                $set('name', $generatedName);
+            }
+            
+            // Рассчитываем объем
             $testResult = $template->testFormula($attributes);
             if ($testResult['success']) {
                 $set('calculated_volume', $testResult['result']);
