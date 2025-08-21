@@ -34,6 +34,22 @@ class EditProductInTransit extends EditRecord
             $data['attributes'] = [];
         }
         
+        // Обрабатываем document_path для сохранения
+        if (isset($data['document_path'])) {
+            // Если document_path пустой или null, устанавливаем пустой массив
+            if (empty($data['document_path'])) {
+                $data['document_path'] = [];
+            }
+            // Убеждаемся, что document_path всегда массив
+            if (!is_array($data['document_path'])) {
+                $data['document_path'] = [$data['document_path']];
+            }
+            // Фильтруем пустые значения
+            $data['document_path'] = array_filter($data['document_path'], function($path) {
+                return !empty($path);
+            });
+        }
+        
         // Рассчитываем и сохраняем объем
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
@@ -59,6 +75,14 @@ class EditProductInTransit extends EditRecord
             foreach ($data['attributes'] as $key => $value) {
                 $data["attribute_{$key}"] = $value;
             }
+        }
+        
+        // Обрабатываем document_path для корректной работы FileUpload
+        if (isset($data['document_path']) && is_array($data['document_path'])) {
+            // Убеждаемся, что document_path содержит корректные пути к файлам
+            $data['document_path'] = array_filter($data['document_path'], function($path) {
+                return !empty($path) && is_string($path);
+            });
         }
         
         // Рассчитываем объем при загрузке данных

@@ -250,7 +250,16 @@ class ProductInTransitResource extends Resource
                             ->directory('documents')
                             ->multiple()
                             ->maxFiles(5)
-                            ->maxSize(51200), // 50MB
+                            ->maxSize(51200) // 50MB
+                            ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+                            ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
+                            ->previewable()
+                            ->imagePreviewHeight('250')
+                            ->loadingMessage('Загрузка файла...')
+                            ->uploadingMessage('Файл загружается...')
+                            ->uploadProgressIndicator(),
                     ]),
             ]);
     }
