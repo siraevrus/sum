@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
 use App\Models\Product;
-use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
 use Filament\Forms\Components\DatePicker;
@@ -270,7 +269,7 @@ class ReceiptResource extends Resource
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
-                    ->suffix(function (ProductInTransit $record): string {
+                    ->suffix(function (Product $record): string {
                         return $record->template?->unit ?? '';
                     })
                     ->sortable(),
@@ -279,8 +278,13 @@ class ReceiptResource extends Resource
                     ->label('Ожидаемая дата')
                     ->date()
                     ->sortable()
-                    ->color(function (ProductInTransit $record): string {
-                        return $record->isOverdue() ? 'danger' : 'success';
+                    ->color(function (Product $record): string {
+                        $expected = $record->expected_arrival_date;
+                        if (! $expected) {
+                            return 'success';
+                        }
+
+                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
@@ -313,7 +317,14 @@ class ReceiptResource extends Resource
                 SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
-                        $locations = ProductInTransit::getShippingLocations();
+                        $locations = \App\Models\Product::query()
+                            ->whereNotNull('shipping_location')
+                            ->distinct()
+                            ->pluck('shipping_location')
+                            ->filter()
+                            ->sort()
+                            ->values()
+                            ->toArray();
 
                         return array_combine($locations, $locations);
                     })
