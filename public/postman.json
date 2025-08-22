@@ -1,0 +1,242 @@
+{
+  "info": {
+    "name": "Sklad API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "b9b1b3f1-3b1a-4c0e-9c7b-{{timestamp}}"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost", "type": "string" },
+    { "key": "token", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"johndoe\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        { "name": "Logout", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api","auth","logout"] } } },
+        { "name": "Me", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api","auth","me"] } } },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/auth/profile", "host": ["{{base_url}}"], "path": ["api","auth","profile"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Updated\",\n  \"email\": \"admin@example.com\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/products?per_page=15", "host": ["{{base_url}}"], "path": ["api","products"], "query": [{"key":"per_page","value":"15"}] } } },
+        { "name": "Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/products/stats", "host": ["{{base_url}}"], "path": ["api","products","stats"] } } },
+        { "name": "Popular", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/products/popular", "host": ["{{base_url}}"], "path": ["api","products","popular"] } } },
+        { "name": "Export", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/products/export", "host": ["{{base_url}}"], "path": ["api","products","export"] } } },
+        {
+          "name": "Show by ID",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/products/1", "host": ["{{base_url}}"], "path": ["api","products","1"] } }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/products", "host": ["{{base_url}}"], "path": ["api","products"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_template_id\": 1,\n  \"warehouse_id\": 1,\n  \"quantity\": 1,\n  \"attributes\": {\n    \"length\": 2,\n    \"width\": 3,\n    \"height\": 4\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/products/1", "host": ["{{base_url}}"], "path": ["api","products","1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 5\n}" }
+          }
+        },
+        { "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/products/1", "host": ["{{base_url}}"], "path": ["api","products","1"] } } }
+      ]
+    },
+    {
+      "name": "Sales",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/sales?per_page=15", "host": ["{{base_url}}"], "path": ["api","sales"], "query": [{"key":"per_page","value":"15"}] } } },
+        { "name": "Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/sales/stats", "host": ["{{base_url}}"], "path": ["api","sales","stats"] } } },
+        { "name": "Export", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/sales/export", "host": ["{{base_url}}"], "path": ["api","sales","export"] } } },
+        { "name": "Show by ID", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/sales/1", "host": ["{{base_url}}"], "path": ["api","sales","1"] } } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/sales", "host": ["{{base_url}}"], "path": ["api","sales"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"warehouse_id\": 1,\n  \"customer_name\": \"Иван\",\n  \"quantity\": 1,\n  \"unit_price\": 100,\n  \"payment_method\": \"cash\",\n  \"sale_date\": \"2025-01-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/sales/1", "host": ["{{base_url}}"], "path": ["api","sales","1"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" }
+          }
+        },
+        { "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/sales/1", "host": ["{{base_url}}"], "path": ["api","sales","1"] } } },
+        { "name": "Process", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/sales/1/process", "host": ["{{base_url}}"], "path": ["api","sales","1","process"] } } },
+        { "name": "Cancel", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/sales/1/cancel", "host": ["{{base_url}}"], "path": ["api","sales","1","cancel"] } } }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/requests", "host": ["{{base_url}}"], "path": ["api","requests"] } } },
+        { "name": "Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/requests/stats", "host": ["{{base_url}}"], "path": ["api","requests","stats"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/requests/1", "host": ["{{base_url}}"], "path": ["api","requests","1"] } } },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/requests", "host": ["{{base_url}}"], "path": ["api","requests"] },
+            "body": { "mode": "raw", "raw": "{\n  \"warehouse_id\": 1,\n  \"product_template_id\": 1,\n  \"title\": \"Запрос\",\n  \"quantity\": 1,\n  \"priority\": \"normal\"\n}" }
+          }
+        },
+        { "name": "Update", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/requests/1", "host": ["{{base_url}}"], "path": ["api","requests","1"] }, "body": { "mode": "raw", "raw": "{\n  \"status\": \"approved\"\n}" } } },
+        { "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/requests/1", "host": ["{{base_url}}"], "path": ["api","requests","1"] } } },
+        { "name": "Process", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/requests/1/process", "host": ["{{base_url}}"], "path": ["api","requests","1","process"] } } },
+        { "name": "Reject", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/requests/1/reject", "host": ["{{base_url}}"], "path": ["api","requests","1","reject"] } } }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api","users"] } } },
+        { "name": "Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/users/stats", "host": ["{{base_url}}"], "path": ["api","users","stats"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/users/1", "host": ["{{base_url}}"], "path": ["api","users","1"] } } },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api","users"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"User\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"operator\"\n}" }
+          }
+        },
+        { "name": "Update (admin)", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/users/1", "host": ["{{base_url}}"], "path": ["api","users","1"] }, "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+7 999 000-00-00\"\n}" } } },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/users/1", "host": ["{{base_url}}"], "path": ["api","users","1"] } } },
+        { "name": "Block (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/users/1/block", "host": ["{{base_url}}"], "path": ["api","users","1","block"] } } },
+        { "name": "Unblock (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/users/1/unblock", "host": ["{{base_url}}"], "path": ["api","users","1","unblock"] } } },
+        { "name": "Profile (get)", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/users/profile", "host": ["{{base_url}}"], "path": ["api","users","profile"] } } },
+        { "name": "Profile (update)", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/users/profile", "host": ["{{base_url}}"], "path": ["api","users","profile"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"New Name\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Warehouses",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses", "host": ["{{base_url}}"], "path": ["api","warehouses"] } } },
+        { "name": "Stats (all)", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses/stats", "host": ["{{base_url}}"], "path": ["api","warehouses","stats"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses/1", "host": ["{{base_url}}"], "path": ["api","warehouses","1"] } } },
+        { "name": "Warehouse stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses/1/stats", "host": ["{{base_url}}"], "path": ["api","warehouses","1","stats"] } } },
+        { "name": "Warehouse products", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses/1/products", "host": ["{{base_url}}"], "path": ["api","warehouses","1","products"] } } },
+        { "name": "Warehouse employees", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/warehouses/1/employees", "host": ["{{base_url}}"], "path": ["api","warehouses","1","employees"] } } },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": { "raw": "{{base_url}}/api/warehouses", "host": ["{{base_url}}"], "path": ["api","warehouses"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Main\",\n  \"address\": \"Address\",\n  \"company_id\": 1\n}" }
+          }
+        },
+        { "name": "Update (admin)", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/warehouses/1", "host": ["{{base_url}}"], "path": ["api","warehouses","1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated\"\n}" } } },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/warehouses/1", "host": ["{{base_url}}"], "path": ["api","warehouses","1"] } } },
+        { "name": "Activate (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/warehouses/1/activate", "host": ["{{base_url}}"], "path": ["api","warehouses","1","activate"] } } },
+        { "name": "Deactivate (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/warehouses/1/deactivate", "host": ["{{base_url}}"], "path": ["api","warehouses","1","deactivate"] } } }
+      ]
+    },
+    {
+      "name": "Companies",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/companies", "host": ["{{base_url}}"], "path": ["api","companies"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/companies/1", "host": ["{{base_url}}"], "path": ["api","companies","1"] } } },
+        { "name": "Create (admin)", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/companies", "host": ["{{base_url}}"], "path": ["api","companies"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Company\"\n}" } } },
+        { "name": "Update (admin)", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/companies/1", "host": ["{{base_url}}"], "path": ["api","companies","1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated\"\n}" } } },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/companies/1", "host": ["{{base_url}}"], "path": ["api","companies","1"] } } },
+        { "name": "Company warehouses", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/companies/1/warehouses", "host": ["{{base_url}}"], "path": ["api","companies","1","warehouses"] } } }
+      ]
+    },
+    {
+      "name": "Receipts (warehouse worker)",
+      "item": [
+        { "name": "List (in transit)", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/receipts", "host": ["{{base_url}}"], "path": ["api","receipts"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/receipts/1", "host": ["{{base_url}}"], "path": ["api","receipts","1"] } } },
+        { "name": "Receive", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/receipts/1/receive", "host": ["{{base_url}}"], "path": ["api","receipts","1","receive"] } } }
+      ]
+    },
+    {
+      "name": "Product Templates",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates", "host": ["{{base_url}}"], "path": ["api","product-templates"] } } },
+        { "name": "Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates/stats", "host": ["{{base_url}}"], "path": ["api","product-templates","stats"] } } },
+        { "name": "Units", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates/units", "host": ["{{base_url}}"], "path": ["api","product-templates","units"] } } },
+        { "name": "Show", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates/1", "host": ["{{base_url}}"], "path": ["api","product-templates","1"] } } },
+        { "name": "Attributes", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates/1/attributes", "host": ["{{base_url}}"], "path": ["api","product-templates","1","attributes"] } } },
+        { "name": "Products by template", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/product-templates/1/products", "host": ["{{base_url}}"], "path": ["api","product-templates","1","products"] } } },
+        { "name": "Create (admin)", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/product-templates", "host": ["{{base_url}}"], "path": ["api","product-templates"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Template\",\n  \"unit\": \"м³\"\n}" } } },
+        { "name": "Update (admin)", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/product-templates/1", "host": ["{{base_url}}"], "path": ["api","product-templates","1"] }, "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated\"\n}" } } },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/product-templates/1", "host": ["{{base_url}}"], "path": ["api","product-templates","1"] } } },
+        { "name": "Activate (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/product-templates/1/activate", "host": ["{{base_url}}"], "path": ["api","product-templates","1","activate"] } } },
+        { "name": "Deactivate (admin)", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/product-templates/1/deactivate", "host": ["{{base_url}}"], "path": ["api","product-templates","1","deactivate"] } } },
+        { "name": "Test formula", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": { "raw": "{{base_url}}/api/product-templates/1/test-formula", "host": ["{{base_url}}"], "path": ["api","product-templates","1","test-formula"] }, "body": { "mode": "raw", "raw": "{\n  \"values\": {\n    \"length\": 2,\n    \"width\": 3,\n    \"height\": 4\n  }\n}" } } }
+      ]
+    }
+  ]
+}
+
+
