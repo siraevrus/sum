@@ -74,8 +74,25 @@ class ProductResource extends Resource
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
-                                    ->options(Warehouse::pluck('name', 'id'))
+                                    ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
+                                    ->dehydrated()
+                                    ->default(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return null;
+                                        }
+
+                                        return $user->isAdmin() ? null : $user->warehouse_id;
+                                    })
+                                    ->visible(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return false;
+                                        }
+
+                                        return $user->isAdmin();
+                                    })
                                     ->searchable(),
 
                                 TextInput::make('name')
@@ -314,7 +331,7 @@ class ProductResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id'))
+                    ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
                 SelectFilter::make('producer')
@@ -379,17 +396,22 @@ class ProductResource extends Resource
     {
         $user = Auth::user();
 
-        // Администратор видит только товары «На складе»
-        if ($user->role->value === 'admin') {
-            return parent::getEloquentQuery()
-                ->where('status', Product::STATUS_IN_STOCK);
+        $base = parent::getEloquentQuery()
+            ->where('status', Product::STATUS_IN_STOCK);
+
+        if (! $user) {
+            return $base->whereRaw('1 = 0');
         }
 
-        // Остальные пользователи видят только товары «На складе» на своих складах
-        return parent::getEloquentQuery()
-            ->where('status', Product::STATUS_IN_STOCK)
-            ->whereHas('warehouse', function (Builder $query) use ($user) {
-                $query->where('company_id', $user->company_id);
-            });
+        if ($user->role->value === 'admin') {
+            return $base;
+        }
+
+        // Не админ — только свой склад
+        if ($user->warehouse_id) {
+            return $base->where('warehouse_id', $user->warehouse_id);
+        }
+
+        return $base->whereRaw('1 = 0');
     }
 }

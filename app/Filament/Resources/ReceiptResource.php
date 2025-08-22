@@ -362,18 +362,23 @@ class ReceiptResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $query = parent::getEloquentQuery()
+        $base = parent::getEloquentQuery()
             ->where('status', Product::STATUS_IN_TRANSIT)
             ->where('is_active', true);
 
-        // Админы видят все товары, обычные пользователи только по своей компании
-        if ($user && $user->role->value !== 'admin' && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if (! $user) {
+            return $base->whereRaw('1 = 0');
         }
 
-        return $query;
+        if ($user->role->value === 'admin') {
+            return $base;
+        }
+
+        if ($user->warehouse_id) {
+            return $base->where('warehouse_id', $user->warehouse_id);
+        }
+
+        return $base->whereRaw('1 = 0');
     }
 
     /**

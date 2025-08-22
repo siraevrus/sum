@@ -91,7 +91,7 @@ class StockResource extends Resource
                     ->label('Склад')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Количество')
+                    ->label('Доступное количество')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -106,7 +106,7 @@ class StockResource extends Resource
                         return 'danger';
                     }),
                 Tables\Columns\TextColumn::make('calculated_volume')
-                    ->label('Объем')
+                    ->label('Доступный объем (м³)')
                     ->numeric(
                         decimalPlaces: 2,
                         decimalSeparator: '.',
@@ -125,6 +125,11 @@ class StockResource extends Resource
 
                         return array_combine($producers, $producers);
                     }),
+                Tables\Filters\Filter::make('in_stock')
+                    ->label('В наличии')
+                    ->query(function (Builder $query): Builder {
+                        return $query->where('quantity', '>', 0);
+                    }),
             ])
             ->actions([
                 // Список только для просмотра
@@ -138,17 +143,23 @@ class StockResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $query = parent::getEloquentQuery()
+        $base = parent::getEloquentQuery()
             ->where('status', Product::STATUS_IN_STOCK)
             ->where('is_active', true);
 
-        if ($user && $user->role->value !== 'admin' && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if (! $user) {
+            return $base->whereRaw('1 = 0');
         }
 
-        return $query;
+        if ($user->role->value === 'admin') {
+            return $base;
+        }
+
+        if ($user->warehouse_id) {
+            return $base->where('warehouse_id', $user->warehouse_id);
+        }
+
+        return $base->whereRaw('1 = 0');
     }
 
     public static function getRelations(): array

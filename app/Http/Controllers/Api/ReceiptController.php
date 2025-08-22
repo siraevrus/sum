@@ -22,11 +22,13 @@ class ReceiptController extends Controller
             ->where('is_active', true)
             ->with(['warehouse', 'template', 'creator']);
 
-        // Ограничение по компании для не-админа
-        if ($user && ! $user->isAdmin() && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        // Ограничение по складу для не-админа
+        if ($user && ! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Фильтры
@@ -79,11 +81,10 @@ class ReceiptController extends Controller
             ], 404);
         }
 
-        // Ограничение по компании для не-админа
+        // Ограничение по складу для не-админа
         $user = Auth::user();
-        if ($user && ! $user->isAdmin() && $user->company_id) {
-            $receipt->load('warehouse');
-            if (! $receipt->warehouse || $receipt->warehouse->company_id !== $user->company_id) {
+        if ($user && ! $user->isAdmin()) {
+            if ($user->warehouse_id !== $receipt->warehouse_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Запись не найдена',
@@ -104,11 +105,10 @@ class ReceiptController extends Controller
      */
     public function receive(Product $receipt): JsonResponse
     {
-        // Ограничение по компании для не-админа
+        // Ограничение по складу для не-админа
         $user = Auth::user();
-        if ($user && ! $user->isAdmin() && $user->company_id) {
-            $receipt->load('warehouse');
-            if (! $receipt->warehouse || $receipt->warehouse->company_id !== $user->company_id) {
+        if ($user && ! $user->isAdmin()) {
+            if ($user->warehouse_id !== $receipt->warehouse_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Запись не найдена',

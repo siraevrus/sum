@@ -76,7 +76,7 @@ class Warehouse extends Model
      */
     public static function optionsForUser(?User $user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
@@ -86,12 +86,10 @@ class Warehouse extends Model
             return $query->pluck('name', 'id')->toArray();
         }
 
-        if (!empty($user->warehouse_id)) {
+        if (! empty($user->warehouse_id)) {
             $query->where('id', $user->warehouse_id);
-        } elseif (!empty($user->company_id)) {
-            $query->where('company_id', $user->company_id);
         } else {
-            // если нет привязки — не показываем ничего
+            // если нет привязки к складу — не показываем ничего
             return [];
         }
 

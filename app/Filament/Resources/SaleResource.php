@@ -111,16 +111,7 @@ class SaleResource extends Resource
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
-                                    ->options(function () {
-                                        $user = Auth::user();
-                                        if ($user->role->value === 'warehouse_worker') {
-                                            // Работник склада видит только свой склад
-                                            return Warehouse::where('id', $user->warehouse_id)->pluck('name', 'id');
-                                        }
-
-                                        // Админ и менеджер видят все склады
-                                        return Warehouse::pluck('name', 'id');
-                                    })
+                                    ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -305,7 +296,7 @@ class SaleResource extends Resource
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
-                    ->options(Warehouse::pluck('name', 'id')),
+                    ->options(fn () => Warehouse::optionsForCurrentUser()),
 
                 Filter::make('active')
                     ->label('Только активные')
@@ -399,17 +390,19 @@ class SaleResource extends Resource
     {
         $user = Auth::user();
 
-        // Администратор видит все продажи
+        if (! $user) {
+            return parent::getEloquentQuery()->whereRaw('1 = 0');
+        }
+
         if ($user->role->value === 'admin') {
             return parent::getEloquentQuery();
         }
 
-        // Остальные пользователи видят только продажи на своих складах
-        return parent::getEloquentQuery()
-            ->whereHas('warehouse', function (Builder $query) use ($user) {
-                if ($user->company_id) {
-                    $query->where('company_id', $user->company_id);
-                }
-            });
+        // Не админ — только свой склад
+        if ($user->warehouse_id) {
+            return parent::getEloquentQuery()->where('warehouse_id', $user->warehouse_id);
+        }
+
+        return parent::getEloquentQuery()->whereRaw('1 = 0');
     }
 }

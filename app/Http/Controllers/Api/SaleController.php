@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Warehouse;
-use Illuminate\Http\Request;
+use App\Models\Sale;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -19,12 +18,12 @@ class SaleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         $query = Sale::with(['product', 'warehouse', 'user'])
             ->when($request->search, function ($query, $search) {
                 $query->where('sale_number', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_phone', 'like', "%{$search}%");
             })
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
@@ -48,15 +47,17 @@ class SaleController extends Controller
                 $query->where('is_active', true);
             });
 
-        // Применяем права доступа
-        if (!$user->isAdmin() && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        // Применяем права доступа: не админ видит только свой склад
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $sales = $query->orderBy('created_at', 'desc')
-                       ->paginate($request->get('per_page', 15));
+            ->paginate($request->get('per_page', 15));
 
         return response()->json([
             'data' => $sales->items(),
@@ -82,11 +83,11 @@ class SaleController extends Controller
     {
         $user = Auth::user();
         $sale = Sale::with(['product', 'warehouse', 'user'])->find($id);
-        if (!$sale) {
+        if (! $sale) {
             return response()->json(['message' => 'Продажа не найдена'], 404);
         }
-        
-        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
+
+        if (! $user->isAdmin() && $user->warehouse_id !== $sale->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -117,18 +118,17 @@ class SaleController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         // Проверяем права доступа к складу
-        if (!$user->isAdmin() && $user->company_id) {
-            $warehouse = Warehouse::find($request->warehouse_id);
-            if (!$warehouse || $warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin()) {
+            if (! $user->warehouse_id || (int) $request->warehouse_id !== (int) $user->warehouse_id) {
                 return response()->json(['message' => 'Доступ к складу запрещен'], 403);
             }
         }
 
         // Проверяем наличие товара
         $product = Product::find($request->product_id);
-        if (!$product || $product->quantity < $request->quantity) {
+        if (! $product || $product->quantity < $request->quantity) {
             return response()->json(['message' => 'Недостаточно товара на складе'], 400);
         }
 
@@ -169,9 +169,9 @@ class SaleController extends Controller
     public function update(Request $request, Sale $sale): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $sale->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -195,7 +195,7 @@ class SaleController extends Controller
         $sale->update($request->only([
             'customer_name', 'customer_phone', 'customer_email', 'customer_address',
             'quantity', 'unit_price', 'vat_rate', 'payment_method', 'payment_status',
-            'delivery_status', 'notes', 'sale_date', 'delivery_date', 'is_active'
+            'delivery_status', 'notes', 'sale_date', 'delivery_date', 'is_active',
         ]));
 
         // Пересчитываем цены если изменились количество или цена
@@ -216,9 +216,9 @@ class SaleController extends Controller
     public function destroy(Sale $sale): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -235,15 +235,15 @@ class SaleController extends Controller
     public function process(Sale $sale): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $sale->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $sale->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
         // Проверим остаток по товару свежим запросом
         $product = Product::find($sale->product_id);
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Товар не найден'], 404);
         }
         if ($product->quantity < $sale->quantity) {
@@ -266,9 +266,9 @@ class SaleController extends Controller
     public function cancel(Sale $sale): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $user->company_id && $sale->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $sale->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -288,15 +288,15 @@ class SaleController extends Controller
     public function stats(): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Кешируем статистику на 2 минуты
         $cacheKey = "sale_stats_{$user->id}";
-        
+
         $stats = Cache::remember($cacheKey, 120, function () use ($user) {
             $query = Sale::query();
-            
+
             // Применяем права доступа
-        if (!$user->isAdmin() && $user->company_id) {
+            if (! $user->isAdmin() && $user->company_id) {
                 $query->whereHas('warehouse', function ($q) use ($user) {
                     $q->where('company_id', $user->company_id);
                 });
@@ -311,10 +311,10 @@ class SaleController extends Controller
                 'pending_payments' => $query->where('payment_status', Sale::PAYMENT_STATUS_PENDING)->count(),
                 'today_sales' => $query->where('sale_date', '>=', $today)->count(),
                 'month_revenue' => $query->where('sale_date', '>=', $thisMonth)
-                                       ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                                       ->sum('total_price'),
+                    ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                    ->sum('total_price'),
                 'total_revenue' => $query->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                                       ->sum('total_price'),
+                    ->sum('total_price'),
                 'total_quantity' => $query->sum('quantity'),
             ];
         });
@@ -332,12 +332,12 @@ class SaleController extends Controller
     public function export(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         $query = Sale::with(['product', 'warehouse', 'user'])
             ->when($request->search, function ($query, $search) {
                 $query->where('sale_number', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_phone', 'like', "%{$search}%");
             })
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
@@ -362,10 +362,12 @@ class SaleController extends Controller
             });
 
         // Применяем права доступа
-        if ($user->role !== 'admin') {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $sales = $query->orderBy('created_at', 'desc')->get();
@@ -399,4 +401,4 @@ class SaleController extends Controller
             'total' => $exportData->count(),
         ]);
     }
-} 
+}

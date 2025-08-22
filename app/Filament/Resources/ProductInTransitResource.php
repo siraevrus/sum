@@ -407,19 +407,20 @@ class ProductInTransitResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $query = parent::getEloquentQuery()->where('status', Product::STATUS_IN_TRANSIT);
+        $base = parent::getEloquentQuery()->where('status', Product::STATUS_IN_TRANSIT);
 
         if (! $user) {
-            return $query->whereRaw('1 = 0');
+            return $base->whereRaw('1 = 0');
         }
 
-        // Админы видят все товары, обычные пользователи только по своей компании
-        if ($user->role->value !== 'admin' && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if ($user->role->value === 'admin') {
+            return $base;
         }
 
-        return $query;
+        if ($user->warehouse_id) {
+            return $base->where('warehouse_id', $user->warehouse_id);
+        }
+
+        return $base->whereRaw('1 = 0');
     }
 }

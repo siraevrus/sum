@@ -4,11 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Warehouse;
-use App\Models\Company;
-use App\Models\User;
-use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WarehouseController extends Controller
@@ -21,9 +18,13 @@ class WarehouseController extends Controller
         $user = Auth::user();
         $query = Warehouse::query();
 
-        // Фильтрация по компании пользователя
-        if ($user->company_id) {
-            $query->where('company_id', $user->company_id);
+        // Ограничение по складу для не-админа: видит только свой склад
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Фильтрация по компании
@@ -41,7 +42,7 @@ class WarehouseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%");
+                    ->orWhere('address', 'like', "%{$search}%");
             });
         }
 
@@ -71,6 +72,17 @@ class WarehouseController extends Controller
      */
     public function show(Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа к конкретному складу
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ((int) $user->warehouse_id !== (int) $warehouse->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Склад не найден',
+                ], 404);
+            }
+        }
+
         $warehouse->load(['company', 'employees', 'products']);
 
         return response()->json([
@@ -115,6 +127,17 @@ class WarehouseController extends Controller
             'is_active' => 'sometimes|boolean',
         ]);
 
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ((int) $user->warehouse_id !== (int) $warehouse->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Доступ запрещен',
+                ], 403);
+            }
+        }
+
         $warehouse->update($validated);
         $warehouse->load(['company']);
 
@@ -130,6 +153,15 @@ class WarehouseController extends Controller
      */
     public function destroy(Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         // Проверяем, есть ли товары на складе
         if ($warehouse->products()->count() > 0) {
             return response()->json([
@@ -159,6 +191,15 @@ class WarehouseController extends Controller
      */
     public function activate(Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $warehouse->update(['is_active' => true]);
 
         return response()->json([
@@ -173,6 +214,15 @@ class WarehouseController extends Controller
      */
     public function deactivate(Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $warehouse->update(['is_active' => false]);
 
         return response()->json([
@@ -206,6 +256,17 @@ class WarehouseController extends Controller
      */
     public function products(Request $request, Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ((int) $user->warehouse_id !== (int) $warehouse->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Доступ запрещен',
+                ], 403);
+            }
+        }
+
         $query = $warehouse->products();
 
         // Фильтрация по активности
@@ -250,6 +311,17 @@ class WarehouseController extends Controller
      */
     public function employees(Request $request, Warehouse $warehouse): JsonResponse
     {
+        // Ограничение доступа
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ((int) $user->warehouse_id !== (int) $warehouse->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Доступ запрещен',
+                ], 403);
+            }
+        }
+
         $query = $warehouse->employees();
 
         // Фильтрация по роли
@@ -267,7 +339,7 @@ class WarehouseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -300,9 +372,13 @@ class WarehouseController extends Controller
         $user = Auth::user();
         $query = Warehouse::query();
 
-        // Фильтрация по компании пользователя
-        if ($user->company_id) {
-            $query->where('company_id', $user->company_id);
+        // Ограничение по складу
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $stats = [
@@ -316,4 +392,4 @@ class WarehouseController extends Controller
             'data' => $stats,
         ]);
     }
-} 
+}

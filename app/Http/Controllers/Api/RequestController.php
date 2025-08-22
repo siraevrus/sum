@@ -4,11 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Request;
-use App\Models\User;
-use App\Models\Warehouse;
-use App\Models\ProductTemplate;
-use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\Auth;
 
 class RequestController extends Controller
@@ -21,11 +18,13 @@ class RequestController extends Controller
         $user = Auth::user();
         $query = Request::query();
 
-        // Фильтрация по компании пользователя
-        if ($user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        // Ограничение по складу для не-админа
+        if ($user && method_exists($user, 'isAdmin') && ! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Фильтрация по статусу
@@ -103,6 +102,18 @@ class RequestController extends Controller
         ]);
 
         $validated['user_id'] = Auth::id();
+
+        // Если не админ — принудительно устанавливаем склад пользователя
+        $currentUser = Auth::user();
+        if ($currentUser && method_exists($currentUser, 'isAdmin') && ! $currentUser->isAdmin()) {
+            if (! $currentUser->warehouse_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Пользователь не привязан к складу',
+                ], 403);
+            }
+            $validated['warehouse_id'] = $currentUser->warehouse_id;
+        }
         $validated['status'] = $validated['status'] ?? 'pending';
 
         $requestModel = Request::create($validated);
@@ -220,4 +231,4 @@ class RequestController extends Controller
             'data' => $stats,
         ]);
     }
-} 
+}

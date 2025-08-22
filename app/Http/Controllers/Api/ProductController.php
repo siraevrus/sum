@@ -5,9 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -19,12 +18,12 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         $query = Product::with(['template', 'warehouse', 'creator'])
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                      ->orWhere('producer', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('producer', 'like', "%{$search}%");
             })
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
@@ -45,11 +44,13 @@ class ProductController extends Controller
                 $query->where('is_active', true);
             });
 
-        // Применяем права доступа (если не админ и задана компания)
-        if (!$user->isAdmin() && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        // Применяем права доступа: не админ видит только свой склад
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $products = $query->paginate($request->get('per_page', 15));
@@ -78,10 +79,10 @@ class ProductController extends Controller
     {
         $user = Auth::user();
         $product = Product::with(['template', 'warehouse', 'creator'])->find($id);
-        if (!$product) {
+        if (! $product) {
             return response()->json(['message' => 'Товар не найден'], 404);
         }
-        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $product->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -107,25 +108,20 @@ class ProductController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         // Проверяем права доступа к складу
-        if (!$user->isAdmin() && $user->company_id) {
-            $warehouse = Warehouse::find($request->warehouse_id);
-            if (!$warehouse) {
-                return response()->json(['message' => 'Склад не найден'], 404);
-            }
-            // Разрешаем, если у пользователя не задана компания (сценарии тестов)
-            if ($user->company_id && $warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin()) {
+            if (! $user->warehouse_id || (int) $request->warehouse_id !== (int) $user->warehouse_id) {
                 return response()->json(['message' => 'Доступ к складу запрещен'], 403);
             }
         }
 
         // Генерируем имя из атрибутов, если оно не предоставлено
         $name = $request->name;
-        if (!$name && $request->has('attributes')) {
+        if (! $name && $request->has('attributes')) {
             $template = ProductTemplate::find($request->product_template_id);
             if ($template) {
-                $name = $template->name . ': ' . implode(', ', array_values($request->get('attributes', [])));
+                $name = $template->name.': '.implode(', ', array_values($request->get('attributes', [])));
             }
         }
 
@@ -158,9 +154,9 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $product->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -176,8 +172,8 @@ class ProductController extends Controller
         ]);
 
         $product->update($request->only([
-            'name', 'description', 'attributes', 'quantity', 
-            'transport_number', 'producer', 'arrival_date', 'is_active'
+            'name', 'description', 'attributes', 'quantity',
+            'transport_number', 'producer', 'arrival_date', 'is_active',
         ]));
 
         // Пересчитываем объем если изменились атрибуты
@@ -197,9 +193,9 @@ class ProductController extends Controller
     public function destroy(Product $product): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Проверяем права доступа
-        if (!$user->isAdmin() && $user->company_id && $product->warehouse->company_id !== $user->company_id) {
+        if (! $user->isAdmin() && $user->warehouse_id !== $product->warehouse_id) {
             return response()->json(['message' => 'Доступ запрещен'], 403);
         }
 
@@ -216,18 +212,20 @@ class ProductController extends Controller
     public function stats(): JsonResponse
     {
         $user = Auth::user();
-        
+
         // Кешируем статистику на 5 минут (v2 — чтобы сбросить старый кэш)
         $cacheKey = "product_stats_v2_{$user->id}";
-        
+
         $stats = Cache::remember($cacheKey, 300, function () use ($user) {
             $baseQuery = Product::query();
-            
-            // Применяем права доступа (если не админ и задана компания)
-            if (!$user->isAdmin() && $user->company_id) {
-                $baseQuery->whereHas('warehouse', function ($q) use ($user) {
-                    $q->where('company_id', $user->company_id);
-                });
+
+            // Применяем права доступа: не админ видит только свой склад
+            if (! $user->isAdmin()) {
+                if ($user->warehouse_id) {
+                    $baseQuery->where('warehouse_id', $user->warehouse_id);
+                } else {
+                    $baseQuery->whereRaw('1 = 0');
+                }
             }
 
             $totalProducts = (clone $baseQuery)->count();
@@ -262,7 +260,7 @@ class ProductController extends Controller
     public function popular(): JsonResponse
     {
         $user = Auth::user();
-        
+
         $query = Product::with(['template', 'warehouse'])
             ->withCount(['sales as total_sales'])
             ->withSum(['sales as total_revenue'], 'total_price')
@@ -270,10 +268,12 @@ class ProductController extends Controller
             ->limit(10);
 
         // Применяем права доступа
-        if (!$user->isAdmin() && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $products = $query->get();
@@ -290,12 +290,12 @@ class ProductController extends Controller
     public function export(Request $request): JsonResponse
     {
         $user = Auth::user();
-        
+
         $query = Product::with(['template', 'warehouse', 'creator'])
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
-                      ->orWhere('producer', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('producer', 'like', "%{$search}%");
             })
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
@@ -317,10 +317,12 @@ class ProductController extends Controller
             });
 
         // Применяем права доступа
-        if (!$user->isAdmin() && $user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $products = $query->get();
@@ -348,4 +350,4 @@ class ProductController extends Controller
             'total' => $exportData->count(),
         ]);
     }
-} 
+}
