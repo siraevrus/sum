@@ -6,24 +6,22 @@ use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
-use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,11 +42,13 @@ class ProductResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return in_array($user->role->value, [
             'admin',
-            'operator'
+            'operator',
         ]);
     }
 
@@ -124,19 +124,19 @@ class ProductResource extends Resource
                     ->live()
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
-                        if (!$templateId) {
+                        if (! $templateId) {
                             return [];
                         }
 
                         $template = ProductTemplate::with('attributes')->find($templateId);
-                        if (!$template) {
+                        if (! $template) {
                             return [];
                         }
 
                         $fields = [];
                         foreach ($template->attributes as $attribute) {
                             $fieldName = "attribute_{$attribute->variable}";
-                            
+
                             switch ($attribute->type) {
                                 case 'number':
                                     $fields[] = TextInput::make($fieldName)
@@ -144,13 +144,13 @@ class ProductResource extends Resource
                                         ->numeric()
                                         ->required($attribute->is_required);
                                     break;
-                                    
+
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->required($attribute->is_required);
                                     break;
-                                    
+
                                 case 'select':
                                     $options = $attribute->options_array;
                                     $fields[] = Select::make($fieldName)
@@ -162,6 +162,7 @@ class ProductResource extends Resource
                                             if ($state !== null && is_numeric($state) && isset($options[$state])) {
                                                 return $options[$state];
                                             }
+
                                             return $state;
                                         });
                                     break;
@@ -180,8 +181,10 @@ class ProductResource extends Resource
                                 $templateId = $get('product_template_id');
                                 if ($templateId) {
                                     $template = ProductTemplate::find($templateId);
+
                                     return $template ? $template->unit : '';
                                 }
+
                                 return '';
                             }),
                     ])
@@ -199,20 +202,20 @@ class ProductResource extends Resource
         // Собираем все значения характеристик
         $attributes = [];
         $formData = $get();
-        
+
         foreach ($formData as $key => $value) {
             if (str_starts_with($key, 'attribute_') && $value !== null) {
                 $attributeName = str_replace('attribute_', '', $key);
                 $attributes[$attributeName] = $value;
             }
         }
-        
+
         // Добавляем количество
         $quantity = $get('quantity') ?? 1;
         $attributes['quantity'] = $quantity;
-        
+
         // Формируем наименование из характеристик
-        if (!empty($attributes)) {
+        if (! empty($attributes)) {
             $nameParts = [];
             foreach ($template->attributes as $templateAttribute) {
                 $attributeKey = $templateAttribute->variable;
@@ -220,14 +223,14 @@ class ProductResource extends Resource
                     $nameParts[] = $attributes[$attributeKey];
                 }
             }
-            
-            if (!empty($nameParts)) {
+
+            if (! empty($nameParts)) {
                 // Добавляем название шаблона в начало
                 $templateName = $template->name ?? 'Товар';
-                $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                $generatedName = $templateName.': '.implode(', ', $nameParts);
                 $set('name', $generatedName);
             }
-            
+
             // Рассчитываем объем только для числовых характеристик
             $numericAttributes = [];
             foreach ($attributes as $key => $value) {
@@ -235,8 +238,8 @@ class ProductResource extends Resource
                     $numericAttributes[$key] = $value;
                 }
             }
-            
-            if (!empty($numericAttributes)) {
+
+            if (! empty($numericAttributes)) {
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
                     $set('calculated_volume', $testResult['result']);
@@ -268,8 +271,13 @@ class ProductResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(function (string $state): string {
-                        if ($state > 10) return 'success';
-                        if ($state > 0) return 'warning';
+                        if ($state > 10) {
+                            return 'success';
+                        }
+                        if ($state > 0) {
+                            return 'warning';
+                        }
+
                         return 'danger';
                     }),
 
@@ -313,6 +321,7 @@ class ProductResource extends Resource
                     ->label('Производитель')
                     ->options(function () {
                         $producers = Product::getProducers();
+
                         return array_combine($producers, $producers);
                     })
                     ->searchable(),
@@ -369,16 +378,18 @@ class ProductResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
-        // Администратор видит все товары
+
+        // Администратор видит только товары «На складе»
         if ($user->role->value === 'admin') {
-            return parent::getEloquentQuery();
+            return parent::getEloquentQuery()
+                ->where('status', Product::STATUS_IN_STOCK);
         }
-        
-        // Остальные пользователи видят только товары на своих складах
+
+        // Остальные пользователи видят только товары «На складе» на своих складах
         return parent::getEloquentQuery()
+            ->where('status', Product::STATUS_IN_STOCK)
             ->whereHas('warehouse', function (Builder $query) use ($user) {
                 $query->where('company_id', $user->company_id);
             });
     }
-} 
+}
