@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\ProductInTransitResource\Pages;
 
 use App\Filament\Resources\ProductInTransitResource;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use App\Models\ProductTemplate;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -47,12 +47,14 @@ class CreateProductInTransit extends CreateRecord
             'transport_number' => $data['transport_number'] ?? null,
             'tracking_number' => $data['tracking_number'] ?? null,
             'expected_arrival_date' => $data['expected_arrival_date'] ?? null,
-            'status' => $data['status'] ?? ProductInTransit::STATUS_IN_TRANSIT,
+            'status' => $data['status'] ?? Product::STATUS_IN_TRANSIT,
             'notes' => $data['notes'] ?? null,
             'document_path' => $data['document_path'] ?? null,
             'created_by' => $createdBy,
             'is_active' => true,
             'attributes' => $attributes,
+            // arrival_date обязательна в products — ставим как дата отгрузки или сегодня
+            'arrival_date' => ($data['shipping_date'] ?? null) ?: now()->toDateString(),
         ]);
 
         // Рассчет объема для первого товара
@@ -96,7 +98,7 @@ class CreateProductInTransit extends CreateRecord
         }
 
         // Создаем основную запись
-        $mainRecord = ProductInTransit::create($recordData);
+        $mainRecord = Product::create($recordData);
 
         // Создаем дополнительные товары, если их больше одного
         if (count($products) > 1) {
@@ -126,12 +128,13 @@ class CreateProductInTransit extends CreateRecord
                     'transport_number' => $data['transport_number'] ?? null,
                     'tracking_number' => $data['tracking_number'] ?? null,
                     'expected_arrival_date' => $data['expected_arrival_date'] ?? null,
-                    'status' => $data['status'] ?? ProductInTransit::STATUS_IN_TRANSIT,
+                    'status' => $data['status'] ?? Product::STATUS_IN_TRANSIT,
                     'notes' => $data['notes'] ?? null,
                     'document_path' => $data['document_path'] ?? null,
                     'created_by' => $createdBy,
                     'is_active' => true,
                     'attributes' => $productAttributes,
+                    'arrival_date' => ($data['shipping_date'] ?? null) ?: now()->toDateString(),
                 ]);
 
                 // Рассчет объема для дополнительного товара
@@ -174,7 +177,7 @@ class CreateProductInTransit extends CreateRecord
                     }
                 }
 
-                ProductInTransit::create($additionalProductData);
+                Product::create($additionalProductData);
             }
         }
 
