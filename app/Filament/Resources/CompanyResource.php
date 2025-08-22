@@ -10,7 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
 class CompanyResource extends Resource
@@ -30,8 +29,10 @@ class CompanyResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return $user->role->value === 'admin';
     }
 
@@ -158,6 +159,7 @@ class CompanyResource extends Resource
                         if ($data['value'] === false) {
                             return $query->whereNull('deleted_at');
                         }
+
                         return $query;
                     }),
             ])
@@ -172,7 +174,7 @@ class CompanyResource extends Resource
                     ->modalDescription('Вы хотите архивировать компанию? Вместе с ней скроются все внесенные данные связанные с этой компанией.')
                     ->modalSubmitActionLabel('Да, архивировать')
                     ->modalCancelActionLabel('Отмена')
-                    ->visible(fn (Company $record): bool => !$record->is_archived)
+                    ->visible(fn (Company $record): bool => ! $record->is_archived)
                     ->action(function (Company $record): void {
                         $record->archive();
                     }),
@@ -199,6 +201,18 @@ class CompanyResource extends Resource
                     ->visible(fn (Company $record): bool => $record->trashed())
                     ->action(function (Company $record): void {
                         $record->restore();
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->before(function (Company $record) {
+                        if ($record->warehouses()->exists() || $record->employees()->exists()) {
+                            throw new \Filament\Notifications\NotificationException(
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Нельзя удалить компанию')
+                                    ->body('У компании есть связанные склады или сотрудники. Сначала удалите/перенесите их или архивируйте компанию.')
+                                    ->danger()
+                            );
+                        }
                     }),
             ])
             ->bulkActions([

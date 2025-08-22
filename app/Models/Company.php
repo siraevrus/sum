@@ -124,4 +124,16 @@ class Company extends Model
         $this->updateEmployeesCount();
         $this->updateWarehousesCount();
     }
+
+    /**
+     * Prevent deleting company when it still has related warehouses or employees.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Company $company): void {
+            if ($company->warehouses()->exists() || $company->employees()->exists()) {
+                throw new \RuntimeException('Нельзя удалить компанию, у которой есть склады или сотрудники. Архивируйте компанию или удалите связанные записи.');
+            }
+        });
+    }
 }

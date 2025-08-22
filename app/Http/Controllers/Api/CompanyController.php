@@ -191,6 +191,14 @@ class CompanyController extends Controller
             ], 404);
         }
 
+        // Блокируем удаление, если есть связанные склады или сотрудники
+        if ($company->warehouses()->exists() || $company->employees()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Нельзя удалить компанию с привязанными складами или сотрудниками. Архивируйте или удалите связанные записи.',
+            ], 400);
+        }
+
         try {
             // Архивируем компанию (soft delete)
             $company->archive();
