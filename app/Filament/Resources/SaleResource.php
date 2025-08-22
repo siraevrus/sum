@@ -147,45 +147,29 @@ class SaleResource extends Resource
                                             return [];
                                         }
 
-                                        // Получаем товары из агрегированных остатков
+                                        // Получаем товары из агрегированных остатков (суммарное количество)
                                         $query = Product::query()
                                             ->select([
                                                 'product_template_id',
                                                 'warehouse_id',
                                                 'producer',
                                                 'name',
-                                                DB::raw('SUM(quantity) as total_quantity'),
-                                                DB::raw('SUM(calculated_volume * quantity) as total_volume'),
+                                                DB::raw('SUM(quantity) as available_quantity'),
                                             ])
                                             ->where('warehouse_id', $warehouseId)
                                             ->where('status', Product::STATUS_IN_STOCK)
                                             ->where('is_active', true)
                                             ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
-                                            ->having('total_quantity', '>', 0);
-
-                                        // Вычитаем проданные товары для расчета реальных остатков
-                                        $query->addSelect([
-                                            DB::raw('(SUM(quantity) - COALESCE((
-                                                SELECT SUM(s.quantity) 
-                                                FROM sales s 
-                                                INNER JOIN products p2 ON s.product_id = p2.id 
-                                                WHERE p2.product_template_id = products.product_template_id 
-                                                AND p2.warehouse_id = products.warehouse_id 
-                                                AND p2.producer = products.producer 
-                                                AND p2.name = products.name
-                                                AND s.is_active = 1
-                                            ), 0)) as available_quantity'),
-                                        ]);
+                                            ->having('available_quantity', '>', 0);
 
                                         $availableProducts = $query->get();
 
                                         $options = [];
                                         foreach ($availableProducts as $product) {
-                                            if ($product->available_quantity > 0) {
-                                                // Используем более надежный разделитель для составного ключа
-                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
-                                                $options[$key] = "{$product->name} ({$product->producer}) - Доступно: {$product->available_quantity}";
-                                            }
+                                            // Используем более надежный разделитель для составного ключа
+                                            $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
+                                            $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                            $options[$key] = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
                                         }
 
                                         return $options;
