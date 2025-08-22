@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
-use App\Livewire\TestFormula;
 
 class Product extends Model
 {
     use HasFactory;
+
+    // Статусы товара
+    public const STATUS_IN_STOCK = 'in_stock';
+
+    public const STATUS_IN_TRANSIT = 'in_transit';
 
     protected $fillable = [
         'product_template_id',
@@ -25,7 +29,15 @@ class Product extends Model
         'transport_number',
         'producer',
         'arrival_date',
+        'status',
         'is_active',
+        'shipping_location',
+        'shipping_date',
+        'tracking_number',
+        'expected_arrival_date',
+        'actual_arrival_date',
+        'document_path',
+        'notes',
     ];
 
     protected $casts = [
@@ -33,7 +45,12 @@ class Product extends Model
         'calculated_volume' => 'decimal:4',
         'quantity' => 'integer',
         'arrival_date' => 'date',
+        'status' => 'string',
         'is_active' => 'boolean',
+        'shipping_date' => 'date',
+        'expected_arrival_date' => 'date',
+        'actual_arrival_date' => 'date',
+        'document_path' => 'array',
     ];
 
     protected $attributes = [
@@ -112,11 +129,11 @@ class Product extends Model
     public function calculateVolume(): ?float
     {
         // Загружаем productTemplate, если не загружен
-        if (!$this->relationLoaded('productTemplate')) {
+        if (! $this->relationLoaded('productTemplate')) {
             $this->load('productTemplate');
         }
-        
-        if (!$this->productTemplate || !$this->productTemplate->formula) {
+
+        if (! $this->productTemplate || ! $this->productTemplate->formula) {
             return null;
         }
 
@@ -124,19 +141,19 @@ class Product extends Model
             $attributes = $this->getAttribute('attributes');
             if (is_string($attributes)) {
                 $attributes = json_decode($attributes, true) ?? [];
-            } elseif (!is_array($attributes)) {
+            } elseif (! is_array($attributes)) {
                 $attributes = [];
             }
-            
+
             // Добавляем количество в атрибуты для использования в формуле
             $attributes['quantity'] = $this->quantity;
-            
+
             $testResult = $this->productTemplate->testFormula($attributes);
-            
+
             if ($testResult['success']) {
                 return (float) $testResult['result'];
             }
-            
+
             // Отладочная информация
             \Illuminate\Support\Facades\Log::info('calculateVolume failed', [
                 'product_id' => $this->id,
@@ -145,7 +162,7 @@ class Product extends Model
                 'attributes' => $attributes,
                 'test_result' => $testResult,
             ]);
-            
+
             return null;
         } catch (\Exception $e) {
             return null;
@@ -169,7 +186,7 @@ class Product extends Model
         if ($this->calculated_volume === null) {
             return null;
         }
-        
+
         return $this->calculated_volume * $this->quantity;
     }
 
@@ -179,11 +196,11 @@ class Product extends Model
     public function getFullName(): string
     {
         $name = $this->name;
-        
+
         if ($this->producer) {
-            $name .= ' (' . $this->producer . ')';
+            $name .= ' ('.$this->producer.')';
         }
-        
+
         return $name;
     }
 
@@ -203,9 +220,10 @@ class Product extends Model
         if ($this->quantity >= $amount) {
             $this->quantity -= $amount;
             $this->save();
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -285,4 +303,27 @@ class Product extends Model
             'total_volume' => static::sum('calculated_volume'),
         ];
     }
-} 
+
+    public function isInStock(): bool
+    {
+        return $this->status === self::STATUS_IN_STOCK;
+    }
+
+    public function isInTransit(): bool
+    {
+        return $this->status === self::STATUS_IN_TRANSIT;
+    }
+
+    public function markInStock(): void
+    {
+        $this->status = self::STATUS_IN_STOCK;
+        $this->arrival_date = $this->arrival_date ?? now();
+        $this->save();
+    }
+
+    public function markInTransit(): void
+    {
+        $this->status = self::STATUS_IN_TRANSIT;
+        $this->save();
+    }
+}

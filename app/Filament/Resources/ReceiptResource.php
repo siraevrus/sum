@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
+use App\Models\Product;
 use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReceiptResource extends Resource
 {
-    protected static ?string $model = ProductInTransit::class;
+    protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
@@ -295,10 +296,11 @@ class ReceiptResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
                     ->colors([
-                        'success' => ProductInTransit::STATUS_ARRIVED,
+                        'success' => Product::STATUS_IN_STOCK,
+                        'info' => Product::STATUS_IN_TRANSIT,
                     ])
-                    ->formatStateUsing(function (ProductInTransit $record): string {
-                        return $record->getStatusLabel();
+                    ->formatStateUsing(function (Product $record): string {
+                        return $record->isInStock() ? 'На складе' : 'В пути';
                     })
                     ->sortable(),
             ])
@@ -350,7 +352,7 @@ class ReceiptResource extends Resource
     {
         $user = Auth::user();
         $query = parent::getEloquentQuery()
-            ->where('status', ProductInTransit::STATUS_ARRIVED)
+            ->where('status', Product::STATUS_IN_TRANSIT)
             ->where('is_active', true);
 
         // Админы видят все товары, обычные пользователи только по своей компании

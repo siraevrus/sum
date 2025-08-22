@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductInTransitResource\Pages;
+use App\Models\Product;
 use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ProductInTransitResource extends Resource
 {
-    protected static ?string $model = ProductInTransit::class;
+    protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
@@ -89,10 +90,10 @@ class ProductInTransitResource extends Resource
                                 Select::make('status')
                                     ->label('Статус')
                                     ->options([
-                                        ProductInTransit::STATUS_IN_TRANSIT => 'В пути',
-                                        ProductInTransit::STATUS_ARRIVED => 'Прибыл',
+                                        Product::STATUS_IN_TRANSIT => 'В пути',
+                                        Product::STATUS_IN_STOCK => 'На складе',
                                     ])
-                                    ->default(ProductInTransit::STATUS_IN_TRANSIT)
+                                    ->default(Product::STATUS_IN_TRANSIT)
                                     ->required(),
 
                                 Toggle::make('is_active')
@@ -285,14 +286,11 @@ class ProductInTransitResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
                     ->colors([
-                        'warning' => ProductInTransit::STATUS_ORDERED,
-                        'info' => ProductInTransit::STATUS_IN_TRANSIT,
-                        'success' => ProductInTransit::STATUS_ARRIVED,
-                        'success' => ProductInTransit::STATUS_RECEIVED,
-                        'danger' => ProductInTransit::STATUS_CANCELLED,
+                        'info' => Product::STATUS_IN_TRANSIT,
+                        'success' => Product::STATUS_IN_STOCK,
                     ])
-                    ->formatStateUsing(function (ProductInTransit $record): string {
-                        return $record->getStatusLabel();
+                    ->formatStateUsing(function (Product $record): string {
+                        return $record->isInTransit() ? 'В пути' : 'На складе';
                     })
                     ->sortable(),
 
@@ -404,7 +402,7 @@ class ProductInTransitResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()->where('status', Product::STATUS_IN_TRANSIT);
 
         if (! $user) {
             return $query->whereRaw('1 = 0');

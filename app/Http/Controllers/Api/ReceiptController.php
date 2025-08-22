@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +17,8 @@ class ReceiptController extends Controller
     {
         $user = Auth::user();
 
-        $query = ProductInTransit::query()
-            ->where('status', ProductInTransit::STATUS_ARRIVED)
+        $query = Product::query()
+            ->where('status', Product::STATUS_IN_TRANSIT)
             ->where('is_active', true)
             ->with(['warehouse', 'template', 'creator']);
 
@@ -69,10 +69,10 @@ class ReceiptController extends Controller
     /**
      * Просмотр приемки
      */
-    public function show(ProductInTransit $receipt): JsonResponse
+    public function show(Product $receipt): JsonResponse
     {
-        // Доступ только к активным и прибывшим
-        if ($receipt->status !== ProductInTransit::STATUS_ARRIVED || ! $receipt->is_active) {
+        // Доступ только к активным в пути
+        if ($receipt->status !== Product::STATUS_IN_TRANSIT || ! $receipt->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Запись не найдена',
@@ -102,7 +102,7 @@ class ReceiptController extends Controller
     /**
      * Принять товар (перевести в остатки)
      */
-    public function receive(ProductInTransit $receipt): JsonResponse
+    public function receive(Product $receipt): JsonResponse
     {
         // Ограничение по компании для не-админа
         $user = Auth::user();
@@ -116,20 +116,7 @@ class ReceiptController extends Controller
             }
         }
 
-        if (! $receipt->canBeReceived()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Товар нельзя принять',
-            ], 400);
-        }
-
-        $ok = $receipt->receive();
-        if (! $ok) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Не удалось принять товар',
-            ], 500);
-        }
+        $receipt->markInStock();
 
         return response()->json([
             'success' => true,

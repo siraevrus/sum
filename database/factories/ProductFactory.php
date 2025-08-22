@@ -64,7 +64,15 @@ class ProductFactory extends Factory
             'transport_number' => $this->faker->optional()->regexify('[A-Z]{2}\d{4}'),
             'producer' => $this->faker->optional()->company(),
             'arrival_date' => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'status' => Product::STATUS_IN_STOCK,
             'is_active' => $this->faker->boolean(80), // 80% товаров активны
+            'shipping_location' => $this->faker->optional()->city(),
+            'shipping_date' => $this->faker->optional()->dateTimeBetween('-10 days', 'now'),
+            'tracking_number' => $this->faker->optional()->regexify('[A-Z]{2}\d{8}'),
+            'expected_arrival_date' => $this->faker->optional()->dateTimeBetween('now', '+10 days'),
+            'actual_arrival_date' => $this->faker->optional()->dateTimeBetween('-10 days', 'now'),
+            'document_path' => null,
+            'notes' => $this->faker->optional()->sentence(),
         ];
     }
 
@@ -95,6 +103,7 @@ class ProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'quantity' => $this->faker->numberBetween(1, 50),
+            'status' => Product::STATUS_IN_STOCK,
             'is_active' => true,
         ]);
     }
@@ -106,6 +115,17 @@ class ProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'quantity' => 0,
+            'status' => Product::STATUS_IN_STOCK,
+        ]);
+    }
+
+    /**
+     * Указываем, что товар в пути
+     */
+    public function inTransit(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => Product::STATUS_IN_TRANSIT,
         ]);
     }
 } 

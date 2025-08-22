@@ -3,7 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Company;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use App\Models\ProductTemplate;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -43,9 +43,10 @@ class ReceiptApiTest extends TestCase
 
     public function test_can_list_receipts(): void
     {
-        ProductInTransit::factory()->count(2)->arrived()->create([
+        Product::factory()->count(2)->create([
             'warehouse_id' => $this->warehouse->id,
             'is_active' => true,
+            'status' => Product::STATUS_IN_TRANSIT,
         ]);
 
         $response = $this->withHeaders([
@@ -62,9 +63,10 @@ class ReceiptApiTest extends TestCase
 
     public function test_can_show_receipt(): void
     {
-        $receipt = ProductInTransit::factory()->arrived()->create([
+        $receipt = Product::factory()->create([
             'warehouse_id' => $this->warehouse->id,
             'is_active' => true,
+            'status' => Product::STATUS_IN_TRANSIT,
         ]);
 
         $response = $this->withHeaders([
@@ -80,9 +82,10 @@ class ReceiptApiTest extends TestCase
 
     public function test_can_receive_receipt(): void
     {
-        $receipt = ProductInTransit::factory()->arrived()->create([
+        $receipt = Product::factory()->create([
             'warehouse_id' => $this->warehouse->id,
             'is_active' => true,
+            'status' => Product::STATUS_IN_TRANSIT,
         ]);
 
         $response = $this->withHeaders([
@@ -95,9 +98,9 @@ class ReceiptApiTest extends TestCase
                 'message' => 'Товар принят',
             ]);
 
-        $this->assertDatabaseHas('product_in_transit', [
+        $this->assertDatabaseHas('products', [
             'id' => $receipt->id,
-            'status' => ProductInTransit::STATUS_RECEIVED,
+            'status' => Product::STATUS_IN_STOCK,
         ]);
 
         $this->assertDatabaseHas('products', [

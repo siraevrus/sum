@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use App\Models\ProductTemplate;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -49,16 +49,16 @@ class ReceiptResourceTest extends TestCase
 
     public function test_warehouse_worker_can_access_receipt_edit_page()
     {
-        $receipt = ProductInTransit::factory()->create([
+        $receipt = Product::factory()->create([
             'warehouse_id' => $this->user->company->warehouses->first()->id,
-            'status' => ProductInTransit::STATUS_ARRIVED,
+            'status' => Product::STATUS_IN_TRANSIT,
             'is_active' => true,
         ]);
 
         // Проверим, что товар создан
-        $this->assertDatabaseHas('product_in_transit', [
+        $this->assertDatabaseHas('products', [
             'id' => $receipt->id,
-            'status' => ProductInTransit::STATUS_ARRIVED,
+            'status' => Product::STATUS_IN_TRANSIT,
             'is_active' => true,
         ]);
 
