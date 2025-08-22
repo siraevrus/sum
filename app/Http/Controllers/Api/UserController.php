@@ -22,9 +22,13 @@ class UserController extends Controller
         $query = User::query();
 
         // Администратор видит всех пользователей
-        // Остальные видят только пользователей своей компании
-        if (! $user->isAdmin() && $user->company_id) {
-            $query->where('company_id', $user->company_id);
+        // Остальные видят только пользователей своего склада
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         // Фильтрация по роли
@@ -85,6 +89,14 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        $current = Auth::user();
+        if (! $current->isAdmin() && $current->warehouse_id !== $user->warehouse_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $user->load(['company', 'warehouse']);
 
         return response()->json([
@@ -98,6 +110,14 @@ class UserController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Только администратор может создавать пользователей через API
+        if (! Auth::user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'first_name' => 'nullable|string|max:255',
@@ -148,6 +168,14 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        // Только администратор может обновлять пользователей через API
+        if (! Auth::user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'first_name' => 'sometimes|nullable|string|max:255',
@@ -198,6 +226,14 @@ class UserController extends Controller
      */
     public function destroy(User $user): JsonResponse
     {
+        // Только администратор может удалять пользователей через API
+        if (! Auth::user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         // Нельзя удалить самого себя
         if ($user->id === Auth::id()) {
             return response()->json([
@@ -219,6 +255,14 @@ class UserController extends Controller
      */
     public function block(User $user): JsonResponse
     {
+        // Только администратор может блокировать пользователей
+        if (! Auth::user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $user->update(['is_blocked' => true]);
 
         return response()->json([
@@ -233,6 +277,14 @@ class UserController extends Controller
      */
     public function unblock(User $user): JsonResponse
     {
+        // Только администратор может разблокировать пользователей
+        if (! Auth::user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен',
+            ], 403);
+        }
+
         $user->update(['is_blocked' => false]);
 
         return response()->json([
@@ -250,9 +302,13 @@ class UserController extends Controller
         $user = Auth::user();
         $query = User::query();
 
-        // Фильтрация по компании пользователя
-        if (! $user->isAdmin() && $user->company_id) {
-            $query->where('company_id', $user->company_id);
+        // Для не-админа считаем статистику только по его складу
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         $stats = [
