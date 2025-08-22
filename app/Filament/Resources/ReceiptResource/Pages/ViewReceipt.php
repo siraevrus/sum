@@ -3,10 +3,10 @@
 namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
-use App\Models\ProductInTransit;
-use Filament\Resources\Pages\ViewRecord;
+use App\Models\Product;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewReceipt extends ViewRecord
 {
@@ -19,11 +19,12 @@ class ViewReceipt extends ViewRecord
                 ->label('Принять товар')
                 ->icon('heroicon-o-check')
                 ->color('success')
-                ->visible(function (ProductInTransit $record): bool {
-                    return $record->canBeReceived();
+                ->visible(function (Product $record): bool {
+                    return $record->isInTransit();
                 })
-                ->action(function (ProductInTransit $record): void {
-                    if ($record->receive()) {
+                ->action(function (Product $record): void {
+                    $record->markInStock();
+                    if ($record->isInStock()) {
                         Notification::make()
                             ->title('Товар успешно принят')
                             ->body('Товар добавлен в остатки на складе.')
