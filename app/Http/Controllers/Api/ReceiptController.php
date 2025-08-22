@@ -36,16 +36,12 @@ class ReceiptController extends Controller
         if ($request->filled('shipping_location')) {
             $query->where('shipping_location', $request->input('shipping_location'));
         }
-        if ($request->filled('shipment_number')) {
-            $query->where('shipment_number', $request->input('shipment_number'));
-        }
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('producer', 'like', "%{$search}%")
-                    ->orWhere('shipping_location', 'like', "%{$search}%")
-                    ->orWhere('shipment_number', 'like', "%{$search}%");
+                    ->orWhere('shipping_location', 'like', "%{$search}%");
             });
         }
 

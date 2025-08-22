@@ -61,11 +61,6 @@ class ProductInTransitResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('shipment_number')
-                                    ->label('Номер поставки')
-                                    ->maxLength(255)
-                                    ->required()
-                                    ->helperText('Уникальный номер для группировки товаров в поставке'),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
@@ -331,12 +326,7 @@ class ProductInTransitResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc')
-            ->groupRecordsTriggerAction(
-                fn (Tables\Actions\Action $action) => $action
-                    ->button()
-                    ->label('Группировать по поставкам'),
-            );
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

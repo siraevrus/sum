@@ -59,11 +59,6 @@ class ReceiptResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('shipment_number')
-                                    ->label('Номер поставки')
-                                    ->maxLength(255)
-                                    ->required()
-                                    ->helperText('Уникальный номер для группировки товаров в поставке'),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
@@ -92,7 +87,7 @@ class ReceiptResource extends Resource
                             ]),
                     ]),
 
-                Section::make('Товары')
+                Section::make('Информация о товаре')
                     ->schema([
                         Repeater::make('products')
                             ->label('Список товаров')
