@@ -101,6 +101,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{receipt}/receive', [\App\Http\Controllers\Api\ReceiptController::class, 'receive']);
     });
 
+    // Алиас для "Товары в пути" (те же обработчики, что и receipts)
+    Route::prefix('products-in-transit')->middleware(['role:warehouse_worker'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::get('/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'show']);
+        Route::post('/{receipt}/receive', [\App\Http\Controllers\Api\ReceiptController::class, 'receive']);
+    });
+
     // Склады
     Route::prefix('warehouses')->group(function () {
         Route::get('/', [WarehouseController::class, 'index']);
