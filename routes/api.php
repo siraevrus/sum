@@ -1,15 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\ProductTemplateController;
 use App\Http\Controllers\Api\RequestController;
+use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarehouseController;
-use App\Http\Controllers\Api\ProductTemplateController;
-use App\Http\Controllers\Api\CompanyController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +94,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{company}/warehouses', [CompanyController::class, 'warehouses']);
     });
 
+    // Приемка
+    Route::prefix('receipts')->middleware(['role:warehouse_worker'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::get('/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'show']);
+        Route::post('/{receipt}/receive', [\App\Http\Controllers\Api\ReceiptController::class, 'receive']);
+    });
+
     // Склады
     Route::prefix('warehouses')->group(function () {
         Route::get('/', [WarehouseController::class, 'index']);
@@ -128,4 +134,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'updateAttribute']);
         Route::delete('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'deleteAttribute']);
     });
-}); 
+});
