@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Company;
-use App\Models\Warehouse;
 use App\UserRole;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -25,7 +23,7 @@ class UserController extends Controller
 
         // Администратор видит всех пользователей
         // Остальные видят только пользователей своей компании
-        if (!$user->isAdmin() && $user->company_id) {
+        if (! $user->isAdmin() && $user->company_id) {
             $query->where('company_id', $user->company_id);
         }
 
@@ -49,12 +47,15 @@ class UserController extends Controller
             $query->where('is_blocked', $request->boolean('is_blocked'));
         }
 
-        // Поиск по имени или email
+        // Поиск по ФИО, имени, email
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -98,7 +99,10 @@ class UserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'username' => 'nullable|string|max:255|unique:users,username',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
@@ -109,9 +113,21 @@ class UserController extends Controller
             'is_blocked' => 'boolean',
         ]);
 
-        // Если username не передан — используем name
+        // Собираем ФИО в name, если явно не передано
+        if (empty($validated['name'])) {
+            $parts = array_filter([
+                $validated['last_name'] ?? null,
+                $validated['first_name'] ?? null,
+                $validated['middle_name'] ?? null,
+            ]);
+            if (! empty($parts)) {
+                $validated['name'] = implode(' ', $parts);
+            }
+        }
+
+        // Если username не передан — используем name (или email локально)
         if (empty($validated['username'])) {
-            $validated['username'] = $validated['name'];
+            $validated['username'] = $validated['name'] ?? ($validated['email'] ?? null);
         }
 
         $validated['password'] = Hash::make($validated['password']);
@@ -134,6 +150,9 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'first_name' => 'sometimes|nullable|string|max:255',
+            'last_name' => 'sometimes|nullable|string|max:255',
+            'middle_name' => 'sometimes|nullable|string|max:255',
             'username' => ['sometimes', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'sometimes|string|min:8',
@@ -146,6 +165,22 @@ class UserController extends Controller
 
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
+        }
+
+        // Если name не передан, но меняются части ФИО — пересобираем name
+        if (! isset($validated['name']) && (
+            array_key_exists('first_name', $validated) ||
+            array_key_exists('last_name', $validated) ||
+            array_key_exists('middle_name', $validated)
+        )) {
+            $firstName = $validated['first_name'] ?? $user->first_name;
+            $lastName = $validated['last_name'] ?? $user->last_name;
+            $middleName = $validated['middle_name'] ?? $user->middle_name;
+
+            $parts = array_filter([$lastName, $firstName, $middleName]);
+            if (! empty($parts)) {
+                $validated['name'] = implode(' ', $parts);
+            }
         }
 
         $user->update($validated);
@@ -216,7 +251,7 @@ class UserController extends Controller
         $query = User::query();
 
         // Фильтрация по компании пользователя
-        if (!$user->isAdmin() && $user->company_id) {
+        if (! $user->isAdmin() && $user->company_id) {
             $query->where('company_id', $user->company_id);
         }
 
@@ -261,6 +296,9 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'first_name' => 'sometimes|nullable|string|max:255',
+            'last_name' => 'sometimes|nullable|string|max:255',
+            'middle_name' => 'sometimes|nullable|string|max:255',
             'username' => ['sometimes', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
             'phone' => 'sometimes|string|max:20',
@@ -270,7 +308,7 @@ class UserController extends Controller
 
         // Проверка текущего пароля при смене пароля
         if (isset($validated['new_password'])) {
-            if (!isset($validated['current_password']) || !Hash::check($validated['current_password'], $user->password)) {
+            if (! isset($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Неверный текущий пароль',
@@ -279,6 +317,22 @@ class UserController extends Controller
 
             $validated['password'] = Hash::make($validated['new_password']);
             unset($validated['current_password'], $validated['new_password']);
+        }
+
+        // Если name не передан, но меняются части ФИО — пересобираем name
+        if (! isset($validated['name']) && (
+            array_key_exists('first_name', $validated) ||
+            array_key_exists('last_name', $validated) ||
+            array_key_exists('middle_name', $validated)
+        )) {
+            $firstName = $validated['first_name'] ?? $user->first_name;
+            $lastName = $validated['last_name'] ?? $user->last_name;
+            $middleName = $validated['middle_name'] ?? $user->middle_name;
+
+            $parts = array_filter([$lastName, $firstName, $middleName]);
+            if (! empty($parts)) {
+                $validated['name'] = implode(' ', $parts);
+            }
         }
 
         $user->update($validated);
@@ -290,4 +344,4 @@ class UserController extends Controller
             'data' => $user,
         ]);
     }
-} 
+}
