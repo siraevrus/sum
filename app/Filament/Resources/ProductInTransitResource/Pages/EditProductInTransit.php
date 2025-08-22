@@ -12,28 +12,59 @@ class EditProductInTransit extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Обрабатываем характеристики
-        $attributes = [];
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_') && $value !== null) {
-                $attributeName = str_replace('attribute_', '', $key);
-                $attributes[$attributeName] = $value;
+        // Если данные пришли из репитера products — маппим первую позицию в поля записи
+        if (isset($data['products']) && is_array($data['products']) && ! empty($data['products'])) {
+            $first = $data['products'][0];
+
+            // Собираем характеристики из репитера
+            $attributes = [];
+            foreach ($first as $key => $value) {
+                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                    $attributeName = str_replace('attribute_', '', $key);
+                    $attributes[$attributeName] = $value;
+                }
+            }
+            $data['attributes'] = $attributes;
+
+            // Прокидываем основные поля из репитера на верхний уровень
+            foreach ([
+                'product_template_id',
+                'name',
+                'producer',
+                'quantity',
+                'calculated_volume',
+                'description',
+            ] as $field) {
+                if (array_key_exists($field, $first)) {
+                    $data[$field] = $first[$field];
+                }
+            }
+
+            unset($data['products']);
+        } else {
+            // Обрабатываем характеристики из плоских полей (fallback)
+            $attributes = [];
+            foreach ($data as $key => $value) {
+                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                    $attributeName = str_replace('attribute_', '', $key);
+                    $attributes[$attributeName] = $value;
+                }
+            }
+            $data['attributes'] = $attributes;
+
+            // Удаляем временные поля характеристик
+            foreach ($data as $key => $value) {
+                if (str_starts_with($key, 'attribute_')) {
+                    unset($data[$key]);
+                }
             }
         }
-        $data['attributes'] = $attributes;
-        
-        // Удаляем временные поля характеристик
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_')) {
-                unset($data[$key]);
-            }
-        }
-        
+
         // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
+        if (! isset($data['attributes'])) {
             $data['attributes'] = [];
         }
-        
+
         // Обрабатываем document_path для сохранения
         if (isset($data['document_path'])) {
             // Если document_path пустой или null, устанавливаем пустой массив
@@ -41,23 +72,23 @@ class EditProductInTransit extends EditRecord
                 $data['document_path'] = [];
             }
             // Убеждаемся, что document_path всегда массив
-            if (!is_array($data['document_path'])) {
+            if (! is_array($data['document_path'])) {
                 $data['document_path'] = [$data['document_path']];
             }
             // Фильтруем пустые значения
-            $data['document_path'] = array_filter($data['document_path'], function($path) {
-                return !empty($path);
+            $data['document_path'] = array_filter($data['document_path'], function ($path) {
+                return ! empty($path);
             });
         }
-        
+
         // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 // Добавляем количество в атрибуты для формулы
                 $attributes = $data['attributes'];
                 $attributes['quantity'] = $data['quantity'] ?? 1;
-                
+
                 // Формируем наименование из характеристик
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
@@ -66,55 +97,53 @@ class EditProductInTransit extends EditRecord
                         $nameParts[] = $attributes[$attributeKey];
                     }
                 }
-                
-                if (!empty($nameParts)) {
+
+                if (! empty($nameParts)) {
                     // Добавляем название шаблона в начало
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                    $data['name'] = $templateName.': '.implode(', ', $nameParts);
                 }
-                
+
                 $testResult = $template->testFormula($attributes);
                 if ($testResult['success']) {
                     $data['calculated_volume'] = $testResult['result'];
                 }
             }
         }
-        
+
         return $data;
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Загружаем характеристики в отдельные поля для формы
+        // Префилл репитера products одной позицией на основе текущей записи
+        $item = [
+            'product_template_id' => $data['product_template_id'] ?? null,
+            'name' => $data['name'] ?? null,
+            'producer' => $data['producer'] ?? null,
+            'quantity' => $data['quantity'] ?? 1,
+            'calculated_volume' => $data['calculated_volume'] ?? null,
+            'description' => $data['description'] ?? null,
+        ];
+
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($data['attributes'] as $key => $value) {
-                $data["attribute_{$key}"] = $value;
+                $item["attribute_{$key}"] = $value;
             }
         }
-        
+
+        $data['products'] = [$item];
+
         // Обрабатываем document_path для корректной работы FileUpload
         if (isset($data['document_path']) && is_array($data['document_path'])) {
             // Убеждаемся, что document_path содержит корректные пути к файлам
-            $data['document_path'] = array_filter($data['document_path'], function($path) {
-                return !empty($path) && is_string($path);
+            $data['document_path'] = array_filter($data['document_path'], function ($path) {
+                return ! empty($path) && is_string($path);
             });
         }
-        
-        // Рассчитываем объем при загрузке данных
-        if (isset($data['product_template_id']) && isset($data['attributes']) && is_array($data['attributes'])) {
-            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            if ($template && $template->formula && !empty($data['attributes'])) {
-                // Добавляем количество в атрибуты для формулы
-                $attributes = $data['attributes'];
-                $attributes['quantity'] = $data['quantity'] ?? 1;
-                
-                $testResult = $template->testFormula($attributes);
-                if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
-                }
-            }
-        }
-        
+
+        // Пересчет объема (оставляем как есть — будет выполняться реактивно в форме)
+
         return $data;
     }
 
@@ -130,4 +159,4 @@ class EditProductInTransit extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}
