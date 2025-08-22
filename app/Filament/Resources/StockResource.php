@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockResource\Pages;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class StockResource extends Resource
 {
-    protected static ?string $model = ProductInTransit::class;
+    protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
@@ -120,7 +120,11 @@ class StockResource extends Resource
                     ->options(fn () => Warehouse::optionsForCurrentUser()),
                 Tables\Filters\SelectFilter::make('producer')
                     ->label('Производитель')
-                    ->options(fn () => ProductInTransit::query()->distinct()->pluck('producer', 'producer')->filter()),
+                    ->options(function () {
+                        $producers = Product::getProducers();
+
+                        return array_combine($producers, $producers);
+                    }),
             ])
             ->actions([
                 // Список только для просмотра
@@ -134,8 +138,8 @@ class StockResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $query = ProductInTransit::query()
-            ->where('status', ProductInTransit::STATUS_ARRIVED)
+        $query = parent::getEloquentQuery()
+            ->where('status', Product::STATUS_IN_STOCK)
             ->where('is_active', true);
 
         if ($user && $user->role->value !== 'admin' && $user->company_id) {
