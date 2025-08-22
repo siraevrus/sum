@@ -109,23 +109,6 @@ class CompanyResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Статистика')
-                    ->schema([
-                        Forms\Components\TextInput::make('employees_count')
-                            ->label('Количество сотрудников')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0)
-                            ->helperText('Оставляйте 0 для автоматического подсчета'),
-
-                        Forms\Components\TextInput::make('warehouses_count')
-                            ->label('Количество складов')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0)
-                            ->helperText('Оставляйте 0 для автоматического подсчета'),
-                    ])
-                    ->columns(2),
             ]);
     }
 
