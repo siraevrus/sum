@@ -3,27 +3,25 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SaleResource\Pages;
-use App\Models\Sale;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\Warehouse;
-use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Actions\Action;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -45,8 +43,10 @@ class SaleResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return in_array($user->role->value, [
             'admin',
             'warehouse_worker',
@@ -62,7 +62,7 @@ class SaleResource extends Resource
         $cashAmount = (float) ($get('cash_amount') ?? 0);
         $nocashAmount = (float) ($get('nocash_amount') ?? 0);
         $totalPrice = $cashAmount + $nocashAmount;
-        
+
         $set('total_price', $totalPrice);
     }
 
@@ -71,7 +71,7 @@ class SaleResource extends Resource
      */
     private static function getMaxAvailableQuantity(string $productId): int
     {
-        if (!str_contains($productId, '|')) {
+        if (! str_contains($productId, '|')) {
             return 0;
         }
 
@@ -125,6 +125,7 @@ class SaleResource extends Resource
                                             // Работник склада видит только свой склад
                                             return Warehouse::where('id', $user->warehouse_id)->pluck('name', 'id');
                                         }
+
                                         // Админ и менеджер видят все склады
                                         return Warehouse::pluck('name', 'id');
                                     })
@@ -142,10 +143,10 @@ class SaleResource extends Resource
                                     ->label('Товар')
                                     ->options(function (Get $get) {
                                         $warehouseId = $get('warehouse_id');
-                                        if (!$warehouseId) {
+                                        if (! $warehouseId) {
                                             return [];
                                         }
-                                        
+
                                         // Получаем товары из агрегированных остатков
                                         $query = Product::query()
                                             ->select([
@@ -159,7 +160,7 @@ class SaleResource extends Resource
                                             ->where('warehouse_id', $warehouseId)
                                             ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
                                             ->having('total_quantity', '>', 0);
-                                        
+
                                         // Вычитаем проданные товары для расчета реальных остатков
                                         $query->addSelect([
                                             DB::raw('(SUM(quantity) - COALESCE((
@@ -171,20 +172,20 @@ class SaleResource extends Resource
                                                 AND p2.producer = products.producer 
                                                 AND p2.name = products.name
                                                 AND s.is_active = 1
-                                            ), 0)) as available_quantity')
+                                            ), 0)) as available_quantity'),
                                         ]);
-                                        
+
                                         $availableProducts = $query->get();
-                                        
+
                                         $options = [];
                                         foreach ($availableProducts as $product) {
                                             if ($product->available_quantity > 0) {
                                                 // Используем более надежный разделитель для составного ключа
-                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|" . base64_encode($product->name);
+                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
                                                 $options[$key] = "{$product->name} ({$product->producer}) - Доступно: {$product->available_quantity}";
                                             }
                                         }
-                                        
+
                                         return $options;
                                     })
                                     ->required()
@@ -212,21 +213,9 @@ class SaleResource extends Resource
                                         if ($productId) {
                                             return static::getMaxAvailableQuantity($productId);
                                         }
+
                                         return 999999;
-                                    })
-                                    ->rules([
-                                        function (string $attribute, $value, \Closure $fail, Get $get) {
-                                            $productId = $get('product_id');
-                                            if ($productId && $value) {
-                                                $maxQuantity = static::getMaxAvailableQuantity($productId);
-                                                if ($value > $maxQuantity) {
-                                                    $fail("Недостаточно товара на складе. Доступно: {$maxQuantity}");
-                                                }
-                                            }
-                                        }
-                                    ]),
-
-
+                                    }),
 
                                 TextInput::make('cash_amount')
                                     ->label('Сумма (нал)')
@@ -430,12 +419,12 @@ class SaleResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
+
         // Администратор видит все продажи
         if ($user->role->value === 'admin') {
             return parent::getEloquentQuery();
         }
-        
+
         // Остальные пользователи видят только продажи на своих складах
         return parent::getEloquentQuery()
             ->whereHas('warehouse', function (Builder $query) use ($user) {
@@ -444,4 +433,4 @@ class SaleResource extends Resource
                 }
             });
     }
-} 
+}
