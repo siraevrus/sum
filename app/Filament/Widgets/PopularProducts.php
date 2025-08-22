@@ -4,18 +4,23 @@ namespace App\Filament\Widgets;
 
 use App\Models\Product;
 use App\Models\Sale;
-use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 
 class PopularProducts extends BaseWidget
 {
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'Популярные товары';
+
+    public function getHeading(): string
+    {
+        return 'Популярные товары';
+    }
 
     public function table(Table $table): Table
     {
@@ -56,11 +61,12 @@ class PopularProducts extends BaseWidget
                         if ($record->quantity <= 10) {
                             return 'warning';
                         }
+
                         return 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('total_sales')
-                    ->label('Продаж')
+                    ->label('Продажи')
                     ->sortable()
                     ->badge()
                     ->color('info'),
@@ -75,6 +81,8 @@ class PopularProducts extends BaseWidget
                     ->sortable()
                     ->placeholder('Не указан'),
             ])
+            ->emptyStateHeading('Нет данных')
+            ->emptyStateDescription('Недостаточно данных для определения популярности товаров.')
             ->paginated(false);
     }
-} 
+}
