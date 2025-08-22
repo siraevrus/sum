@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ProductInTransitResource\Pages;
 use App\Filament\Resources\ProductInTransitResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ListProductInTransit extends ListRecords
 {
@@ -14,7 +15,19 @@ class ListProductInTransit extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Добавить'),
+                ->label('Добавить')
+                ->visible(function (): bool {
+                    $user = Auth::user();
+                    if (! $user) {
+                        return false;
+                    }
+
+                    return in_array($user->role->value, [
+                        'admin',
+                        'operator',
+                        'warehouse_worker',
+                    ], true);
+                }),
         ];
     }
-} 
+}
