@@ -158,6 +158,8 @@ class SaleResource extends Resource
                                                 DB::raw('SUM(calculated_volume * quantity) as total_volume'),
                                             ])
                                             ->where('warehouse_id', $warehouseId)
+                                            ->where('status', Product::STATUS_IN_STOCK)
+                                            ->where('is_active', true)
                                             ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
                                             ->having('total_quantity', '>', 0);
 
@@ -190,6 +192,7 @@ class SaleResource extends Resource
                                     })
                                     ->required()
                                     ->searchable()
+                                    ->preload()
                                     ->live()
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Сбрасываем количество при смене товара
