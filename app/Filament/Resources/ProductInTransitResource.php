@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductInTransitResource\Pages;
 use App\Models\Product;
-use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
 use Filament\Forms\Components\DatePicker;
@@ -299,8 +298,13 @@ class ProductInTransitResource extends Resource
                     ->label('Ожидаемая дата')
                     ->date()
                     ->sortable()
-                    ->color(function (ProductInTransit $record): string {
-                        return $record->isOverdue() ? 'danger' : 'success';
+                    ->color(function (Product $record): string {
+                        $expected = $record->expected_arrival_date;
+                        if (! $expected) {
+                            return 'success';
+                        }
+
+                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
