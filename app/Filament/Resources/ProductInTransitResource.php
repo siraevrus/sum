@@ -66,6 +66,23 @@ class ProductInTransitResource extends Resource
                                     ->label('Склад назначения')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
+                                    ->dehydrated()
+                                    ->default(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return null;
+                                        }
+
+                                        return $user->isAdmin() ? null : $user->warehouse_id;
+                                    })
+                                    ->visible(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return false;
+                                        }
+
+                                        return $user->isAdmin();
+                                    })
                                     ->searchable(),
 
                                 TextInput::make('shipping_location')

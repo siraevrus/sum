@@ -29,8 +29,8 @@ class ProductPolicy
             return true;
         }
 
-        // Остальные пользователи могут видеть только товары на своих складах
-        return $product->warehouse->company_id === $user->company_id;
+        // Остальные пользователи могут видеть только товары на своем складе
+        return (int) $product->warehouse_id === (int) $user->warehouse_id;
     }
 
     /**
@@ -51,8 +51,8 @@ class ProductPolicy
             return true;
         }
 
-        // Остальные пользователи могут обновлять только товары на своих складах
-        return $product->warehouse->company_id === $user->company_id;
+        // Остальные пользователи могут обновлять только товары на своем складе
+        return (int) $product->warehouse_id === (int) $user->warehouse_id;
     }
 
     /**
