@@ -85,22 +85,14 @@ class SaleResource extends Resource
         $producer = $parts[2];
         $name = base64_decode($parts[3]);
 
-        // Получаем доступное количество из агрегированных остатков
+        // Доступное количество = сумма количеств по products (без вычитания продаж)
         $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
             ->where('warehouse_id', $warehouseId)
             ->where('producer', $producer)
             ->where('name', $name)
             ->sum('quantity');
 
-        // Вычитаем проданные товары
-        $soldQuantity = \App\Models\Sale::whereHas('product', function ($query) use ($productTemplateId, $warehouseId, $producer, $name) {
-            $query->where('product_template_id', $productTemplateId)
-                ->where('warehouse_id', $warehouseId)
-                ->where('producer', $producer)
-                ->where('name', $name);
-        })->where('is_active', 1)->sum('quantity');
-
-        return max(0, $availableQuantity - $soldQuantity);
+        return max(0, $availableQuantity);
     }
 
     public static function form(Form $form): Form
