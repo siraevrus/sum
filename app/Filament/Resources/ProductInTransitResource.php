@@ -94,7 +94,8 @@ class ProductInTransitResource extends Resource
                                         Product::STATUS_IN_STOCK => 'На складе',
                                     ])
                                     ->default(Product::STATUS_IN_TRANSIT)
-                                    ->required(),
+                                    ->hidden()
+                                    ->dehydrated(false),
 
                                 Toggle::make('is_active')
                                     ->label('Активен')
