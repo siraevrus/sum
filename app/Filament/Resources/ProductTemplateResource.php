@@ -3,10 +3,14 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductTemplateResource\Pages;
-use App\Filament\Resources\ProductTemplateResource\RelationManagers\AttributesRelationManager;
 use App\Models\ProductTemplate;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -213,10 +217,50 @@ class ProductTemplateResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Основная информация')
+                    ->schema([
+                        TextEntry::make('name')->label('Название шаблона'),
+                        TextEntry::make('description')->label('Описание'),
+                        TextEntry::make('unit')->label('Единица измерения')->badge(),
+                        IconEntry::make('is_active')->label('Активный')->boolean(),
+                    ])->columns(2),
+
+                InfoSection::make('Характеристики')
+                    ->schema([
+                        RepeatableEntry::make('attributes')
+                            ->relationship('attributes')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('name')->label('Название'),
+                                TextEntry::make('variable')->label('Переменная'),
+                                TextEntry::make('type')->label('Тип')->badge(),
+                                TextEntry::make('unit')->label('Единица')->badge(),
+                                TextEntry::make('options')
+                                    ->label('Варианты')
+                                    ->formatStateUsing(function ($state) {
+                                        if (is_array($state)) {
+                                            return implode(', ', $state);
+                                        }
+
+                                        return (string) $state;
+                                    })
+                                    ->visible(fn ($record) => ($record->type ?? null) === 'select'),
+                                IconEntry::make('is_required')->label('Обязательно')->boolean(),
+                                IconEntry::make('is_in_formula')->label('В формуле')->boolean(),
+                                TextEntry::make('sort_order')->label('Порядок'),
+                            ])->columns(3),
+                    ]),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
-            AttributesRelationManager::class,
+            // Инлайновое отображение характеристик реализовано через infolist RepeatableEntry
         ];
     }
 
