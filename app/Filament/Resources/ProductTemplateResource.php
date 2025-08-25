@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductTemplateResource\Pages;
+use App\Filament\Resources\ProductTemplateResource\RelationManagers\AttributesRelationManager;
 use App\Models\ProductTemplate;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -215,7 +216,7 @@ class ProductTemplateResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\AttributesRelationManager::class,
+            AttributesRelationManager::class,
         ];
     }
 
