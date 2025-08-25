@@ -212,6 +212,21 @@ paths:
         - { $ref: '#/components/parameters/page' }
         - { $ref: '#/components/parameters/per_page' }
         - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductExportRow' }
+                  total: { type: integer }
 
   /stocks:
     get:
@@ -245,19 +260,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
           in: query
           schema: { type: string }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data:
-                    type: array
-                    items: { $ref: '#/components/schemas/ProductExportRow' }
-                  total: { type: integer }
+      
 
   /products/{id}:
     get:
