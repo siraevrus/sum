@@ -5,8 +5,8 @@ info:
   description: |
     Машиночитаемая спецификация API для склада. Использует аутентификацию Laravel Sanctum через Bearer токен.
 servers:
-  - url: http://localhost:8000/api
-    description: Локальный сервер разработки
+  - url: /api
+    description: Текущий хост
 tags:
   - name: Auth
   - name: Products
