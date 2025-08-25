@@ -3,11 +3,11 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Company;
-use App\Models\User;
 use App\Models\Product;
-use App\Models\ProductInTransit;
+use App\Models\Product as ProductModel;
 use App\Models\Request;
 use App\Models\Sale;
+use App\Models\User;
 use App\Models\Warehouse;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -37,10 +37,9 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('success'),
 
-            Stat::make('В пути', ProductInTransit::whereIn('status', [
-                    ProductInTransit::STATUS_ORDERED,
-                    ProductInTransit::STATUS_IN_TRANSIT,
-                ])->where('is_active', true)->count())
+            Stat::make('В пути', ProductModel::where('status', ProductModel::STATUS_IN_TRANSIT)
+                ->where('is_active', true)
+                ->count())
                 ->description('Товары в доставке')
                 ->descriptionIcon('heroicon-m-truck')
                 ->color('warning'),
@@ -50,7 +49,7 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info'),
 
-            Stat::make('Продажи', number_format(Sale::paid()->sum('total_price'), 0, ',', ' ') . ' ₽')
+            Stat::make('Продажи', number_format(Sale::paid()->sum('total_price'), 0, ',', ' ').' ₽')
                 ->description('Общая выручка')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),

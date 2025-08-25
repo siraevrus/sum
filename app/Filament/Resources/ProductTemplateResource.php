@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
 class ProductTemplateResource extends Resource
@@ -24,14 +22,16 @@ class ProductTemplateResource extends Resource
     protected static ?string $modelLabel = 'Шаблон товара';
 
     protected static ?string $pluralModelLabel = 'Шаблоны товаров';
-    
+
     protected static ?int $navigationSort = 4;
 
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return $user->role->value === 'admin';
     }
 
@@ -128,9 +128,31 @@ class ProductTemplateResource extends Resource
                             ->columns(3)
                             ->orderColumn('sort_order')
                             ->defaultItems(0)
+                            ->default([])
                             ->reorderableWithButtons()
                             ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null),
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                            ->saveRelationshipsUsing(function ($operation, $state, ProductTemplate $record) {
+                                // Сохраняем атрибуты вручную, чтобы поддержать create/edit
+                                $record->attributes()->delete();
+                                $sort = 0;
+                                foreach ($state as $row) {
+                                    $options = $row['options'] ?? null;
+                                    if (is_string($options)) {
+                                        $options = array_values(array_filter(array_map('trim', explode(',', $options))));
+                                    }
+                                    $record->attributes()->create([
+                                        'name' => $row['name'] ?? '',
+                                        'variable' => $row['variable'] ?? '',
+                                        'type' => $row['type'] ?? 'number',
+                                        'options' => $options,
+                                        'unit' => $row['unit'] ?? null,
+                                        'is_required' => (bool) ($row['is_required'] ?? false),
+                                        'is_in_formula' => (bool) ($row['is_in_formula'] ?? false),
+                                        'sort_order' => $sort++,
+                                    ]);
+                                }
+                            }),
                     ]),
 
                 Forms\Components\Section::make('Формула расчета')
@@ -140,7 +162,7 @@ class ProductTemplateResource extends Resource
                             ->rows(3)
                             ->helperText('Используйте переменные из характеристик. Пример: length * width * height, добавьте умножение * quantity если будете считать количество')
                             ->placeholder('length * width * height'),
-                        
+
                     ]),
             ]);
     }
