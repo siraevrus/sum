@@ -232,7 +232,6 @@ class ProductTemplateResource extends Resource
                 InfoSection::make('Характеристики')
                     ->schema([
                         RepeatableEntry::make('attributes')
-                            ->relationship('attributes')
                             ->label('')
                             ->schema([
                                 TextEntry::make('name')->label('Название'),
