@@ -1,7 +1,7 @@
 # API Документация
 
 ## Базовый URL
-`http://localhost:8000/api`
+`/api` (на странице `/docs` Swagger подставит текущий домен/IP)
 
 ## Общие сведения
 - Все защищенные эндпойнты требуют заголовок: `Authorization: Bearer {token}` (Laravel Sanctum)
@@ -194,12 +194,40 @@ GET `/requests/{id}` — `{ "success": true, "data": { ... } }`
 ### Создать запрос
 POST `/requests`
 
-Обязательные: `warehouse_id`, `product_template_id`, `title`, `quantity`, `priority` (`low|normal|high|urgent`). Опционально: `description`, `status`.
+Обязательные: `warehouse_id`, `product_template_id`, `title`, `quantity`, `priority` (`low|normal|high|urgent`).
+Опционально: `description`, `status`, `attributes` (object).
+
+Пример тела с характеристиками (`attributes`):
+```json
+{
+  "warehouse_id": 3,
+  "product_template_id": 22,
+  "title": "Заказ профиля",
+  "quantity": 10,
+  "priority": "normal",
+  "attributes": {
+    "length": 6.5,
+    "width": 2.1,
+    "color": "RAL9003",
+    "thickness": 1.2
+  }
+}
+```
 
 Ответ 201: `{ "success": true, "message": "Запрос успешно создан", "data": { ... } }`
 
 ### Обновить запрос
 PUT `/requests/{id}` — частичное обновление полей, включая `admin_notes`.
+
+Можно передавать частично `attributes` для изменения отдельных характеристик:
+```json
+{
+  "quantity": 12,
+  "attributes": {
+    "color": "RAL7024"
+  }
+}
+```
 
 ### Удалить запрос
 DELETE `/requests/{id}` — `{ "success": true, "message": "Запрос успешно удален" }`
@@ -348,20 +376,20 @@ GET `/product-templates/units` — `{ "success": true, "data": [ "м3", "шт", 
 
 ### Войти и получить токен
 ```bash
-curl -X POST http://localhost:8000/api/auth/login \
+curl -X POST /api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@sklad.ru","password":"password"}'
 ```
 
 ### Получить товары
 ```bash
-curl -X GET "http://localhost:8000/api/products?in_stock=1&per_page=20" \
+curl -X GET "/api/products?in_stock=1&per_page=20" \
   -H "Authorization: Bearer {token}"
 ```
 
 ### Создать продажу
 ```bash
-curl -X POST http://localhost:8000/api/sales \
+curl -X POST /api/sales \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{"product_id":1,"warehouse_id":1,"quantity":2,"unit_price":1000,"payment_method":"cash","sale_date":"2024-01-20"}'
