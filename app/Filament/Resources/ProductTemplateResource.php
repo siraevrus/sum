@@ -204,7 +204,6 @@ class ProductTemplateResource extends Resource
                     ->label('Активные'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\DeleteAction::make()
                     ->label('')
@@ -268,7 +267,6 @@ class ProductTemplateResource extends Resource
         return [
             'index' => Pages\ListProductTemplates::route('/'),
             'create' => Pages\CreateProductTemplate::route('/create'),
-            'view' => Pages\ViewProductTemplate::route('/{record}'),
             'edit' => Pages\EditProductTemplate::route('/{record}/edit'),
         ];
     }
