@@ -99,6 +99,7 @@ class RequestController extends Controller
             'quantity' => 'required|integer|min:1',
             'priority' => 'required|in:low,normal,high,urgent',
             'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
+            'attributes' => 'nullable|array',
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -140,6 +141,7 @@ class RequestController extends Controller
             'priority' => 'sometimes|in:low,normal,high,urgent',
             'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
             'admin_notes' => 'sometimes|string',
+            'attributes' => 'sometimes|array',
         ]);
 
         $request->update($validated);

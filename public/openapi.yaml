@@ -1258,6 +1258,7 @@ components:
         priority: { type: string, enum: [low, normal, high, urgent] }
         description: { type: string }
         status: { type: string }
+        attributes: { type: object, additionalProperties: true, description: 'Характеристики по шаблону товара (ключи = переменные из шаблона)' }
 
     UpdateRequestRequest:
       allOf:
