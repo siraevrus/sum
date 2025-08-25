@@ -258,8 +258,6 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaginatedStocks' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-          in: query
-          schema: { type: string }
       
 
   /products/{id}:
