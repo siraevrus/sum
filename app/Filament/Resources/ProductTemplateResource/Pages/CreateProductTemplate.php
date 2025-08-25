@@ -4,9 +4,7 @@ namespace App\Filament\Resources\ProductTemplateResource\Pages;
 
 use App\Filament\Resources\ProductTemplateResource;
 use App\Models\ProductAttribute;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-
 
 class CreateProductTemplate extends CreateRecord
 {
@@ -20,20 +18,21 @@ class CreateProductTemplate extends CreateRecord
     private function saveAttributes(): void
     {
         $attributes = $this->data['attributes'] ?? [];
-        
+        $sort = 0;
+
         // Логируем для отладки
         // Log::info('Creating product template attributes', [
         //     'template_id' => $this->record->id,
         //     'attributes_data' => $attributes
         // ]);
-        
-        foreach ($attributes as $index => $attribute) {
+
+        foreach ($attributes as $attribute) {
             // Проверяем, что все обязательные поля заполнены
-            if (!empty($attribute['name']) && !empty($attribute['variable'])) {
+            if (! empty($attribute['name']) && ! empty($attribute['variable'])) {
                 try {
                     // Обрабатываем options для select типа
                     $options = null;
-                    if (isset($attribute['type']) && $attribute['type'] === 'select' && !empty($attribute['options'])) {
+                    if (isset($attribute['type']) && $attribute['type'] === 'select' && ! empty($attribute['options'])) {
                         if (is_string($attribute['options'])) {
                             // Разбиваем строку на массив по запятой
                             $options = array_map('trim', explode(',', $attribute['options']));
@@ -41,7 +40,7 @@ class CreateProductTemplate extends CreateRecord
                             $options = $attribute['options'];
                         }
                     }
-                    
+
                     ProductAttribute::create([
                         'product_template_id' => $this->record->id,
                         'name' => trim($attribute['name']),
@@ -49,17 +48,17 @@ class CreateProductTemplate extends CreateRecord
                         'type' => $attribute['type'] ?? 'number',
                         'options' => $options,
                         'unit' => $attribute['unit'] ?? null,
-                        'is_required' => $attribute['is_required'] ?? false,
-                        'is_in_formula' => $attribute['is_in_formula'] ?? false,
-                        'sort_order' => $index + 1,
+                        'is_required' => (bool) ($attribute['is_required'] ?? false),
+                        'is_in_formula' => (bool) ($attribute['is_in_formula'] ?? false),
+                        'sort_order' => $sort++,
                     ]);
-                    
+
                     // Логируем успешное создание
                     // Log::info('Attribute created successfully', [
                     //     'attribute' => $attribute,
                     //     'created_id' => $this->record->id
                     // ]);
-                    
+
                 } catch (\Exception $e) {
                     // Логируем ошибку
                     // Log::error('Error creating attribute', [
@@ -67,7 +66,7 @@ class CreateProductTemplate extends CreateRecord
                     //     'error' => $e->getMessage(),
                     //     'template_id' => $this->record->id
                     // ]);
-                    
+
                     // Продолжаем создание других характеристик
                     continue;
                 }
