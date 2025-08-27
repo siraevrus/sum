@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
-use App\Models\Product;
+use App\Models\ProductInTransit;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -18,11 +18,11 @@ class EditReceipt extends EditRecord
                 ->label('Принять товар')
                 ->requiresConfirmation()
                 ->action(function () {
-                    /** @var Product $product */
+                    /** @var ProductInTransit $product */
                     $product = $this->record;
-                    $product->markInStock();
+                    $product->updateStatus(ProductInTransit::STATUS_RECEIVED);
                 })
-                ->visible(fn (): bool => $this->record instanceof Product && $this->record->isInTransit()),
+                ->visible(fn (): bool => $this->record instanceof ProductInTransit && in_array($this->record->status, [ProductInTransit::STATUS_ARRIVED, ProductInTransit::STATUS_IN_TRANSIT])),
         ];
     }
 }

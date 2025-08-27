@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
 use App\Models\Product;
+use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
 use Filament\Forms\Components\DatePicker;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReceiptResource extends Resource
 {
-    protected static ?string $model = Product::class;
+    protected static ?string $model = ProductInTransit::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
@@ -278,13 +279,13 @@ class ReceiptResource extends Resource
                     ->label('Ожидаемая дата')
                     ->date()
                     ->sortable()
-                    ->color(function (Product $record): string {
+                    ->color(function (ProductInTransit $record): string {
                         $expected = $record->expected_arrival_date;
                         if (! $expected) {
                             return 'success';
                         }
 
-                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
+                        return ($record->status === ProductInTransit::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
@@ -300,12 +301,12 @@ class ReceiptResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
                     ->colors([
-                        'success' => Product::STATUS_IN_STOCK,
-                        'info' => Product::STATUS_IN_TRANSIT,
+                        'warning' => [ProductInTransit::STATUS_ORDERED],
+                        'info' => [ProductInTransit::STATUS_IN_TRANSIT],
+                        'success' => [ProductInTransit::STATUS_ARRIVED, ProductInTransit::STATUS_RECEIVED],
+                        'danger' => [ProductInTransit::STATUS_CANCELLED],
                     ])
-                    ->formatStateUsing(function (Product $record): string {
-                        return $record->isInStock() ? 'На складе' : 'В пути';
-                    })
+                    ->formatStateUsing(fn (ProductInTransit $record): string => $record->getStatusLabel())
                     ->sortable(),
             ])
             ->filters([
@@ -317,7 +318,7 @@ class ReceiptResource extends Resource
                 SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
-                        $locations = \App\Models\Product::query()
+                        $locations = ProductInTransit::query()
                             ->whereNotNull('shipping_location')
                             ->distinct()
                             ->pluck('shipping_location')
@@ -363,8 +364,8 @@ class ReceiptResource extends Resource
     {
         $user = Auth::user();
         $base = parent::getEloquentQuery()
-            ->where('status', Product::STATUS_IN_TRANSIT)
-            ->where('is_active', true);
+            ->inTransit()
+            ->active();
 
         if (! $user) {
             return $base->whereRaw('1 = 0');
