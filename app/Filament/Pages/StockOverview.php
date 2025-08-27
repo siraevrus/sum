@@ -52,7 +52,11 @@ class StockOverview extends Page implements HasTable
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Количество')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->label('Итого')
+                    ),
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем (м³)')
                     ->numeric(
@@ -60,7 +64,16 @@ class StockOverview extends Page implements HasTable
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->label('Итого (м³)')
+                            ->numeric(
+                                decimalPlaces: 2,
+                                decimalSeparator: '.',
+                                thousandsSeparator: ' ',
+                            )
+                    ),
                 Tables\Columns\TextColumn::make('productTemplate.name')
                     ->label('Шаблон')
                     ->sortable(),

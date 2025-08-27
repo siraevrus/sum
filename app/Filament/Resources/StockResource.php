@@ -104,7 +104,11 @@ class StockResource extends Resource
                         }
 
                         return 'danger';
-                    }),
+                    })
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->label('Итого')
+                    ),
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Доступный объем (м³)')
                     ->numeric(
@@ -112,7 +116,16 @@ class StockResource extends Resource
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
-                    ->sortable(),
+                    ->sortable()
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->label('Итого (м³)')
+                            ->numeric(
+                                decimalPlaces: 2,
+                                decimalSeparator: '.',
+                                thousandsSeparator: ' ',
+                            )
+                    ),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
