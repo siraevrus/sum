@@ -97,6 +97,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Приемка
     Route::prefix('receipts')->middleware(['role:warehouse_worker'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
         Route::get('/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'show']);
         Route::post('/{receipt}/receive', [\App\Http\Controllers\Api\ReceiptController::class, 'receive']);
     });
@@ -104,6 +105,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Алиас для "Товары в пути" (те же обработчики, что и receipts)
     Route::prefix('products-in-transit')->middleware(['role:warehouse_worker'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ReceiptController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Api\ReceiptController::class, 'store']);
         Route::get('/{receipt}', [\App\Http\Controllers\Api\ReceiptController::class, 'show']);
         Route::post('/{receipt}/receive', [\App\Http\Controllers\Api\ReceiptController::class, 'receive']);
     });
