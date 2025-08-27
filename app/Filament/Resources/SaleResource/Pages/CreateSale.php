@@ -6,6 +6,7 @@ use App\Filament\Resources\SaleResource;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CreateSale extends CreateRecord
 {
@@ -70,10 +71,61 @@ class CreateSale extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Продажа создана, но количество товара НЕ списывается из Product
-        // Это позволяет сохранить историю добавления товаров
-        // Остатки рассчитываются с учетом продаж в StockResource
-        Log::info('Продажа создана успешно', ['sale_id' => $this->record->id]);
+        // Автоматически списываем товар сразу после создания продажи
+        $sale = $this->record;
+
+        DB::transaction(function () use ($sale) {
+            // Получаем параметры товара из выбранной записи
+            $product = $sale->product;
+            if (! $product) {
+                throw new \Exception('Не удалось найти товар для списания');
+            }
+
+            $templateId = $product->product_template_id;
+            $warehouseId = $product->warehouse_id;
+            $producer = $product->producer;
+            $name = $product->name;
+
+            $remaining = (int) $sale->quantity;
+
+            // Ищем все подходящие записи товара и списываем по очереди
+            $candidates = \App\Models\Product::query()
+                ->where('product_template_id', $templateId)
+                ->where('warehouse_id', $warehouseId)
+                ->where('producer', $producer)
+                ->where('name', $name)
+                ->where('quantity', '>', 0)
+                ->orderByDesc('quantity')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($candidates as $candidate) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $decrement = min($remaining, (int) $candidate->quantity);
+                if ($decrement <= 0) {
+                    continue;
+                }
+
+                // используем decreaseQuantity для единообразия
+                $candidate->decreaseQuantity($decrement);
+                $remaining -= $decrement;
+            }
+
+            if ($remaining > 0) {
+                throw new \Exception('Недостаточно остатка для списания');
+            }
+
+            // Обновляем статусы продажи
+            $sale->payment_status = \App\Models\Sale::PAYMENT_STATUS_PAID;
+            $sale->delivery_status = \App\Models\Sale::DELIVERY_STATUS_DELIVERED;
+            $sale->delivery_date = now();
+            $sale->save();
+        });
+
+        Log::info('Продажа создана и товар списан', ['sale_id' => $sale->id]);
     }
 
     protected function getRedirectUrl(): string

@@ -329,20 +329,7 @@ class SaleResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
-                Tables\Actions\Action::make('process_sale')
-                    ->label('Оформить продажу')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(function (Sale $record): bool {
-                        return $record->canBeSold() && $record->payment_status === Sale::PAYMENT_STATUS_PENDING;
-                    })
-                    ->action(function (Sale $record): void {
-                        $record->processSale();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Оформить продажу')
-                    ->modalDescription('Товар будет списан со склада и продажа будет помечена как оплаченная.')
-                    ->modalSubmitActionLabel('Оформить'),
+                // Списывание теперь происходит автоматически при создании, кнопка не нужна
 
                 Tables\Actions\Action::make('cancel_sale')
                     ->label('Отменить продажу')
