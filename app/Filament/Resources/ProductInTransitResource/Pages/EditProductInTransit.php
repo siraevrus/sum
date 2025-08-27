@@ -81,7 +81,7 @@ class EditProductInTransit extends EditRecord
             });
         }
 
-        // Рассчитываем и сохраняем объем
+        // Рассчитываем и сохраняем объем и наименование (перенесено на сохранение, чтобы форма работала быстрее)
         if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {

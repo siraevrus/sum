@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ProductInTransitResource\Pages;
 
 use App\Filament\Resources\ProductInTransitResource;
 use App\Models\Product;
+use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;

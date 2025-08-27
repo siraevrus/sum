@@ -161,11 +161,7 @@ class ProductInTransitResource extends Resource
                                             ->numeric()
                                             ->default(1)
                                             ->minValue(1)
-                                            ->required()
-                                            ->live()
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                                self::calculateVolumeForItem($set, $get);
-                                            }),
+                                            ->required(),
 
                                         TextInput::make('calculated_volume')
                                             ->label('Рассчитанный объем')
@@ -204,21 +200,13 @@ class ProductInTransitResource extends Resource
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->numeric()
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
 
                                                 case 'text':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
 
                                                 case 'select':
@@ -226,11 +214,7 @@ class ProductInTransitResource extends Resource
                                                     $fields[] = Select::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->options($options)
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
                                             }
                                         }
