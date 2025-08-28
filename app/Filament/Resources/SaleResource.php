@@ -366,13 +366,6 @@ class SaleResource extends Resource
                     ->modalHeading('Отменить продажу')
                     ->modalDescription('Товар будет возвращен на склад и продажа будет отменена.')
                     ->modalSubmitActionLabel('Отменить'),
-
-                Tables\Actions\DeleteAction::make()->label(''),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ])
             ->defaultSort('created_at', 'desc');
     }
