@@ -125,22 +125,19 @@ class SaleResource extends Resource
                                 Select::make('product_id')
                                     ->label('Товар')
                                     ->options(function (Get $get) {
+                                        $record = $get('record');
+                                        if ($record && $record->exists) {
+                                            $product = Product::find($record->product_id);
+                                            if ($product) {
+                                                // Формат: "45 — Брус: 11, 11, Сосна"
+                                                return [$product->id => "{$product->id} — {$product->name}"];
+                                            }
+                                        }
+                                        // Режим создания - получаем товары из агрегированных остатков
                                         $warehouseId = $get('warehouse_id');
                                         if (! $warehouseId) {
                                             return [];
                                         }
-
-                                        // Проверяем, находимся ли мы в режиме редактирования/просмотра
-                                        $record = $get('record');
-                                        if ($record && $record->exists) {
-                                            // Режим редактирования/просмотра - показываем название товара из таблицы products
-                                            $product = Product::find($record->product_id);
-                                            if ($product) {
-                                                return [$product->id => $product->name];
-                                            }
-                                        }
-
-                                        // Режим создания - получаем товары из агрегированных остатков
                                         $query = Product::query()
                                             ->select([
                                                 'product_template_id',
@@ -154,9 +151,7 @@ class SaleResource extends Resource
                                             ->where('is_active', true)
                                             ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
                                             ->having('available_quantity', '>', 0);
-
                                         $availableProducts = $query->get();
-
                                         $options = [];
                                         foreach ($availableProducts as $product) {
                                             // Используем более надежный разделитель для составного ключа
