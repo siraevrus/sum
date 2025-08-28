@@ -368,4 +368,17 @@ class Sale extends Model
             'total_quantity' => static::sum('quantity'),
         ];
     }
+
+    /**
+     * Получить варианты статусов оплаты для фильтра
+     */
+    public static function getPaymentStatusOptions(): array
+    {
+        return [
+            self::PAYMENT_STATUS_PENDING => 'Ожидает оплаты',
+            self::PAYMENT_STATUS_PAID => 'Оплачено',
+            self::PAYMENT_STATUS_PARTIALLY_PAID => 'Частично оплачено',
+            self::PAYMENT_STATUS_CANCELLED => 'Отменено',
+        ];
+    }
 }
