@@ -138,10 +138,7 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
-                        Forms\Components\TextInput::make('phone')
-                            ->label('Телефон')
-                            ->mask('+7 (999) 999-99-99')
-                            ->maxLength(255),
+
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')

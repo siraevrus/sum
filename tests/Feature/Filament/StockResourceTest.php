@@ -193,15 +193,15 @@ class StockResourceTest extends TestCase
         ]);
 
         $product = Product::factory()->create([
-            'producer' => 'Тестовый производитель',
+            'producer' => 'Test Producer',
             'is_active' => true,
         ]);
 
         $response = $this->actingAs($admin)
-            ->get('/admin/stocks?tableFilters[producer][value]=Тестовый производитель');
+            ->get('/admin/stocks?tableFilters[producer][value]=Test Producer');
 
         $response->assertStatus(200);
-        $response->assertSee('Тестовый производитель');
+        $response->assertSee('Test Producer');
     }
 
     /** @test */

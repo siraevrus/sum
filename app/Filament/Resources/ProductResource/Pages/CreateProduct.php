@@ -40,9 +40,8 @@ class CreateProduct extends CreateRecord
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
-                // Добавляем количество в атрибуты для формулы
+                // Используем только характеристики для формулы (без количества)
                 $attributes = $data['attributes'];
-                $attributes['quantity'] = $data['quantity'] ?? 1;
                 
                 // Формируем наименование из характеристик
                 $nameParts = [];
@@ -61,7 +60,40 @@ class CreateProduct extends CreateRecord
                 
                 $testResult = $template->testFormula($attributes);
                 if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
+                    $result = $testResult['result'];
+                    
+                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
+                    if ($result > 99999) {
+                        $result = 99999;
+                    }
+                    
+                    $data['calculated_volume'] = $result;
+                }
+            }
+        }
+        
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Рассчитываем объем при загрузке формы, если есть шаблон
+        if (isset($data['product_template_id'])) {
+            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+            if ($template && $template->formula) {
+                // Если есть характеристики, рассчитываем объем
+                if (isset($data['attributes']) && is_array($data['attributes']) && !empty($data['attributes'])) {
+                    $testResult = $template->testFormula($data['attributes']);
+                    if ($testResult['success']) {
+                        $result = $testResult['result'];
+                        
+                        // Ограничиваем максимальное значение объема до 99999 (5 символов)
+                        if ($result > 99999) {
+                            $result = 99999;
+                        }
+                        
+                        $data['calculated_volume'] = $result;
+                    }
                 }
             }
         }

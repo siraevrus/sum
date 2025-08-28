@@ -209,16 +209,21 @@ class RequestResource extends Resource
                     ->schema([
                         TextInput::make('calculated_volume')
                             ->label('Рассчитанный объем')
-                            ->numeric()
                             ->disabled()
+                            ->formatStateUsing(function ($state) {
+                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                            })
                             ->suffix(function (Get $get) {
                                 $templateId = $get('product_template_id');
                                 if ($templateId) {
                                     $template = ProductTemplate::find($templateId);
+
                                     return $template ? $template->unit : '';
                                 }
+
                                 return '';
-                            }),
+                            })
+                            ->helperText('Объем рассчитывается автоматически на основе числовых характеристик товара по формуле шаблона'),
                     ])
                     ->visible(function (Get $get) {
                         return $get('product_template_id') !== null;

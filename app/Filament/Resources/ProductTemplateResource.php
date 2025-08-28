@@ -267,6 +267,7 @@ class ProductTemplateResource extends Resource
         return [
             'index' => Pages\ListProductTemplates::route('/'),
             'create' => Pages\CreateProductTemplate::route('/create'),
+            'view' => Pages\ViewProductTemplate::route('/{record}'),
             'edit' => Pages\EditProductTemplate::route('/{record}/edit'),
         ];
     }

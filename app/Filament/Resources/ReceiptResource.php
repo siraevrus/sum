@@ -132,6 +132,9 @@ class ReceiptResource extends Resource
                                         TextInput::make('calculated_volume')
                                             ->label('Объем')
                                             ->disabled()
+                                            ->formatStateUsing(function ($state) {
+                                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                                            })
                                             ->suffix(function (Get $get) {
                                                 $templateId = $get('product_template_id');
                                                 if ($templateId) {
@@ -141,7 +144,8 @@ class ReceiptResource extends Resource
                                                 }
 
                                                 return '';
-                                            }),
+                                            })
+                                            ->helperText('Объем рассчитывается автоматически на основе числовых характеристик товара по формуле шаблона'),
                                     ]),
 
                                 // Динамические поля характеристик
@@ -265,11 +269,9 @@ class ReceiptResource extends Resource
 
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
-                    ->numeric(
-                        decimalPlaces: 2,
-                        decimalSeparator: '.',
-                        thousandsSeparator: ' ',
-                    )
+                    ->formatStateUsing(function ($state) {
+                        return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                    })
                     ->suffix(function (Product $record): string {
                         return $record->template?->unit ?? '';
                     })

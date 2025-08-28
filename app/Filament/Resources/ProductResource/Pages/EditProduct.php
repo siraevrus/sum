@@ -46,9 +46,8 @@ class EditProduct extends EditRecord
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
-                // Добавляем количество в атрибуты для формулы
+                // Используем только характеристики для формулы (без количества)
                 $attributes = $data['attributes'];
-                $attributes['quantity'] = $data['quantity'] ?? 1;
                 
                 // Формируем наименование из характеристик
                 $nameParts = [];
@@ -67,7 +66,14 @@ class EditProduct extends EditRecord
                 
                 $testResult = $template->testFormula($attributes);
                 if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
+                    $result = $testResult['result'];
+                    
+                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
+                    if ($result > 99999) {
+                        $result = 99999;
+                    }
+                    
+                    $data['calculated_volume'] = $result;
                 }
             }
         }
@@ -105,7 +111,14 @@ class EditProduct extends EditRecord
             if ($template && $template->formula && !empty($data['attributes'])) {
                 $testResult = $template->testFormula($data['attributes']);
                 if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
+                    $result = $testResult['result'];
+                    
+                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
+                    if ($result > 99999) {
+                        $result = 99999;
+                    }
+                    
+                    $data['calculated_volume'] = $result;
                 }
             }
         }

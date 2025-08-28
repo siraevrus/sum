@@ -23,6 +23,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class ProductResource extends Resource
@@ -66,10 +67,23 @@ class ProductResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->live()
-                                    ->afterStateUpdated(function (Set $set) {
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Очищаем старые характеристики при смене шаблона
                                         $set('calculated_volume', null);
                                         $set('name', null);
+                                        
+                                        // Очищаем все поля характеристик
+                                        $template = ProductTemplate::find($get('product_template_id'));
+                                        if ($template) {
+                                            foreach ($template->attributes as $attribute) {
+                                                $set("attribute_{$attribute->variable}", null);
+                                            }
+                                            
+                                            // Если у шаблона есть формула, показываем подсказку
+                                            if ($template->formula) {
+                                                $set('calculated_volume', 'Заполните характеристики для расчета объема');
+                                            }
+                                        }
                                     }),
 
                                 Select::make('warehouse_id')
@@ -110,7 +124,20 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->maxValue(99999)
+                                    ->maxLength(5)
+                                    ->required()
+                                    ->helperText('Максимальное значение: 99999. Объем рассчитывается по характеристикам товара.')
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+                                            if ($template) {
+                                                static::calculateAndSetVolume($set, $get, $template);
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспортного средства')
@@ -159,13 +186,24 @@ class ProductResource extends Resource
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->numeric()
-                                        ->required($attribute->is_required);
+                                        ->maxValue(9999)
+                                        ->maxLength(4)
+                                        ->required($attribute->is_required)
+                                        ->helperText('Максимальное значение: 9999')
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            static::calculateAndSetVolume($set, $get, $template);
+                                        });
                                     break;
 
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
-                                        ->required($attribute->is_required);
+                                        ->required($attribute->is_required)
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            static::calculateAndSetVolume($set, $get, $template);
+                                        });
                                     break;
 
                                 case 'select':
@@ -174,6 +212,10 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->options($options)
                                         ->required($attribute->is_required)
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            static::calculateAndSetVolume($set, $get, $template);
+                                        })
                                         ->dehydrateStateUsing(function ($state, $get) use ($options) {
                                             // Преобразуем индекс в значение для селектов
                                             if ($state !== null && is_numeric($state) && isset($options[$state])) {
@@ -194,6 +236,10 @@ class ProductResource extends Resource
                         TextInput::make('calculated_volume')
                             ->label('Рассчитанный объем')
                             ->disabled()
+                            ->live()
+                            ->formatStateUsing(function ($state) {
+                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                            })
                             ->suffix(function (Get $get) {
                                 $templateId = $get('product_template_id');
                                 if ($templateId) {
@@ -203,7 +249,8 @@ class ProductResource extends Resource
                                 }
 
                                 return '';
-                            }),
+                            })
+                            ->helperText('Объем рассчитывается автоматически на основе числовых характеристик товара по формуле шаблона'),
                     ])
                     ->visible(function (Get $get) {
                         return $get('product_template_id') !== null;
@@ -214,7 +261,7 @@ class ProductResource extends Resource
     /**
      * Рассчитать и установить объем товара
      */
-    private static function calculateAndSetVolume(Set $set, Get $get, $template): void
+    public static function calculateAndSetVolume(Set $set, Get $get, $template): void
     {
         // Собираем все значения характеристик
         $attributes = [];
@@ -227,9 +274,8 @@ class ProductResource extends Resource
             }
         }
 
-        // Добавляем количество
+        // Добавляем количество (но не в формулу, только для отображения)
         $quantity = $get('quantity') ?? 1;
-        $attributes['quantity'] = $quantity;
 
         // Формируем наименование из характеристик
         if (! empty($attributes)) {
@@ -259,7 +305,14 @@ class ProductResource extends Resource
             if (! empty($numericAttributes)) {
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
-                    $set('calculated_volume', $testResult['result']);
+                    $result = $testResult['result'];
+                    
+                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
+                    if ($result > 99999) {
+                        $result = 99999;
+                    }
+                    
+                    $set('calculated_volume', $result);
                 }
             }
         }
@@ -300,11 +353,9 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
-                    ->numeric(
-                        decimalPlaces: 0,
-                        decimalSeparator: '.',
-                        thousandsSeparator: ' ',
-                    )
+                    ->formatStateUsing(function ($state) {
+                        return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                    })
                     ->suffix(function (Product $record): string {
                         return $record->template?->unit ?? '';
                     })
@@ -315,8 +366,27 @@ class ProductResource extends Resource
                     ->date()
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_active')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Статус')
+                    ->badge()
+                    ->color(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'success',
+                            Product::STATUS_IN_TRANSIT => 'warning',
+                            default => 'gray',
+                        };
+                    })
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'На складе',
+                            Product::STATUS_IN_TRANSIT => 'В пути',
+                            default => $state,
+                        };
+                    })
+                    ->sortable(),
+
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Активен')
                     ->boolean()
                     ->hidden()
                     ->sortable(),
@@ -327,8 +397,16 @@ class ProductResource extends Resource
 
             ])
             ->emptyStateHeading('Нет товаров')
-            ->emptyStateDescription('Создайте первый товар, чтобы начать работу.')
+            ->emptyStateDescription('Создайте первый товар, чтобы начать работу. Используйте фильтр по статусу для просмотра товаров в пути. Товары со статусом "В пути" автоматически появляются в разделе "Приемка".')
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Статус')
+                    ->options([
+                        Product::STATUS_IN_STOCK => 'На складе',
+                        Product::STATUS_IN_TRANSIT => 'В пути',
+                    ])
+                    ->default(Product::STATUS_IN_STOCK),
+
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -359,10 +437,80 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label(''),
+                Tables\Actions\Action::make('mark_in_transit')
+                    ->label('')
+                    ->icon('heroicon-o-truck')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->visible(fn (\App\Models\Product $record): bool => $record->status === Product::STATUS_IN_STOCK)
+                    ->action(function (\App\Models\Product $record): void {
+                        $record->markInTransit();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Товар переведен в статус "В пути"')
+                            ->body('Товар теперь отображается в разделе "Приемка"')
+                            ->success()
+                            ->send();
+                    })
+                    ->modalHeading('Перевести товар в статус "В пути"')
+                    ->modalDescription('Товар будет перемещен в раздел товаров в пути и появится в разделе "Приемка".')
+                    ->modalSubmitActionLabel('Перевести'),
+
+                Tables\Actions\Action::make('mark_in_stock')
+                    ->label('')
+                    ->icon('heroicon-o-home')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn (\App\Models\Product $record): bool => $record->status === Product::STATUS_IN_TRANSIT)
+                    ->action(function (\App\Models\Product $record): void {
+                        $record->markInStock();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Товар переведен в статус "На складе"')
+                            ->body('Товар убран из раздела "Приемка"')
+                            ->success()
+                            ->send();
+                    })
+                    ->modalHeading('Перевести товар в статус "На складе"')
+                    ->modalDescription('Товар будет перемещен в раздел товаров на складе и убран из раздела "Приемка".')
+                    ->modalSubmitActionLabel('Перевести'),
+
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('mark_in_transit')
+                        ->label('Перевести в путь')
+                        ->icon('heroicon-o-truck')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $records->each(fn (\App\Models\Product $record) => $record->markInTransit());
+                            \Filament\Notifications\Notification::make()
+                                ->title("{$records->count()} товаров переведено в статус \"В пути\"")
+                                ->body('Товары теперь отображаются в разделе "Приемка"')
+                                ->success()
+                                ->send();
+                        })
+                        ->modalHeading('Перевести товары в статус "В пути"')
+                        ->modalDescription('Выбранные товары будут перемещены в раздел товаров в пути.')
+                        ->modalSubmitActionLabel('Перевести'),
+
+                    Tables\Actions\BulkAction::make('mark_in_stock')
+                        ->label('Перевести на склад')
+                        ->icon('heroicon-o-home')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            $records->each(fn (\App\Models\Product $record) => $record->markInStock());
+                            \Filament\Notifications\Notification::make()
+                                ->title("{$records->count()} товаров переведено в статус \"На складе\"")
+                                ->body('Товары убраны из раздела "Приемка"')
+                                ->success()
+                                ->send();
+                        })
+                        ->modalHeading('Перевести товары в статус "На складе"')
+                        ->modalDescription('Выбранные товары будут перемещены в раздел товаров на складе.')
+                        ->modalSubmitActionLabel('Перевести'),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
@@ -396,8 +544,7 @@ class ProductResource extends Resource
     {
         $user = Auth::user();
 
-        $base = parent::getEloquentQuery()
-            ->where('status', Product::STATUS_IN_STOCK);
+        $base = parent::getEloquentQuery();
 
         if (! $user) {
             return $base->whereRaw('1 = 0');

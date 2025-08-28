@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockResource\Pages;
 use App\Models\Product;
+use App\Models\StockGroup;
 use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -82,50 +83,72 @@ class StockResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(function (Product $record): string {
+                        return $record->getFullName();
+                    }),
+
                 Tables\Columns\TextColumn::make('producer')
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Доступное количество')
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(function (string $state): string {
-                        if ((int) $state > 10) {
-                            return 'success';
-                        }
-                        if ((int) $state > 0) {
-                            return 'warning';
-                        }
-
+                    ->color(function (Product $record): string {
+                        if ($record->quantity > 10) return 'success';
+                        if ($record->quantity > 0) return 'warning';
                         return 'danger';
                     })
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
                             ->label('Итого')
                     ),
+
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Доступный объем (м³)')
-                    ->numeric(
-                        decimalPlaces: 2,
-                        decimalSeparator: '.',
-                        thousandsSeparator: ' ',
-                    )
+                    ->formatStateUsing(function ($state) {
+                        return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                    })
                     ->sortable()
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
                             ->label('Итого (м³)')
-                            ->numeric(
-                                decimalPlaces: 2,
-                                decimalSeparator: '.',
-                                thousandsSeparator: ' ',
-                            )
+                            ->formatStateUsing(function ($state) {
+                                return number_format($state, 3, '.', ' ');
+                            })
                     ),
+
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Дата поступления')
+                    ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Статус')
+                    ->badge()
+                    ->color(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'success',
+                            Product::STATUS_IN_TRANSIT => 'warning',
+                            default => 'gray',
+                        };
+                    })
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'На складе',
+                            Product::STATUS_IN_TRANSIT => 'В пути',
+                            default => $state,
+                        };
+                    })
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
@@ -143,36 +166,75 @@ class StockResource extends Resource
                     ->query(function (Builder $query): Builder {
                         return $query->where('quantity', '>', 0);
                     }),
+                Tables\Filters\Filter::make('low_stock')
+                    ->label('Низкий остаток')
+                    ->query(function (Builder $query): Builder {
+                        return $query->where('quantity', '<=', 10)
+                                   ->where('quantity', '>', 0);
+                    }),
             ])
             ->actions([
-                // Список только для просмотра
+                Tables\Actions\Action::make('view_details')
+                    ->label('')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Детали товара')
+                    ->modalContent(function (Product $record): string {
+                        $attributesText = $record->getAttributesText();
+                        $templateName = $record->template?->name ?? 'Неизвестный шаблон';
+                        
+                        return "
+                            <div class='space-y-4'>
+                                <div>
+                                    <strong>Шаблон:</strong> {$templateName}
+                                </div>
+                                <div>
+                                    <strong>Производитель:</strong> {$record->producer}
+                                </div>
+                                <div>
+                                    <strong>Склад:</strong> {$record->warehouse?->name}
+                                </div>
+                                <div>
+                                    <strong>Количество:</strong> {$record->quantity}
+                                </div>
+                                <div>
+                                    <strong>Объем:</strong> " . number_format($record->calculated_volume ?? 0, 3, '.', ' ') . " м³
+                                </div>
+                                <div>
+                                    <strong>Характеристики:</strong> {$attributesText}
+                                </div>
+                                <div>
+                                    <strong>Дата поступления:</strong> {$record->arrival_date?->format('d.m.Y')}
+                                </div>
+                            </div>
+                        ";
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Закрыть'),
             ])
             ->bulkActions([
                 // Нет пакетных действий
             ])
+            ->emptyStateHeading('Нет товаров на складе')
+            ->emptyStateDescription('Товары появятся здесь после поступления на склад.')
             ->defaultSort('quantity', 'desc');
     }
 
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $base = parent::getEloquentQuery()
-            ->where('status', Product::STATUS_IN_STOCK)
-            ->where('is_active', true);
-
+        
         if (! $user) {
-            return $base->whereRaw('1 = 0');
+            return Product::query()->whereRaw('1 = 0');
         }
 
-        if ($user->role->value === 'admin') {
-            return $base;
-        }
-
-        if ($user->warehouse_id) {
-            return $base->where('warehouse_id', $user->warehouse_id);
-        }
-
-        return $base->whereRaw('1 = 0');
+        return Product::query()
+            ->where('status', Product::STATUS_IN_STOCK)
+            ->where('is_active', true)
+            ->where('quantity', '>', 0)
+            ->when($user->role->value !== 'admin' && $user->warehouse_id, function ($query) use ($user) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            });
     }
 
     public static function getRelations(): array
@@ -190,7 +252,7 @@ class StockResource extends Resource
     }
 
     /**
-     * Для совместимости: уникальный ключ записи (стандартное поведение модели подходит)
+     * Для совместимости: уникальный ключ записи
      */
     public static function getTableRecordKey($record): string
     {
