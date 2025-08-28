@@ -342,7 +342,11 @@ class SaleResource extends Resource
             ->emptyStateDescription('Создайте первую продажу, чтобы начать работу.')
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
-                Tables\Actions\EditAction::make()->label(''),
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->visible(function (Sale $record) {
+                        return $record->payment_status !== Sale::PAYMENT_STATUS_CANCELLED;
+                    }),
                 // Списывание теперь происходит автоматически при создании, кнопка не нужна
 
                 Tables\Actions\Action::make('cancel_sale')
