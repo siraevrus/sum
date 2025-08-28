@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
-use App\Models\Product;
 use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
@@ -272,7 +271,7 @@ class ReceiptResource extends Resource
                     ->formatStateUsing(function ($state) {
                         return $state ? number_format($state, 3, '.', ' ') : '0.000';
                     })
-                    ->suffix(function (Product $record): string {
+                    ->suffix(function (ProductInTransit $record): string {
                         return $record->template?->unit ?? '';
                     })
                     ->sortable(),
