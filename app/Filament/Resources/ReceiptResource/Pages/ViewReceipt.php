@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -19,23 +19,21 @@ class ViewReceipt extends ViewRecord
                 ->label('Принять товар')
                 ->icon('heroicon-o-check')
                 ->color('success')
-                ->visible(function (ProductInTransit $record): bool {
-                    return in_array($record->status, [ProductInTransit::STATUS_ARRIVED, ProductInTransit::STATUS_IN_TRANSIT]);
+                ->visible(function (Product $record): bool {
+                    return $record->status === Product::STATUS_FOR_RECEIPT;
                 })
-                ->action(function (ProductInTransit $record): void {
-                    if ($record->receive()) {
-                        Notification::make()
-                            ->title('Товар успешно принят')
-                            ->body('Товар добавлен в остатки на складе.')
-                            ->success()
-                            ->send();
-                    } else {
-                        Notification::make()
-                            ->title('Ошибка при приемке')
-                            ->body('Не удалось принять товар. Попробуйте еще раз.')
-                            ->danger()
-                            ->send();
-                    }
+                ->action(function (Product $record): void {
+                    $record->update([
+                        'status' => Product::STATUS_IN_STOCK,
+                        'actual_arrival_date' => now(),
+                    ]);
+
+                    Notification::make()
+                        ->title('Товар успешно принят')
+                        ->body('Товар добавлен в остатки на складе.')
+                        ->success()
+                        ->send();
+
                     $this->redirect(ReceiptResource::getUrl('index'));
                 })
                 ->requiresConfirmation()
