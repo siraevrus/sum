@@ -324,7 +324,10 @@ class SaleResource extends Resource
 
                 SelectFilter::make('payment_status')
                     ->label('Статус оплаты')
-                    ->options(fn () => Sale::getPaymentStatusOptions()),
+                    ->options([
+                        \App\Models\Sale::PAYMENT_STATUS_PAID => 'Оплачено',
+                        \App\Models\Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
+                    ]),
 
                 Filter::make('active')
                     ->label('Только активные')
