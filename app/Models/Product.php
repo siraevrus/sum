@@ -31,6 +31,7 @@ class Product extends Model
         'attributes',
         'calculated_volume',
         'quantity',
+        'sold_quantity',
         'transport_number',
         'producer',
         'arrival_date',
@@ -49,6 +50,7 @@ class Product extends Model
         'attributes' => 'array',
         'calculated_volume' => 'decimal:4',
         'quantity' => 'integer',
+        'sold_quantity' => 'integer',
         'arrival_date' => 'date',
         'status' => 'string',
         'is_active' => 'boolean',
@@ -258,16 +260,25 @@ class Product extends Model
      */
     public function hasStock(): bool
     {
-        return $this->quantity > 0 && $this->is_active;
+        return $this->getAvailableQuantity() > 0 && $this->is_active;
     }
 
     /**
-     * Уменьшить количество товара
+     * Получить доступное количество (остатки)
+     */
+    public function getAvailableQuantity(): int
+    {
+        return $this->quantity - $this->sold_quantity;
+    }
+
+    /**
+     * Уменьшить количество товара (при продаже)
      */
     public function decreaseQuantity(int $amount): bool
     {
         if ($this->quantity >= $amount) {
-            $this->quantity -= $amount;
+            // Увеличиваем проданное количество вместо уменьшения исходного
+            $this->sold_quantity += $amount;
             $this->save();
 
             return true;
@@ -277,12 +288,15 @@ class Product extends Model
     }
 
     /**
-     * Увеличить количество товара
+     * Увеличить количество товара (при отмене продажи)
      */
     public function increaseQuantity(int $amount): void
     {
-        $this->quantity += $amount;
-        $this->save();
+        // Уменьшаем проданное количество при отмене продажи
+        if ($this->sold_quantity >= $amount) {
+            $this->sold_quantity -= $amount;
+            $this->save();
+        }
     }
 
     /**
