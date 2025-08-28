@@ -130,12 +130,19 @@ class SaleResource extends Resource
                                             return [];
                                         }
 
-                                        // Проверяем, находимся ли мы в режиме создания или редактирования
+                                        // Проверяем, находимся ли мы в режиме редактирования/просмотра
                                         $record = $get('record');
                                         if ($record && $record->exists) {
-                                            // Режим просмотра/редактирования - показываем название товара
-                                            return Product::where('id', $record->product_id)
-                                                ->pluck('name', 'id');
+                                            // Режим редактирования/просмотра - восстанавливаем составную позицию
+                                            $product = Product::find($record->product_id);
+                                            if ($product) {
+                                                // Создаем составной ключ как при создании
+                                                $compositeKey = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
+                                                $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                                $displayName = "{$product->name}{$producerLabel} - Текущий товар";
+
+                                                return [$compositeKey => $displayName];
+                                            }
                                         }
 
                                         // Режим создания - получаем товары из агрегированных остатков
@@ -169,6 +176,12 @@ class SaleResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->live()
+                                    ->disabled(function (Get $get) {
+                                        // Блокируем поле при редактировании/просмотре
+                                        $record = $get('record');
+
+                                        return $record && $record->exists;
+                                    })
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Сбрасываем количество при смене товара
                                         $set('quantity', 1);
