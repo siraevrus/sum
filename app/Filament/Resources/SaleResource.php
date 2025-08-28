@@ -303,6 +303,12 @@ class SaleResource extends Resource
                     ->label('Продавец')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Статус оплаты')
+                    ->formatStateUsing(fn ($state, $record) => $record->getPaymentStatusLabel())
+                    ->badge()
+                    ->color(fn ($record) => $record->getPaymentStatusColor())
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('warehouse_id')
