@@ -322,6 +322,10 @@ class SaleResource extends Resource
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser()),
 
+                SelectFilter::make('payment_status')
+                    ->label('Статус оплаты')
+                    ->options(fn () => Sale::getPaymentStatusOptions()),
+
                 Filter::make('active')
                     ->label('Только активные')
                     ->query(function (Builder $query): Builder {
