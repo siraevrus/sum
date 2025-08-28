@@ -344,7 +344,6 @@ class ReceiptResource extends Resource
                     ->label('Статус')
                     ->options([
                         Product::STATUS_IN_TRANSIT => 'В пути',
-                        Product::STATUS_IN_STOCK => 'На складе',
                     ])
                     ->searchable(),
 
