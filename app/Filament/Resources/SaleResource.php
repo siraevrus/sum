@@ -114,6 +114,7 @@ class SaleResource extends Resource
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Сбрасываем выбор товара при смене склада
                                         $set('product_id', null);
@@ -161,6 +162,7 @@ class SaleResource extends Resource
                                         ->searchable()
                                         ->preload()
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) {
                                             $set('quantity', 1);
                                             static::calculateTotalPrice($set, $get);
@@ -188,6 +190,7 @@ class SaleResource extends Resource
                                     ->minValue(1)
                                     ->required()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
                                     })
@@ -206,6 +209,7 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->required()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
                                     }),
@@ -226,6 +230,7 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->required()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
                                     }),
