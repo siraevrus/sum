@@ -3,10 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceiptResource\Pages;
-use App\Models\ProductInTransit;
+use App\Models\Product;
 use App\Models\ProductTemplate;
 use App\Models\Warehouse;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
@@ -18,22 +19,21 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ReceiptResource extends Resource
 {
-    protected static ?string $model = ProductInTransit::class;
+    protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-truck';
+    protected static ?string $navigationIcon = 'heroicon-o-check-circle';
 
     protected static ?string $navigationGroup = 'Приемка';
 
-    protected static ?string $modelLabel = 'Приемка';
+    protected static ?string $modelLabel = 'Приемка товара';
 
-    protected static ?string $pluralModelLabel = 'Приемка';
+    protected static ?string $pluralModelLabel = 'Приемка товаров';
 
     protected static ?int $navigationSort = 7;
 
@@ -44,7 +44,7 @@ class ReceiptResource extends Resource
             return false;
         }
 
-        // Приемка не доступна оператору и менеджеру по продажам
+        // Приемка доступна только админу и работнику склада
         return in_array($user->role->value, [
             'admin',
             'warehouse_worker',
@@ -59,11 +59,27 @@ class ReceiptResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
                                     ->required()
+                                    ->dehydrated()
+                                    ->default(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return null;
+                                        }
+
+                                        return $user->isAdmin() ? null : $user->warehouse_id;
+                                    })
+                                    ->visible(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return false;
+                                        }
+
+                                        return $user->isAdmin();
+                                    })
                                     ->searchable(),
 
                                 TextInput::make('shipping_location')
@@ -73,7 +89,8 @@ class ReceiptResource extends Resource
 
                                 DatePicker::make('shipping_date')
                                     ->label('Дата отгрузки')
-                                    ->required(),
+                                    ->required()
+                                    ->default(now()),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
@@ -99,64 +116,59 @@ class ReceiptResource extends Resource
                                             ->options(function () {
                                                 return ProductTemplate::pluck('name', 'id');
                                             })
-                                            ->required()
                                             ->searchable()
-                                            ->live()
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                                // Очищаем характеристики при смене шаблона
-                                                $set('attributes', []);
-                                                $set('calculated_volume', null);
+                                            ->required()
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set) {
                                                 $set('name', '');
+                                                $set('calculated_volume', null);
                                             }),
 
                                         TextInput::make('name')
-                                            ->label('Наименование товара')
+                                            ->label('Наименование')
+                                            ->maxLength(255)
+                                            ->required()
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                                static::calculateVolumeForItem($set, $get);
+                                            }),
+
+                                        TextInput::make('quantity')
+                                            ->label('Количество')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->minValue(1)
+                                            ->required()
+                                            ->reactive()
+                                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                                static::calculateVolumeForItem($set, $get);
+                                            }),
+
+                                        TextInput::make('calculated_volume')
+                                            ->label('Объем')
+                                            ->numeric()
                                             ->disabled()
-                                            ->helperText('Автоматически формируется из характеристик товара'),
+                                            ->dehydrated(false),
 
                                         TextInput::make('producer')
                                             ->label('Производитель')
                                             ->maxLength(255),
 
-                                        TextInput::make('quantity')
-                                            ->label('Количество')
-                                            ->numeric()
-                                            ->minValue(1)
-                                            ->required()
-                                            ->live()
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                                self::calculateVolumeForItem($set, $get);
-                                            }),
-
-                                        TextInput::make('calculated_volume')
-                                            ->label('Объем')
-                                            ->disabled()
-                                            ->formatStateUsing(function ($state) {
-                                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
-                                            })
-                                            ->suffix(function (Get $get) {
-                                                $templateId = $get('product_template_id');
-                                                if ($templateId) {
-                                                    $template = ProductTemplate::find($templateId);
-
-                                                    return $template ? $template->unit : '';
-                                                }
-
-                                                return '';
-                                            })
-                                            ->helperText('Объем рассчитывается автоматически на основе числовых характеристик товара по формуле шаблона'),
+                                        TextInput::make('tracking_number')
+                                            ->label('Номер отслеживания')
+                                            ->maxLength(255),
                                     ]),
 
-                                // Динамические поля характеристик
-                                Grid::make(3)
+                                // Динамические поля для характеристик
+                                Grid::make(2)
                                     ->schema(function (Get $get) {
                                         $templateId = $get('product_template_id');
                                         if (! $templateId) {
                                             return [];
                                         }
 
-                                        $template = ProductTemplate::with('attributes')->find($templateId);
-                                        if (! $template) {
+                                        $template = ProductTemplate::find($templateId);
+                                        if (! $template || ! $template->attributes) {
                                             return [];
                                         }
 
@@ -169,21 +181,13 @@ class ReceiptResource extends Resource
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->numeric()
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
 
                                                 case 'text':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
 
                                                 case 'select':
@@ -191,11 +195,7 @@ class ReceiptResource extends Resource
                                                     $fields[] = Select::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->options($options)
-                                                        ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                                            self::calculateVolumeForItem($set, $get);
-                                                        });
+                                                        ->required($attribute->is_required);
                                                     break;
                                             }
                                         }
@@ -205,7 +205,7 @@ class ReceiptResource extends Resource
                                     ->visible(fn (Get $get) => $get('product_template_id') !== null),
 
                                 Textarea::make('description')
-                                    ->label('Описание товара')
+                                    ->label('Описание')
                                     ->rows(2)
                                     ->maxLength(1000)
                                     ->columnSpanFull(),
@@ -215,16 +215,23 @@ class ReceiptResource extends Resource
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Товар')
                             ->defaultItems(1)
-                            ->minItems(1)
-                            ->maxItems(50),
+                            ->minItems(1),
                     ]),
 
-                Section::make('Дополнительная информация')
+                Section::make('Документы')
                     ->schema([
-                        Textarea::make('notes')
-                            ->label('Заметки')
-                            ->rows(3)
-                            ->maxLength(1000),
+                        FileUpload::make('document_path')
+                            ->label('Документы')
+                            ->directory('documents')
+                            ->multiple()
+                            ->maxFiles(5)
+                            ->maxSize(51200) // 50MB
+                            ->acceptedFileTypes(['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+                            ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
+                            ->previewable()
+                            ->imagePreviewHeight('250'),
                     ]),
             ]);
     }
@@ -236,10 +243,6 @@ class ReceiptResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
                     ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('template.name')
-                    ->label('Шаблон')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
@@ -263,7 +266,7 @@ class ReceiptResource extends Resource
 
                 Tables\Columns\TextColumn::make('attributes')
                     ->label('Характеристики')
-                    ->formatStateUsing(function (ProductInTransit $record): string {
+                    ->formatStateUsing(function (Product $record): string {
                         if (empty($record->attributes) || ! is_array($record->attributes)) {
                             return 'Не указаны';
                         }
@@ -290,8 +293,19 @@ class ReceiptResource extends Resource
                     ->formatStateUsing(function ($state) {
                         return $state ? number_format($state, 3, '.', ' ') : '0.000';
                     })
-                    ->suffix(function (ProductInTransit $record): string {
+                    ->suffix(function (Product $record): string {
                         return $record->template?->unit ?? '';
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Статус')
+                    ->colors([
+                        'info' => Product::STATUS_IN_TRANSIT,
+                        'success' => Product::STATUS_IN_STOCK,
+                    ])
+                    ->formatStateUsing(function (Product $record): string {
+                        return $record->isInTransit() ? 'В пути' : 'На складе';
                     })
                     ->sortable(),
 
@@ -299,56 +313,45 @@ class ReceiptResource extends Resource
                     ->label('Ожидаемая дата')
                     ->date()
                     ->sortable()
-                    ->color(function (ProductInTransit $record): string {
+                    ->color(function (Product $record): string {
                         $expected = $record->expected_arrival_date;
                         if (! $expected) {
                             return 'success';
                         }
 
-                        return ($record->status === ProductInTransit::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
+                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
-                    ->label('Дата прибытия')
+                    ->label('Фактическая дата')
                     ->date()
                     ->sortable()
-                    ->color('success'),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Создатель')
                     ->sortable(),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Статус')
-                    ->colors([
-                        'warning' => [ProductInTransit::STATUS_ORDERED],
-                        'info' => [ProductInTransit::STATUS_IN_TRANSIT],
-                        'success' => [ProductInTransit::STATUS_ARRIVED, ProductInTransit::STATUS_RECEIVED],
-                        'danger' => [ProductInTransit::STATUS_CANCELLED],
-                    ])
-                    ->formatStateUsing(fn (ProductInTransit $record): string => $record->getStatusLabel())
-                    ->sortable(),
             ])
+            ->emptyStateHeading('Нет товаров для приемки')
+            ->emptyStateDescription('Все товары уже приняты или нет товаров в пути.')
             ->filters([
-                SelectFilter::make('warehouse_id')
+                Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
-                SelectFilter::make('status')
+                Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
                     ->options([
-                        ProductInTransit::STATUS_ORDERED => 'Заказано',
-                        ProductInTransit::STATUS_IN_TRANSIT => 'В пути',
-                        ProductInTransit::STATUS_ARRIVED => 'Прибыл',
-                        ProductInTransit::STATUS_RECEIVED => 'Принят',
+                        Product::STATUS_IN_TRANSIT => 'В пути',
+                        Product::STATUS_IN_STOCK => 'На складе',
                     ])
                     ->searchable(),
 
-                SelectFilter::make('shipping_location')
+                Tables\Filters\SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
-                        $locations = ProductInTransit::query()
+                        $locations = Product::query()
                             ->whereNotNull('shipping_location')
                             ->distinct()
                             ->pluck('shipping_location')
@@ -364,31 +367,29 @@ class ReceiptResource extends Resource
                 Tables\Filters\Filter::make('ready_for_receipt')
                     ->label('Готовы к приемке')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('status', ProductInTransit::STATUS_ARRIVED);
+                        return $query->where('status', Product::STATUS_IN_TRANSIT);
                     })
                     ->indicateUsing(function (array $data): ?string {
                         return 'Готовы к приемке';
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\Action::make('confirm_receipt')
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (ProductInTransit $record): bool => $record->status === ProductInTransit::STATUS_ARRIVED)
+                    ->visible(fn (Product $record): bool => $record->status === Product::STATUS_IN_TRANSIT)
                     ->requiresConfirmation()
                     ->modalHeading('Подтверждение приемки товара')
-                    ->modalDescription('Вы уверены, что хотите подтвердить приемку этого товара?')
-                    ->action(function (ProductInTransit $record): void {
+                    ->modalDescription('Вы уверены, что хотите подтвердить приемку этого товара? Товар будет переведен в статус "На складе".')
+                    ->action(function (Product $record): void {
                         $record->update([
-                            'status' => ProductInTransit::STATUS_RECEIVED,
+                            'status' => Product::STATUS_IN_STOCK,
                             'actual_arrival_date' => now(),
                         ]);
                     })
                     ->after(function () {
-                        // Показать уведомление об успешной приемке
                         \Filament\Notifications\Notification::make()
                             ->title('Товар успешно принят')
                             ->success()
@@ -397,7 +398,29 @@ class ReceiptResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('confirm_multiple_receipts')
+                        ->label('Подтвердить приемку выбранных')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Подтверждение приемки товаров')
+                        ->modalDescription('Вы уверены, что хотите подтвердить приемку выбранных товаров?')
+                        ->action(function (array $records): void {
+                            foreach ($records as $record) {
+                                if ($record->status === Product::STATUS_IN_TRANSIT) {
+                                    $record->update([
+                                        'status' => Product::STATUS_IN_STOCK,
+                                        'actual_arrival_date' => now(),
+                                    ]);
+                                }
+                            }
+                        })
+                        ->after(function () {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Товары успешно приняты')
+                                ->success()
+                                ->send();
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -414,9 +437,7 @@ class ReceiptResource extends Resource
     {
         return [
             'index' => Pages\ListReceipts::route('/'),
-            'create' => Pages\CreateReceipt::route('/create'),
             'view' => Pages\ViewReceipt::route('/{record}'),
-            'edit' => Pages\EditReceipt::route('/{record}/edit'),
         ];
     }
 
@@ -424,12 +445,7 @@ class ReceiptResource extends Resource
     {
         $user = Auth::user();
         $base = parent::getEloquentQuery()
-            ->whereIn('status', [
-                ProductInTransit::STATUS_ORDERED,
-                ProductInTransit::STATUS_IN_TRANSIT,
-                ProductInTransit::STATUS_ARRIVED,
-                ProductInTransit::STATUS_RECEIVED,
-            ])
+            ->where('status', Product::STATUS_IN_TRANSIT)
             ->active();
 
         if (! $user) {
@@ -494,10 +510,14 @@ class ReceiptResource extends Resource
                 $set('name', $generatedName);
             }
 
-            // Рассчитываем объем
-            $testResult = $template->testFormula($attributes);
-            if ($testResult['success']) {
-                $set('calculated_volume', $testResult['result']);
+            // Рассчитываем объем по формуле
+            try {
+                $formula = $template->formula;
+                $result = eval("return $formula;");
+                $set('calculated_volume', $result);
+            } catch (\Throwable $e) {
+                // В случае ошибки в формуле, не устанавливаем объем
+                $set('calculated_volume', null);
             }
         }
     }
