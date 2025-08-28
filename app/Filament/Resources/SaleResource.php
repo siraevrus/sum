@@ -210,6 +210,16 @@ class SaleResource extends Resource
                                         static::calculateTotalPrice($set, $get);
                                     }),
 
+                                Select::make('currency')
+                                    ->label('Валюта')
+                                    ->options([
+                                        'RUB' => 'Руб',
+                                        'USD' => 'USD',
+                                        'KGS' => 'Сомы',
+                                    ])
+                                    ->default('RUB')
+                                    ->required(),
+
                                 TextInput::make('nocash_amount')
                                     ->label('Сумма (безнал)')
                                     ->numeric()
