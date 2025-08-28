@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockResource\Pages;
 use App\Models\Product;
-use App\Models\StockGroup;
 use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -83,10 +82,7 @@ class StockResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
                     ->searchable()
-                    ->sortable()
-                    ->formatStateUsing(function (StockGroup $record): string {
-                        return $record->getFullName();
-                    }),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('producer')
                     ->label('Производитель')
@@ -97,20 +93,26 @@ class StockResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('total_quantity')
+                Tables\Columns\TextColumn::make('quantity')
                     ->label('Доступное количество')
                     ->numeric()
                     ->sortable()
                     ->badge()
-                    ->color(function (StockGroup $record): string {
-                        return $record->getQuantityColor();
+                    ->color(function (string $state): string {
+                        if ($state > 10) {
+                            return 'success';
+                        }
+                        if ($state > 0) {
+                            return 'warning';
+                        }
+                        return 'danger';
                     })
                     ->summarize(
                         Tables\Columns\Summarizers\Sum::make()
                             ->label('Итого')
                     ),
 
-                Tables\Columns\TextColumn::make('total_volume')
+                Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Доступный объем (м³)')
                     ->formatStateUsing(function ($state) {
                         return $state ? number_format($state, 3, '.', ' ') : '0.000';
@@ -124,19 +126,27 @@ class StockResource extends Resource
                             })
                     ),
 
-                Tables\Columns\TextColumn::make('product_count')
-                    ->label('Кол-во позиций')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color('info'),
-
-                Tables\Columns\TextColumn::make('last_arrival_date')
-                    ->label('Последнее поступление')
+                Tables\Columns\TextColumn::make('arrival_date')
+                    ->label('Дата поступления')
                     ->date()
-                    ->sortable()
-                    ->formatStateUsing(function (StockGroup $record): string {
-                        return $record->getLastArrivalInfo();
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Статус')
+                    ->badge()
+                    ->color(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'success',
+                            Product::STATUS_IN_TRANSIT => 'warning',
+                            default => 'gray',
+                        };
+                    })
+                    ->formatStateUsing(function (string $state): string {
+                        return match ($state) {
+                            Product::STATUS_IN_STOCK => 'На складе',
+                            Product::STATUS_IN_TRANSIT => 'В пути',
+                            default => 'Неизвестно',
+                        };
                     }),
             ])
             ->filters([
@@ -153,13 +163,13 @@ class StockResource extends Resource
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('total_quantity', '>', 0);
+                        return $query->where('quantity', '>', 0);
                     }),
                 Tables\Filters\Filter::make('low_stock')
                     ->label('Низкий остаток')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('total_quantity', '<=', 10)
-                                   ->where('total_quantity', '>', 0);
+                        return $query->where('quantity', '<=', 10)
+                                   ->where('quantity', '>', 0);
                     }),
             ])
             ->actions([
@@ -167,10 +177,16 @@ class StockResource extends Resource
                     ->label('')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading('Детали группы товаров')
-                    ->modalContent(function (StockGroup $record): string {
-                        $attributesText = $record->getAttributesText();
+                    ->modalHeading('Детали товара')
+                    ->modalContent(function (Product $record): string {
                         $templateName = $record->template?->name ?? 'Неизвестный шаблон';
+                        $attributesText = '';
+                        
+                        if ($record->attributes && is_array($record->attributes)) {
+                            $attributesText = implode(', ', array_map(function($key, $value) {
+                                return "{$key}: {$value}";
+                            }, array_keys($record->attributes), $record->attributes));
+                        }
                         
                         return "
                             <div class='space-y-4'>
@@ -184,22 +200,16 @@ class StockResource extends Resource
                                     <strong>Склад:</strong> {$record->warehouse?->name}
                                 </div>
                                 <div>
-                                    <strong>Общее количество:</strong> {$record->total_quantity}
+                                    <strong>Количество:</strong> {$record->quantity}
                                 </div>
                                 <div>
-                                    <strong>Общий объем:</strong> " . number_format($record->total_volume ?? 0, 3, '.', ' ') . " м³
-                                </div>
-                                <div>
-                                    <strong>Количество позиций:</strong> {$record->product_count}
+                                    <strong>Объем:</strong> " . number_format($record->calculated_volume ?? 0, 3, '.', ' ') . " м³
                                 </div>
                                 <div>
                                     <strong>Характеристики:</strong> {$attributesText}
                                 </div>
                                 <div>
-                                    <strong>Первое поступление:</strong> {$record->first_arrival_date?->format('d.m.Y')}
-                                </div>
-                                <div>
-                                    <strong>Последнее поступление:</strong> {$record->last_arrival_date?->format('d.m.Y')}
+                                    <strong>Дата поступления:</strong> {$record->arrival_date?->format('d.m.Y')}
                                 </div>
                             </div>
                         ";
@@ -212,7 +222,7 @@ class StockResource extends Resource
             ])
             ->emptyStateHeading('Нет товаров на складе')
             ->emptyStateDescription('Товары появятся здесь после поступления на склад. Товары с одинаковыми характеристиками автоматически группируются.')
-            ->defaultSort('total_quantity', 'desc');
+            ->defaultSort('quantity', 'desc');
     }
 
     public static function getEloquentQuery(): Builder
@@ -231,32 +241,8 @@ class StockResource extends Resource
             $baseQuery->where('warehouse_id', $user->warehouse_id);
         }
 
-        // Получаем сгруппированные данные
-        $groupedData = Product::getGroupedStock($baseQuery);
-        
-        // Создаем коллекцию StockGroup моделей с уникальными ID
-        $stockGroups = collect();
-        foreach ($groupedData as $index => $group) {
-            $stockGroup = new StockGroup();
-            $stockGroup->id = $index + 1; // Уникальный ID для каждой группы
-            $stockGroup->fill([
-                'product_template_id' => $group->product_template_id,
-                'warehouse_id' => $group->warehouse_id,
-                'producer' => $group->producer,
-                'attributes' => $group->attributes,
-                'total_quantity' => $group->total_quantity,
-                'total_volume' => $group->total_volume,
-                'product_count' => $group->product_count,
-                'name' => $group->name,
-                'description' => $group->description,
-                'first_arrival_date' => $group->first_arrival_date,
-                'last_arrival_date' => $group->last_arrival_date,
-            ]);
-            $stockGroups->push($stockGroup);
-        }
-        
-        // Возвращаем query builder с сгруппированными данными
-        return StockGroup::query()->whereIn('id', $stockGroups->pluck('id'));
+        // Возвращаем базовый query для продуктов
+        return $baseQuery;
     }
 
     public static function getRelations(): array
@@ -273,19 +259,5 @@ class StockResource extends Resource
         ];
     }
 
-    /**
-     * Для совместимости: уникальный ключ записи для сгруппированных данных
-     */
-    public static function getTableRecordKey($record): string
-    {
-        if (is_object($record) && method_exists($record, 'getGroupingKey')) {
-            return $record->getGroupingKey();
-        }
 
-        if (is_object($record) && method_exists($record, 'getAttribute')) {
-            return (string) ($record->getAttribute('id') ?? '0');
-        }
-
-        return '0';
-    }
 }

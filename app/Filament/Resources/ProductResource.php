@@ -85,7 +85,8 @@ class ProductResource extends Resource
                                                 $set('calculated_volume', 'Заполните характеристики для расчета объема');
                                             }
                                         }
-                                    }),
+                                    })
+                                    ->live(),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
