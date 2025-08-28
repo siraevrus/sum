@@ -301,11 +301,11 @@ class ReceiptResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Статус')
                     ->colors([
-                        'info' => Product::STATUS_IN_TRANSIT,
+                        'warning' => Product::STATUS_FOR_RECEIPT,
                         'success' => Product::STATUS_IN_STOCK,
                     ])
                     ->formatStateUsing(function (Product $record): string {
-                        return $record->isInTransit() ? 'В пути' : 'На складе';
+                        return $record->isForReceipt() ? 'Для приемки' : 'На складе';
                     })
                     ->sortable(),
 
@@ -319,7 +319,7 @@ class ReceiptResource extends Resource
                             return 'success';
                         }
 
-                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
+                        return ($record->status === Product::STATUS_FOR_RECEIPT && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
@@ -333,7 +333,7 @@ class ReceiptResource extends Resource
                     ->sortable(),
             ])
             ->emptyStateHeading('Нет товаров для приемки')
-            ->emptyStateDescription('Все товары уже приняты или нет товаров в пути.')
+            ->emptyStateDescription('Все товары уже приняты или нет товаров со статусом "Для приемки".')
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
@@ -343,7 +343,7 @@ class ReceiptResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
                     ->options([
-                        Product::STATUS_IN_TRANSIT => 'В пути',
+                        Product::STATUS_FOR_RECEIPT => 'Для приемки',
                     ])
                     ->searchable(),
 
@@ -366,7 +366,7 @@ class ReceiptResource extends Resource
                 Tables\Filters\Filter::make('ready_for_receipt')
                     ->label('Готовы к приемке')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('status', Product::STATUS_IN_TRANSIT);
+                        return $query->where('status', Product::STATUS_FOR_RECEIPT);
                     })
                     ->indicateUsing(function (array $data): ?string {
                         return 'Готовы к приемке';
@@ -378,7 +378,7 @@ class ReceiptResource extends Resource
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (Product $record): bool => $record->status === Product::STATUS_IN_TRANSIT)
+                    ->visible(fn (Product $record): bool => $record->status === Product::STATUS_FOR_RECEIPT)
                     ->requiresConfirmation()
                     ->modalHeading('Подтверждение приемки товара')
                     ->modalDescription('Вы уверены, что хотите подтвердить приемку этого товара? Товар будет переведен в статус "На складе".')
@@ -406,7 +406,7 @@ class ReceiptResource extends Resource
                         ->modalDescription('Вы уверены, что хотите подтвердить приемку выбранных товаров?')
                         ->action(function (array $records): void {
                             foreach ($records as $record) {
-                                if ($record->status === Product::STATUS_IN_TRANSIT) {
+                                if ($record->status === Product::STATUS_FOR_RECEIPT) {
                                     $record->update([
                                         'status' => Product::STATUS_IN_STOCK,
                                         'actual_arrival_date' => now(),
@@ -444,7 +444,7 @@ class ReceiptResource extends Resource
     {
         $user = Auth::user();
         $base = parent::getEloquentQuery()
-            ->where('status', Product::STATUS_IN_TRANSIT)
+            ->where('status', Product::STATUS_FOR_RECEIPT)
             ->active();
 
         if (! $user) {
