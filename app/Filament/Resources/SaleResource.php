@@ -133,10 +133,26 @@ class SaleResource extends Resource
                                         // Проверяем, находимся ли мы в режиме редактирования/просмотра
                                         $record = $get('record');
                                         if ($record && $record->exists) {
-                                            // Режим редактирования/просмотра - восстанавливаем составную позицию
+                                            // Режим редактирования/просмотра - показываем оригинальный составной ключ
+                                            if ($record->composite_product_key) {
+                                                // Разбираем оригинальный составной ключ для отображения
+                                                $parts = explode('|', $record->composite_product_key);
+                                                if (count($parts) >= 4) {
+                                                    $productTemplateId = $parts[0];
+                                                    $warehouseId = $parts[1];
+                                                    $producer = $parts[2];
+                                                    $name = base64_decode($parts[3]);
+
+                                                    $producerLabel = $producer ? " ({$producer})" : '';
+                                                    $displayName = "{$name}{$producerLabel} - Текущий товар";
+
+                                                    return [$record->composite_product_key => $displayName];
+                                                }
+                                            }
+
+                                            // Fallback: если составной ключ не найден, восстанавливаем из товара
                                             $product = Product::find($record->product_id);
                                             if ($product) {
-                                                // Создаем составной ключ как при создании
                                                 $compositeKey = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
                                                 $producerLabel = $product->producer ? " ({$product->producer})" : '';
                                                 $displayName = "{$product->name}{$producerLabel} - Текущий товар";

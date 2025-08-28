@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class Sale extends Model
 {
@@ -15,6 +13,7 @@ class Sale extends Model
 
     protected $fillable = [
         'product_id',
+        'composite_product_key',
         'warehouse_id',
         'user_id',
         'sale_number',
@@ -58,17 +57,21 @@ class Sale extends Model
 
     // Статусы оплаты
     const PAYMENT_STATUS_PENDING = 'pending';
+
     const PAYMENT_STATUS_PAID = 'paid';
+
     const PAYMENT_STATUS_PARTIALLY_PAID = 'partially_paid';
+
     const PAYMENT_STATUS_CANCELLED = 'cancelled';
 
     // Статусы доставки
     const DELIVERY_STATUS_PENDING = 'pending';
+
     const DELIVERY_STATUS_IN_PROGRESS = 'in_progress';
+
     const DELIVERY_STATUS_DELIVERED = 'delivered';
+
     const DELIVERY_STATUS_CANCELLED = 'cancelled';
-
-
 
     /**
      * Связь с товаром
@@ -110,19 +113,19 @@ class Sale extends Model
         $prefix = 'SALE';
         $year = now()->format('Y');
         $month = now()->format('m');
-        
+
         // Получаем последний номер за этот месяц
         $lastSale = static::where('sale_number', 'like', "{$prefix}-{$year}{$month}-%")
             ->orderBy('sale_number', 'desc')
             ->first();
-        
+
         if ($lastSale) {
             $lastNumber = (int) substr($lastSale->sale_number, -4);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
-        
+
         return sprintf('%s-%s%s-%04d', $prefix, $year, $month, $newNumber);
     }
 
@@ -150,21 +153,22 @@ class Sale extends Model
      */
     public function processSale(): bool
     {
-        if (!$this->canBeSold()) {
+        if (! $this->canBeSold()) {
             return false;
         }
 
         // Списываем товар со склада
         $success = $this->product->decreaseQuantity($this->quantity);
-        
+
         if ($success) {
             $this->payment_status = self::PAYMENT_STATUS_PAID;
             $this->delivery_status = self::DELIVERY_STATUS_DELIVERED;
             $this->delivery_date = now();
             $this->save();
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -179,11 +183,11 @@ class Sale extends Model
 
         // Возвращаем товар на склад
         $this->product->increaseQuantity($this->quantity);
-        
+
         $this->payment_status = self::PAYMENT_STATUS_CANCELLED;
         $this->delivery_status = self::DELIVERY_STATUS_CANCELLED;
         $this->save();
-        
+
         return true;
     }
 
@@ -192,7 +196,7 @@ class Sale extends Model
      */
     public function getPaymentStatusLabel(): string
     {
-        return match($this->payment_status) {
+        return match ($this->payment_status) {
             self::PAYMENT_STATUS_PENDING => 'Ожидает оплаты',
             self::PAYMENT_STATUS_PAID => 'Оплачено',
             self::PAYMENT_STATUS_PARTIALLY_PAID => 'Частично оплачено',
@@ -206,7 +210,7 @@ class Sale extends Model
      */
     public function getPaymentStatusColor(): string
     {
-        return match($this->payment_status) {
+        return match ($this->payment_status) {
             self::PAYMENT_STATUS_PENDING => 'warning',
             self::PAYMENT_STATUS_PAID => 'success',
             self::PAYMENT_STATUS_PARTIALLY_PAID => 'info',
@@ -220,7 +224,7 @@ class Sale extends Model
      */
     public function getDeliveryStatusLabel(): string
     {
-        return match($this->delivery_status) {
+        return match ($this->delivery_status) {
             self::DELIVERY_STATUS_PENDING => 'Ожидает доставки',
             self::DELIVERY_STATUS_IN_PROGRESS => 'В доставке',
             self::DELIVERY_STATUS_DELIVERED => 'Доставлено',
@@ -234,7 +238,7 @@ class Sale extends Model
      */
     public function getDeliveryStatusColor(): string
     {
-        return match($this->delivery_status) {
+        return match ($this->delivery_status) {
             self::DELIVERY_STATUS_PENDING => 'warning',
             self::DELIVERY_STATUS_IN_PROGRESS => 'info',
             self::DELIVERY_STATUS_DELIVERED => 'success',
@@ -242,8 +246,6 @@ class Sale extends Model
             default => 'gray',
         };
     }
-
-
 
     /**
      * Получить полное имя клиента
@@ -253,7 +255,7 @@ class Sale extends Model
         if ($this->customer_name) {
             return $this->customer_name;
         }
-        
+
         return 'Клиент не указан';
     }
 
@@ -263,15 +265,15 @@ class Sale extends Model
     public function getCustomerContact(): string
     {
         $contacts = [];
-        
+
         if ($this->customer_phone) {
             $contacts[] = $this->customer_phone;
         }
-        
+
         if ($this->customer_email) {
             $contacts[] = $this->customer_email;
         }
-        
+
         return $contacts ? implode(', ', $contacts) : 'Контакты не указаны';
     }
 
@@ -341,7 +343,7 @@ class Sale extends Model
     public function scopeDeliveryOverdue(Builder $query): void
     {
         $query->where('delivery_status', self::DELIVERY_STATUS_IN_PROGRESS)
-              ->where('sale_date', '<', now()->subDays(7));
+            ->where('sale_date', '<', now()->subDays(7));
     }
 
     /**
@@ -366,4 +368,4 @@ class Sale extends Model
             'total_quantity' => static::sum('quantity'),
         ];
     }
-} 
+}
