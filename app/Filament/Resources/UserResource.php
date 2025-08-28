@@ -11,7 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
@@ -31,8 +30,10 @@ class UserResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return $user->role->value === 'admin';
     }
 
@@ -75,9 +76,9 @@ class UserResource extends Resource
                                 $firstName = $get('first_name') ?? '';
                                 $lastName = $get('last_name') ?? '';
                                 $middleName = $get('middle_name') ?? '';
-                                
+
                                 $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (!empty($fullName)) {
+                                if (! empty($fullName)) {
                                     $set('name', $fullName);
                                 }
                             }),
@@ -92,9 +93,9 @@ class UserResource extends Resource
                                 $firstName = $state ?? '';
                                 $lastName = $get('last_name') ?? '';
                                 $middleName = $get('middle_name') ?? '';
-                                
+
                                 $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (!empty($fullName)) {
+                                if (! empty($fullName)) {
                                     $set('name', $fullName);
                                 }
                             }),
@@ -109,9 +110,9 @@ class UserResource extends Resource
                                 $firstName = $get('first_name') ?? '';
                                 $lastName = $state ?? '';
                                 $middleName = $get('middle_name') ?? '';
-                                
+
                                 $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (!empty($fullName)) {
+                                if (! empty($fullName)) {
                                     $set('name', $fullName);
                                 }
                             }),
@@ -125,9 +126,9 @@ class UserResource extends Resource
                                 $firstName = $get('first_name') ?? '';
                                 $lastName = $get('last_name') ?? '';
                                 $middleName = $state ?? '';
-                                
+
                                 $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (!empty($fullName)) {
+                                if (! empty($fullName)) {
                                     $set('name', $fullName);
                                 }
                             }),
@@ -141,10 +142,8 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('phone')
                             ->label('Телефон')
                             ->tel()
-                            ->mask('+7 (999) 999-99-99')
-                            ->placeholder('+7 (999) 999-99-99')
                             ->maxLength(20)
-                            ->helperText('Введите номер телефона в формате +7 (999) 999-99-99'),
+                            ->helperText('Введите номер телефона'),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')
@@ -175,6 +174,7 @@ class UserResource extends Resource
                                 if ($companyId) {
                                     $query->where('company_id', $companyId);
                                 }
+
                                 return $query;
                             })
                             ->searchable()
@@ -271,7 +271,7 @@ class UserResource extends Resource
                     ->icon('heroicon-o-lock-closed')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (User $record): bool => !$record->is_blocked)
+                    ->visible(fn (User $record): bool => ! $record->is_blocked)
                     ->action(function (User $record): void {
                         $record->update([
                             'is_blocked' => true,
@@ -309,12 +309,12 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Администратор видит всех пользователей
         if (\Illuminate\Support\Facades\Auth::user()->role === UserRole::ADMIN) {
             return $query;
         }
-        
+
         // Остальные пользователи видят только пользователей своей компании
         return $query->where('company_id', \Illuminate\Support\Facades\Auth::user()->company_id);
     }
