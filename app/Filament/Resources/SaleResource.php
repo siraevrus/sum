@@ -284,13 +284,8 @@ class SaleResource extends Resource
                     ->sortable()
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('cash_amount')
-                    ->label('Сумма (нал)')
-                    ->money('RUB')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('nocash_amount')
-                    ->label('Сумма (безнал)')
+                Tables\Columns\TextColumn::make('total_price')
+                    ->label('Общая сумма')
                     ->money('RUB')
                     ->sortable(),
 
