@@ -503,7 +503,6 @@ class ReceiptResource extends Resource
             }
 
             if (! empty($nameParts)) {
-                // Добавляем название шаблона в начало
                 $templateName = $template->name ?? 'Товар';
                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                 $set('name', $generatedName);
@@ -512,10 +511,24 @@ class ReceiptResource extends Resource
             // Рассчитываем объем по формуле
             try {
                 $formula = $template->formula;
-                $result = eval("return $formula;");
+                $expression = $formula;
+
+                // Получаем переменные из формулы
+                preg_match_all('/[a-zA-Z_][a-zA-Z0-9_]*/', $formula, $matches);
+                $variables = $matches[0] ?? [];
+
+                foreach ($variables as $var) {
+                    if (! isset($attributes[$var]) || ! is_numeric($attributes[$var])) {
+                        $set('calculated_volume', null);
+
+                        return;
+                    }
+                    $expression = str_replace($var, $attributes[$var], $expression);
+                }
+
+                $result = eval("return $expression;");
                 $set('calculated_volume', $result);
             } catch (\Throwable $e) {
-                // В случае ошибки в формуле, не устанавливаем объем
                 $set('calculated_volume', null);
             }
         }
