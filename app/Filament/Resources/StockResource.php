@@ -106,6 +106,7 @@ class StockResource extends Resource
                         if ($state > 0) {
                             return 'warning';
                         }
+
                         return 'danger';
                     })
                     ->summarize(
@@ -159,7 +160,7 @@ class StockResource extends Resource
                     ->label('Низкий остаток')
                     ->query(function (Builder $query): Builder {
                         return $query->where('total_quantity', '<=', 10)
-                                   ->where('total_quantity', '>', 0);
+                            ->where('total_quantity', '>', 0);
                     }),
             ])
             ->actions([
@@ -174,14 +175,14 @@ class StockResource extends Resource
                             $template = \App\Models\ProductTemplate::find($record->product_template_id);
                             $templateName = $template ? $template->name : 'Неизвестный шаблон';
                         }
-                        
+
                         $attributesText = '';
                         if ($record->attributes && is_array($record->attributes)) {
-                            $attributesText = implode(', ', array_map(function($key, $value) {
+                            $attributesText = implode(', ', array_map(function ($key, $value) {
                                 return "{$key}: {$value}";
                             }, array_keys($record->attributes), $record->attributes));
                         }
-                        
+
                         return "
                             <div class='space-y-4'>
                                 <div>
@@ -197,7 +198,7 @@ class StockResource extends Resource
                                     <strong>Общее количество:</strong> {$record->total_quantity}
                                 </div>
                                 <div>
-                                    <strong>Общий объем:</strong> " . number_format($record->total_volume ?? 0, 3, '.', ' ') . " м³
+                                    <strong>Общий объем:</strong> ".number_format($record->total_volume ?? 0, 3, '.', ' ')." м³
                                 </div>
                                 <div>
                                     <strong>Количество позиций:</strong> {$record->product_count}
@@ -206,13 +207,13 @@ class StockResource extends Resource
                                     <strong>Характеристики:</strong> {$attributesText}
                                 </div>
                                 <div>
-                                    <strong>Первое поступление:</strong> " . ($record->first_arrival_date ? date('d.m.Y', strtotime($record->first_arrival_date)) : 'Не указано') . "
+                                    <strong>Первое поступление:</strong> ".($record->first_arrival_date ? date('d.m.Y', strtotime($record->first_arrival_date)) : 'Не указано').'
                                 </div>
                                 <div>
-                                    <strong>Последнее поступление:</strong> " . ($record->last_arrival_date ? date('d.m.Y', strtotime($record->last_arrival_date)) : 'Не указано') . "
+                                    <strong>Последнее поступление:</strong> '.($record->last_arrival_date ? date('d.m.Y', strtotime($record->last_arrival_date)) : 'Не указано').'
                                 </div>
                             </div>
-                        ";
+                        ';
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Закрыть'),
@@ -228,7 +229,7 @@ class StockResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
+
         if (! $user) {
             return Product::query()->whereRaw('1 = 0');
         }
@@ -244,6 +245,7 @@ class StockResource extends Resource
         // Группируем товары по характеристикам
         return $baseQuery
             ->select([
+                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer, "_", JSON_UNQUOTE(JSON_EXTRACT(attributes, "$"))) as id'),
                 'product_template_id',
                 'warehouse_id',
                 'producer',
@@ -254,7 +256,7 @@ class StockResource extends Resource
                 DB::raw('MIN(name) as name'),
                 DB::raw('MIN(description) as description'),
                 DB::raw('MIN(arrival_date) as first_arrival_date'),
-                DB::raw('MAX(arrival_date) as last_arrival_date')
+                DB::raw('MAX(arrival_date) as last_arrival_date'),
             ])
             ->groupBy('product_template_id', 'warehouse_id', 'producer', 'attributes');
     }
@@ -273,5 +275,29 @@ class StockResource extends Resource
         ];
     }
 
+    /**
+     * Получить ключ записи для таблицы
+     */
+    public static function getTableRecordKey($record): string
+    {
+        if (is_object($record) && isset($record->id)) {
+            return (string) $record->id;
+        }
 
+        if (is_array($record) && isset($record['id'])) {
+            return (string) $record['id'];
+        }
+
+        // Fallback - создаем ключ из характеристик
+        if (is_object($record)) {
+            $templateId = $record->product_template_id ?? '';
+            $warehouseId = $record->warehouse_id ?? '';
+            $producer = $record->producer ?? '';
+            $attributes = is_array($record->attributes) ? json_encode($record->attributes) : '';
+
+            return md5($templateId.'_'.$warehouseId.'_'.$producer.'_'.$attributes);
+        }
+
+        return md5(serialize($record));
+    }
 }
