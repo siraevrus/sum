@@ -68,6 +68,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Очищаем старые характеристики при смене шаблона
                                         $set('calculated_volume', null);
@@ -85,8 +86,7 @@ class ProductResource extends Resource
                                                 $set('calculated_volume', 'Заполните характеристики для расчета объема');
                                             }
                                         }
-                                    })
-                                    ->live(),
+                                    }),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
@@ -131,6 +131,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->helperText('Максимальное значение: 99999. Объем рассчитывается по характеристикам товара.')
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $templateId = $get('product_template_id');
                                         if ($templateId) {
@@ -226,6 +227,7 @@ class ProductResource extends Resource
                                         ->required($attribute->is_required)
                                         ->helperText('Максимальное значение: 9999')
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
@@ -293,6 +295,7 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->required($attribute->is_required)
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
@@ -362,6 +365,7 @@ class ProductResource extends Resource
                                         ->options($options)
                                         ->required($attribute->is_required)
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
