@@ -107,6 +107,7 @@ class ProductInTransitResource extends Resource
                                     ->label('Статус')
                                     ->options([
                                         Product::STATUS_IN_TRANSIT => 'В пути',
+                                        Product::STATUS_FOR_RECEIPT => 'Для приемки',
                                         Product::STATUS_IN_STOCK => 'На складе',
                                     ])
                                     ->required()
@@ -291,10 +292,18 @@ class ProductInTransitResource extends Resource
                     ->label('Статус')
                     ->colors([
                         'info' => Product::STATUS_IN_TRANSIT,
+                        'warning' => Product::STATUS_FOR_RECEIPT,
                         'success' => Product::STATUS_IN_STOCK,
                     ])
                     ->formatStateUsing(function (Product $record): string {
-                        return $record->isInTransit() ? 'В пути' : 'На складе';
+                        if ($record->isInTransit()) {
+                            return 'В пути';
+                        }
+                        if ($record->isForReceipt()) {
+                            return 'Для приемки';
+                        }
+
+                        return 'На складе';
                     })
                     ->sortable(),
 
@@ -308,7 +317,7 @@ class ProductInTransitResource extends Resource
                             return 'success';
                         }
 
-                        return ($record->status === Product::STATUS_IN_TRANSIT && $expected < now()) ? 'danger' : 'success';
+                        return (($record->status === Product::STATUS_IN_TRANSIT || $record->status === Product::STATUS_FOR_RECEIPT) && $expected < now()) ? 'danger' : 'success';
                     }),
 
                 Tables\Columns\TextColumn::make('actual_arrival_date')
