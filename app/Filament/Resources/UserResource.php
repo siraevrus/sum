@@ -138,7 +138,11 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
-
+                        Forms\Components\TextInput::make('phone')
+                            ->label('Телефон')
+                            ->tel()
+                            ->maxLength(20)
+                            ->helperText('Введите номер телефона в любом формате'),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')
@@ -203,6 +207,11 @@ class UserResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (UserRole $state): string => $state->label()),
 
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Телефон')
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
@@ -235,6 +244,20 @@ class UserResource extends Resource
                 Tables\Filters\SelectFilter::make('company_id')
                     ->label('Компания')
                     ->relationship('company', 'name'),
+
+                Tables\Filters\Filter::make('phone')
+                    ->label('Телефон')
+                    ->form([
+                        Forms\Components\TextInput::make('phone')
+                            ->label('Номер телефона')
+                            ->placeholder('Введите часть номера для поиска'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['phone'],
+                            fn (Builder $query, $phone): Builder => $query->where('phone', 'like', "%{$phone}%")
+                        );
+                    }),
 
                 Tables\Filters\TernaryFilter::make('is_blocked')
                     ->label('Заблокированные'),
