@@ -365,7 +365,12 @@ class ReceiptResource extends Resource
     {
         $user = Auth::user();
         $base = parent::getEloquentQuery()
-            ->inTransit()
+            ->whereIn('status', [
+                ProductInTransit::STATUS_ORDERED,
+                ProductInTransit::STATUS_IN_TRANSIT,
+                ProductInTransit::STATUS_ARRIVED,
+                ProductInTransit::STATUS_RECEIVED,
+            ])
             ->active();
 
         if (! $user) {
