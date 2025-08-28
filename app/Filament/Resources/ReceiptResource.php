@@ -261,6 +261,25 @@ class ReceiptResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('attributes')
+                    ->label('Характеристики')
+                    ->formatStateUsing(function (ProductInTransit $record): string {
+                        if (empty($record->attributes) || ! is_array($record->attributes)) {
+                            return 'Не указаны';
+                        }
+
+                        $parts = [];
+                        foreach ($record->attributes as $key => $value) {
+                            if ($value !== null && $value !== '') {
+                                $parts[] = "{$key}: {$value}";
+                            }
+                        }
+
+                        return ! empty($parts) ? implode(', ', $parts) : 'Не указаны';
+                    })
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Количество')
                     ->sortable()
@@ -316,6 +335,16 @@ class ReceiptResource extends Resource
                     ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
+                SelectFilter::make('status')
+                    ->label('Статус')
+                    ->options([
+                        ProductInTransit::STATUS_ORDERED => 'Заказано',
+                        ProductInTransit::STATUS_IN_TRANSIT => 'В пути',
+                        ProductInTransit::STATUS_ARRIVED => 'Прибыл',
+                        ProductInTransit::STATUS_RECEIVED => 'Принят',
+                    ])
+                    ->searchable(),
+
                 SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
@@ -331,10 +360,40 @@ class ReceiptResource extends Resource
                         return array_combine($locations, $locations);
                     })
                     ->searchable(),
+
+                Tables\Filters\Filter::make('ready_for_receipt')
+                    ->label('Готовы к приемке')
+                    ->query(function (Builder $query): Builder {
+                        return $query->where('status', ProductInTransit::STATUS_ARRIVED);
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        return 'Готовы к приемке';
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\ViewAction::make()->label(''),
+                Tables\Actions\Action::make('confirm_receipt')
+                    ->label('Подтвердить')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (ProductInTransit $record): bool => $record->status === ProductInTransit::STATUS_ARRIVED)
+                    ->requiresConfirmation()
+                    ->modalHeading('Подтверждение приемки товара')
+                    ->modalDescription('Вы уверены, что хотите подтвердить приемку этого товара?')
+                    ->action(function (ProductInTransit $record): void {
+                        $record->update([
+                            'status' => ProductInTransit::STATUS_RECEIVED,
+                            'actual_arrival_date' => now(),
+                        ]);
+                    })
+                    ->after(function () {
+                        // Показать уведомление об успешной приемке
+                        \Filament\Notifications\Notification::make()
+                            ->title('Товар успешно принят')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
