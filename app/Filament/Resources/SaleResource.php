@@ -122,62 +122,64 @@ class SaleResource extends Resource
                                         static::calculateTotalPrice($set, $get);
                                     }),
 
-                                Select::make('product_id')
-                                    ->label('Товар')
-                                    ->options(function (Get $get) {
-                                        $record = $get('record');
-                                        if ($record && $record->exists) {
-                                            $product = Product::find($record->product_id);
-                                            if ($product) {
-                                                // Формат: "45 — Брус: 11, 11, Сосна"
-                                                return [$product->id => "{$product->id} — {$product->name}"];
+                                Forms\Components\Fieldset::make('Товар')->schema([
+                                    Forms\Components\Select::make('product_id')
+                                        ->label('Товар')
+                                        ->options(function (Get $get) {
+                                            $record = $get('record');
+                                            if ($record && $record->exists) {
+                                                return [];
                                             }
-                                        }
-                                        // Режим создания - получаем товары из агрегированных остатков
-                                        $warehouseId = $get('warehouse_id');
-                                        if (! $warehouseId) {
-                                            return [];
-                                        }
-                                        $query = Product::query()
-                                            ->select([
-                                                'product_template_id',
-                                                'warehouse_id',
-                                                'producer',
-                                                'name',
-                                                DB::raw('SUM(quantity) as available_quantity'),
-                                            ])
-                                            ->where('warehouse_id', $warehouseId)
-                                            ->where('status', Product::STATUS_IN_STOCK)
-                                            ->where('is_active', true)
-                                            ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
-                                            ->having('available_quantity', '>', 0);
-                                        $availableProducts = $query->get();
-                                        $options = [];
-                                        foreach ($availableProducts as $product) {
-                                            // Используем более надежный разделитель для составного ключа
-                                            $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
-                                            $producerLabel = $product->producer ? " ({$product->producer})" : '';
-                                            $options[$key] = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
-                                        }
+                                            $warehouseId = $get('warehouse_id');
+                                            if (! $warehouseId) {
+                                                return [];
+                                            }
+                                            $query = Product::query()
+                                                ->select([
+                                                    'product_template_id',
+                                                    'warehouse_id',
+                                                    'producer',
+                                                    'name',
+                                                    DB::raw('SUM(quantity) as available_quantity'),
+                                                ])
+                                                ->where('warehouse_id', $warehouseId)
+                                                ->where('status', Product::STATUS_IN_STOCK)
+                                                ->where('is_active', true)
+                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
+                                                ->having('available_quantity', '>', 0);
+                                            $availableProducts = $query->get();
+                                            $options = [];
+                                            foreach ($availableProducts as $product) {
+                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
+                                                $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                                $options[$key] = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
+                                            }
 
-                                        return $options;
-                                    })
-                                    ->required()
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->disabled(function (Get $get) {
-                                        // Блокируем поле при редактировании/просмотре
-                                        $record = $get('record');
+                                            return $options;
+                                        })
+                                        ->required()
+                                        ->searchable()
+                                        ->preload()
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, Get $get) {
+                                            $set('quantity', 1);
+                                            static::calculateTotalPrice($set, $get);
+                                        })
+                                        ->visible(fn ($get) => ! ($get('record') && $get('record')->exists)),
+                                    Forms\Components\Placeholder::make('product_info')
+                                        ->label('Товар')
+                                        ->content(function ($get) {
+                                            $record = $get('record');
+                                            if ($record && $record->exists) {
+                                                $product = Product::find($record->product_id);
 
-                                        return $record && $record->exists;
-                                    })
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        // Сбрасываем количество при смене товара
-                                        $set('quantity', 1);
-                                        // Обновляем общую сумму
-                                        static::calculateTotalPrice($set, $get);
-                                    }),
+                                                return $product ? "{$product->id} — {$product->name}" : '—';
+                                            }
+
+                                            return null;
+                                        })
+                                        ->visible(fn ($get) => $get('record') && $get('record')->exists),
+                                ]),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
