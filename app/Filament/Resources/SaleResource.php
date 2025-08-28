@@ -130,7 +130,15 @@ class SaleResource extends Resource
                                             return [];
                                         }
 
-                                        // Получаем товары из агрегированных остатков (суммарное количество)
+                                        // Проверяем, находимся ли мы в режиме создания или редактирования
+                                        $record = $get('record');
+                                        if ($record && $record->exists) {
+                                            // Режим просмотра/редактирования - показываем название товара
+                                            return Product::where('id', $record->product_id)
+                                                ->pluck('name', 'id');
+                                        }
+
+                                        // Режим создания - получаем товары из агрегированных остатков
                                         $query = Product::query()
                                             ->select([
                                                 'product_template_id',
