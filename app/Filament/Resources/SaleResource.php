@@ -298,7 +298,8 @@ class SaleResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->label('Общая сумма')
-                    ->money('RUB')
+                    ->formatStateUsing(fn ($state, $record) => number_format($state, 2, '.', ' '))
+                    ->suffix(fn ($record) => ' '.($record->currency ?? ''))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('sale_date')
