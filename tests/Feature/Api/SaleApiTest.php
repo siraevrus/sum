@@ -216,7 +216,7 @@ class SaleApiTest extends TestCase
 
         // Проверяем, что товар списан со склада
         $this->product->refresh();
-        $this->assertEquals($initialQuantity - 5, $this->product->quantity);
+        $this->assertEquals(5, $this->product->sold_quantity); // 0 + 5 = 5
 
         // Проверяем, что статус продажи изменился
         $sale->refresh();
@@ -246,7 +246,7 @@ class SaleApiTest extends TestCase
 
         // Проверяем, что товар возвращен на склад
         $this->product->refresh();
-        $this->assertEquals($initialQuantity + 5, $this->product->quantity);
+        $this->assertEquals(0, $this->product->sold_quantity); // 5 - 5 = 0
 
         // Проверяем, что статус продажи изменился
         $sale->refresh();
@@ -268,13 +268,42 @@ class SaleApiTest extends TestCase
         ])->getJson('/api/sales/stats');
 
         $response->assertStatus(200)
-                ->assertJsonStructure([
-                    'total_sales',
-                    'total_revenue',
-                    'average_sale',
-                    'pending_payments',
-                    'in_delivery',
-                ]);
+            ->assertJsonStructure([
+                'total_sales',
+                'total_revenue',
+                'average_sale',
+                'pending_payments',
+                'in_delivery',
+            ]);
+    }
+
+    public function test_can_export_sales()
+    {
+        Sale::factory()->count(3)->create([
+            'product_id' => $this->product->id,
+            'warehouse_id' => $this->product->warehouse_id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+        ])->getJson('/api/sales/export');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'data' => [
+                    '*' => [
+                        'id', 'sale_number', 'customer_name', 'customer_phone', 'customer_email',
+                        'product_name', 'warehouse', 'quantity', 'unit_price', 'total_price',
+                        'payment_status', 'delivery_status', 'payment_method', 'sale_date',
+                        'delivery_date', 'created_by', 'created_at'
+                    ]
+                ],
+                'total'
+            ]);
+
+        $this->assertCount(3, $response->json('data'));
     }
 
     public function test_cannot_process_sale_with_insufficient_stock()

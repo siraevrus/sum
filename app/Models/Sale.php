@@ -144,8 +144,8 @@ class Sale extends Model
      */
     public function canBeSold(): bool
     {
-        // Доступность продажи определяется только наличием достаточного количества товара
-        return $this->product && $this->product->quantity >= $this->quantity;
+        // Доступность продажи определяется наличием достаточного количества товара
+        return $this->product && $this->product->getAvailableQuantity() >= $this->quantity;
     }
 
     /**

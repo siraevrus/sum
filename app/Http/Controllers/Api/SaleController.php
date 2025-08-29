@@ -283,45 +283,53 @@ class SaleController extends Controller
     }
 
     /**
-     * Получение статистики по продажам
+     * Получение статистики продаж
      */
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
         $user = Auth::user();
 
-        // Кешируем статистику на 2 минуты
-        $cacheKey = "sale_stats_{$user->id}";
+        $query = Sale::query();
 
-        $stats = Cache::remember($cacheKey, 120, function () use ($user) {
-            $query = Sale::query();
-
-            // Применяем права доступа
-            if (! $user->isAdmin() && $user->company_id) {
-                $query->whereHas('warehouse', function ($q) use ($user) {
-                    $q->where('company_id', $user->company_id);
-                });
+        // Применяем права доступа: не админ видит только свой склад
+        if (! $user->isAdmin()) {
+            if ($user->warehouse_id) {
+                $query->where('warehouse_id', $user->warehouse_id);
+            } else {
+                $query->whereRaw('1 = 0');
             }
+        }
 
-            $today = now()->startOfDay();
-            $thisMonth = now()->startOfMonth();
+        // Фильтры по датам
+        if ($request->date_from) {
+            $query->where('sale_date', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $query->where('sale_date', '<=', $request->date_to);
+        }
 
-            return [
-                'total_sales' => $query->count(),
-                'paid_sales' => $query->where('payment_status', Sale::PAYMENT_STATUS_PAID)->count(),
-                'pending_payments' => $query->where('payment_status', Sale::PAYMENT_STATUS_PENDING)->count(),
-                'today_sales' => $query->where('sale_date', '>=', $today)->count(),
-                'month_revenue' => $query->where('sale_date', '>=', $thisMonth)
-                    ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                    ->sum('total_price'),
-                'total_revenue' => $query->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                    ->sum('total_price'),
-                'total_quantity' => $query->sum('quantity'),
-            ];
-        });
+        // Фильтры по статусам
+        if ($request->payment_status) {
+            $query->where('payment_status', $request->payment_status);
+        }
+        if ($request->delivery_status) {
+            $query->where('delivery_status', $request->delivery_status);
+        }
 
-        // Дополняем статистику ключами, ожидаемыми тестами
-        $stats['average_sale'] = Sale::where('payment_status', Sale::PAYMENT_STATUS_PAID)->avg('total_price');
-        $stats['in_delivery'] = Sale::where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)->count();
+        $stats = [
+            'total_sales' => (clone $query)->count(),
+            'paid_sales' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)->count(),
+            'pending_payments' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PENDING)->count(),
+            'today_sales' => (clone $query)->whereDate('sale_date', today())->count(),
+            'month_revenue' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                ->whereMonth('sale_date', now()->month)
+                ->whereYear('sale_date', now()->year)
+                ->sum('total_price'),
+            'total_revenue' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)->sum('total_price'),
+            'total_quantity' => (clone $query)->sum('quantity'),
+            'average_sale' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)->avg('total_price'),
+            'in_delivery' => (clone $query)->where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)->count(),
+        ];
 
         return response()->json($stats);
     }

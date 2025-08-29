@@ -5,8 +5,8 @@ info:
   description: |
     Машиночитаемая спецификация API для склада. Использует аутентификацию Laravel Sanctum через Bearer токен.
 servers:
-  - url: /api
-    description: Текущий хост
+  - url: http://localhost:8000/api
+    description: Локальный сервер разработки
 tags:
   - name: Auth
   - name: Products
@@ -14,6 +14,7 @@ tags:
   - name: Stock
   - name: Requests
   - name: Users
+  - name: Companies
   - name: Warehouses
   - name: ProductTemplates
 security:
@@ -212,21 +213,6 @@ paths:
         - { $ref: '#/components/parameters/page' }
         - { $ref: '#/components/parameters/per_page' }
         - name: search
-          in: query
-          schema: { type: string }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  data:
-                    type: array
-                    items: { $ref: '#/components/schemas/ProductExportRow' }
-                  total: { type: integer }
 
   /stocks:
     get:
@@ -258,7 +244,30 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaginatedStocks' }
         '401': { $ref: '#/components/responses/Unauthorized' }
-      
+
+  /products/export:
+    get:
+      tags: [Products]
+      summary: Экспорт товаров
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductExportRow' }
+                  total: { type: integer }
 
   /products/{id}:
     get:
@@ -640,6 +649,136 @@ paths:
       summary: Статистика пользователей
       responses:
         '200': { description: OK }
+
+  /companies:
+    get:
+      tags: [Companies]
+      summary: Список компаний
+      parameters:
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Companies]
+      summary: Создать компанию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCompanyRequest' }
+      responses:
+        '201': { description: Создано }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /companies/{id}:
+    get:
+      tags: [Companies]
+      summary: Компания по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Companies]
+      summary: Обновить компанию
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateCompanyRequest' }
+      responses:
+        '200': { description: OK }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Companies]
+      summary: Удалить компанию
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/MessageOk' }
+        '400': { $ref: '#/components/responses/CompanyDeleteError' }
+
+  /companies/{id}/archive:
+    post:
+      tags: [Companies]
+      summary: Архивировать компанию
+      description: Архивирует компанию вместо удаления. Архивированная компания не отображается в обычных списках, но сохраняет все данные и связи.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/CompanyArchiveSuccess' }
+        '400': { $ref: '#/components/responses/CompanyArchiveError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /companies/{id}/restore:
+    post:
+      tags: [Companies]
+      summary: Восстановить компанию из архива
+      description: Восстанавливает компанию из архива, делая её снова активной.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { $ref: '#/components/responses/CompanyRestoreSuccess' }
+        '400': { $ref: '#/components/responses/CompanyRestoreError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /companies/{id}/warehouses:
+    get:
+      tags: [Companies]
+      summary: Склады компании
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - { $ref: '#/components/parameters/page' }
+        - { $ref: '#/components/parameters/per_page' }
+        - name: is_active
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema: { type: string }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc] }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /warehouses:
     get:
@@ -1030,6 +1169,64 @@ components:
             type: object
             properties:
               message: { type: string }
+    
+    CompanyArchiveSuccess:
+      description: Компания успешно архивирована
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: true }
+              message: { type: string, example: "Компания успешно архивирована" }
+              data: { $ref: '#/components/schemas/Company' }
+    
+    CompanyRestoreSuccess:
+      description: Компания успешно восстановлена
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: true }
+              message: { type: string, example: "Компания успешно восстановлена" }
+              data: { $ref: '#/components/schemas/Company' }
+    
+    CompanyArchiveError:
+      description: Ошибка архивирования компании
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: false }
+              message: { type: string, example: "Компания уже архивирована" }
+    
+    CompanyRestoreError:
+      description: Ошибка восстановления компании
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: false }
+              message: { type: string, example: "Компания не архивирована" }
+    
+    CompanyDeleteError:
+      description: Нельзя удалить компанию с привязанными складами или сотрудниками
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: false }
+              message: { type: string, example: "Нельзя удалить компанию с привязанными складами или сотрудниками. Архивируйте или удалите связанные записи." }
+              details:
+                type: object
+                properties:
+                  warehouses_count: { type: integer, example: 2 }
+                  employees_count: { type: integer, example: 5 }
+                  suggestion: { type: string, example: "Используйте POST /api/companies/14/archive для архивирования" }
 
   schemas:
     User:
@@ -1056,6 +1253,69 @@ components:
         current_password: { type: string, format: password }
         new_password: { type: string, format: password }
 
+    Company:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        legal_address: { type: string, nullable: true }
+        postal_address: { type: string, nullable: true }
+        phone_fax: { type: string, nullable: true }
+        general_director: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true }
+        inn: { type: string, nullable: true }
+        kpp: { type: string, nullable: true }
+        ogrn: { type: string, nullable: true }
+        bank: { type: string, nullable: true }
+        account_number: { type: string, nullable: true }
+        correspondent_account: { type: string, nullable: true }
+        bik: { type: string, nullable: true }
+        employees_count: { type: integer, nullable: true, description: 'Количество сотрудников' }
+        warehouses_count: { type: integer, nullable: true, description: 'Количество складов' }
+        is_archived: { type: boolean }
+        archived_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateCompanyRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 255, description: "Название компании" }
+        legal_address: { type: string, maxLength: 500, nullable: true, description: "Юридический адрес" }
+        postal_address: { type: string, maxLength: 500, nullable: true, description: "Почтовый адрес" }
+        phone_fax: { type: string, maxLength: 100, nullable: true, description: "Телефон/факс" }
+        general_director: { type: string, maxLength: 255, nullable: true, description: "Генеральный директор" }
+        email: { type: string, format: email, maxLength: 255, nullable: true, description: "Email компании" }
+        inn: { type: string, maxLength: 12, nullable: true, description: "ИНН" }
+        kpp: { type: string, maxLength: 9, nullable: true, description: "КПП" }
+        ogrn: { type: string, maxLength: 15, nullable: true, description: "ОГРН" }
+        bank: { type: string, maxLength: 255, nullable: true, description: "Банк" }
+        account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
+        correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
+        bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
+        employees_count: { type: integer, nullable: true, description: "Количество сотрудников" }
+        warehouses_count: { type: integer, nullable: true, description: "Количество складов" }
+
+    UpdateCompanyRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 255, nullable: true, description: "Название компании" }
+        legal_address: { type: string, maxLength: 500, nullable: true, description: "Юридический адрес" }
+        postal_address: { type: string, maxLength: 500, nullable: true, description: "Почтовый адрес" }
+        phone_fax: { type: string, maxLength: 100, nullable: true, description: "Телефон/факс" }
+        general_director: { type: string, maxLength: 255, nullable: true, description: "Генеральный директор" }
+        email: { type: string, format: email, maxLength: 255, nullable: true, description: "Email компании" }
+        inn: { type: string, maxLength: 12, nullable: true, description: "ИНН" }
+        kpp: { type: string, maxLength: 9, nullable: true, description: "КПП" }
+        ogrn: { type: string, maxLength: 15, nullable: true, description: "ОГРН" }
+        bank: { type: string, maxLength: 255, nullable: true, description: "Банк" }
+        account_number: { type: string, maxLength: 20, nullable: true, description: "Расчетный счет" }
+        correspondent_account: { type: string, maxLength: 20, nullable: true, description: "Корреспондентский счет" }
+        bik: { type: string, maxLength: 9, nullable: true, description: "БИК" }
+        employees_count: { type: integer, nullable: true, description: "Количество сотрудников" }
+        warehouses_count: { type: integer, nullable: true, description: "Количество складов" }
+
     Product:
       type: object
       properties:
@@ -1064,6 +1324,7 @@ components:
         description: { type: string, nullable: true }
         quantity: { type: number }
         attributes: { type: object, additionalProperties: true, nullable: true }
+        transport_number: { type: string, nullable: true }
         producer: { type: string, nullable: true }
         arrival_date: { type: string, format: date, nullable: true }
         is_active: { type: boolean }
@@ -1091,6 +1352,7 @@ components:
         quantity: { type: number }
         description: { type: string }
         attributes: { type: object, additionalProperties: true, description: 'Характеристики товара (обязательные для выбранного шаблона)' }
+        transport_number: { type: string, description: 'Номер транспортного средства' }
         producer: { type: string }
         arrival_date: { type: string, format: date }
         is_active: { type: boolean }
@@ -1105,6 +1367,7 @@ components:
         id: { type: integer }
         name: { type: string }
         quantity: { type: number }
+        transport_number: { type: string, nullable: true }
         calculated_volume: { type: number }
         warehouse: { type: string }
         template: { type: string }
@@ -1137,64 +1400,318 @@ components:
 
     Sale:
       type: object
+      description: Модель продажи с полной информацией о товаре, клиенте и статусах
       properties:
-        id: { type: integer }
-        sale_number: { type: string }
-        product: { type: object, properties: { id: { type: integer } } }
-        warehouse: { type: object, properties: { id: { type: integer } } }
-        user: { type: object, properties: { id: { type: integer } } }
-        quantity: { type: number }
-        cash_amount: { type: number }
-        nocash_amount: { type: number }
-        total_price: { type: number }
-        unit_price: { type: number }
-        price_without_vat: { type: number }
-        vat_amount: { type: number }
-        vat_rate: { type: number }
-        currency: { type: string }
-        exchange_rate: { type: number }
-        payment_status: { type: string }
-        delivery_status: { type: string }
-        sale_date: { type: string, format: date }
-        notes: { type: string, nullable: true }
-        is_active: { type: boolean }
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
+        id: 
+          type: integer
+          description: Уникальный идентификатор продажи
+        sale_number: 
+          type: string
+          description: Автоматически сгенерированный номер продажи
+          example: "SALE-202508-0001"
+        product_id: 
+          type: integer
+          description: ID товара
+        product: 
+          type: object
+          description: Информация о товаре
+          properties: 
+            id: { type: integer }
+            name: { type: string }
+            description: { type: string, nullable: true }
+            quantity: { type: number }
+        warehouse_id: 
+          type: integer
+          description: ID склада
+        warehouse: 
+          type: object
+          description: Информация о складе
+          properties: 
+            id: { type: integer }
+            name: { type: string }
+        user_id: 
+          type: integer
+          description: ID пользователя, оформившего продажу
+        user: 
+          type: object
+          description: Информация о пользователе
+          properties: 
+            id: { type: integer }
+            name: { type: string }
+        customer_name: 
+          type: string
+          description: Имя клиента
+          example: "Иван Иванов"
+        customer_phone: 
+          type: string
+          nullable: true
+          description: Телефон клиента
+          example: "+7 (999) 123-45-67"
+        customer_email: 
+          type: string
+          nullable: true
+          description: Email клиента
+          example: "ivan@example.com"
+        customer_address: 
+          type: string
+          nullable: true
+          description: Адрес клиента
+        quantity: 
+          type: number
+          description: Количество проданного товара
+          minimum: 1
+        unit_price: 
+          type: number
+          description: Цена за единицу товара
+          minimum: 0
+        total_price: 
+          type: number
+          description: Общая стоимость с НДС
+          minimum: 0
+        price_without_vat: 
+          type: number
+          description: Цена без НДС
+          minimum: 0
+        vat_rate: 
+          type: number
+          description: Ставка НДС в процентах
+          default: 20.00
+          minimum: 0
+          maximum: 100
+        vat_amount: 
+          type: number
+          description: Сумма НДС
+          minimum: 0
+        currency: 
+          type: string
+          description: Валюта
+          default: "RUB"
+          example: "RUB"
+        exchange_rate: 
+          type: number
+          description: Курс обмена валюты
+          default: 1.0000
+          minimum: 0
+        payment_method: 
+          type: string
+          description: Способ оплаты
+          enum: [cash, card, bank_transfer, other]
+          example: "cash"
+        payment_status: 
+          type: string
+          description: Статус оплаты
+          enum: [pending, paid, partially_paid, cancelled]
+          default: "pending"
+          example: "pending"
+        delivery_status: 
+          type: string
+          description: Статус доставки
+          enum: [pending, in_progress, delivered, cancelled]
+          default: "pending"
+          example: "pending"
+        sale_date: 
+          type: string
+          format: date
+          description: Дата продажи
+          example: "2025-08-29"
+        delivery_date: 
+          type: string
+          format: date
+          nullable: true
+          description: Дата доставки
+        notes: 
+          type: string
+          nullable: true
+          description: Дополнительные заметки
+        invoice_number: 
+          type: string
+          nullable: true
+          description: Номер счета
+        is_active: 
+          type: boolean
+          description: Статус активности
+          default: true
+        created_at: 
+          type: string
+          format: date-time
+          description: Дата создания записи
+        updated_at: 
+          type: string
+          format: date-time
+          description: Дата последнего обновления
 
     CreateSaleRequest:
       type: object
-      required: [warehouse_id, quantity, cash_amount, nocash_amount, sale_date]
+      description: Данные для создания новой продажи
+      required: [product_id, warehouse_id, customer_name, quantity, unit_price, sale_date]
       properties:
-        product_id: { type: string, description: 'Составной ключ товара из агрегированных остатков (формат: template_id|warehouse_id|producer|encoded_name)' }
-        warehouse_id: { type: integer, description: 'ID склада для продажи' }
-        quantity: { type: number, description: 'Количество товара для продажи' }
-        cash_amount: { type: number, description: 'Сумма наличными' }
-        nocash_amount: { type: number, description: 'Сумма безналичными' }
-        total_price: { type: number, description: 'Общая сумма (автоматически рассчитывается)' }
-        unit_price: { type: number, description: 'Цена за единицу (автоматически рассчитывается)' }
-        price_without_vat: { type: number, description: 'Цена без НДС (автоматически рассчитывается)' }
-        vat_amount: { type: number, description: 'Сумма НДС (автоматически рассчитывается)' }
-        vat_rate: { type: number, description: 'Ставка НДС (по умолчанию 20%)' }
-        currency: { type: string, description: 'Валюта (по умолчанию RUB)' }
-        exchange_rate: { type: number, description: 'Курс обмена (по умолчанию 1.0)' }
-        payment_status: { type: string, description: 'Статус оплаты (по умолчанию pending)' }
-        delivery_status: { type: string, description: 'Статус доставки (по умолчанию pending)' }
-        sale_date: { type: string, format: date, description: 'Дата продажи' }
-        notes: { type: string, description: 'Дополнительные заметки' }
-        is_active: { type: boolean, description: 'Статус активности (по умолчанию true)' }
+        product_id: 
+          type: integer
+          description: ID товара для продажи
+          example: 1
+        warehouse_id: 
+          type: integer
+          description: ID склада для продажи
+          example: 1
+        customer_name: 
+          type: string
+          description: Имя клиента
+          maxLength: 255
+          example: "Иван Иванов"
+        customer_phone: 
+          type: string
+          nullable: true
+          description: Телефон клиента
+          maxLength: 255
+          example: "+7 (999) 123-45-67"
+        customer_email: 
+          type: string
+          nullable: true
+          description: Email клиента
+          format: email
+          maxLength: 255
+          example: "ivan@example.com"
+        customer_address: 
+          type: string
+          nullable: true
+          description: Адрес клиента
+        quantity: 
+          type: integer
+          description: Количество товара для продажи
+          minimum: 1
+          example: 5
+        unit_price: 
+          type: number
+          description: Цена за единицу товара
+          minimum: 0
+          example: 1000.00
+        vat_rate: 
+          type: number
+          description: Ставка НДС в процентах
+          minimum: 0
+          maximum: 100
+          default: 20.00
+          example: 20.00
+        payment_method: 
+          type: string
+          description: Способ оплаты
+          enum: [cash, card, bank_transfer, other]
+          default: "cash"
+          example: "cash"
+        payment_status: 
+          type: string
+          description: Статус оплаты
+          enum: [pending, paid, partially_paid, cancelled]
+          default: "pending"
+          example: "pending"
+        delivery_status: 
+          type: string
+          description: Статус доставки
+          enum: [pending, in_progress, delivered, cancelled]
+          default: "pending"
+          example: "pending"
+        sale_date: 
+          type: string
+          format: date
+          description: Дата продажи
+          example: "2025-08-29"
+        notes: 
+          type: string
+          nullable: true
+          description: Дополнительные заметки
+        is_active: 
+          type: boolean
+          description: Статус активности
+          default: true
 
     UpdateSaleRequest:
-      allOf:
-        - $ref: '#/components/schemas/CreateSaleRequest'
+      type: object
+      description: Данные для обновления существующей продажи
+      properties:
+        customer_name: 
+          type: string
+          nullable: true
+          description: Имя клиента
+          maxLength: 255
+        customer_phone: 
+          type: string
+          nullable: true
+          description: Телефон клиента
+          maxLength: 255
+        customer_email: 
+          type: string
+          nullable: true
+          description: Email клиента
+          format: email
+          maxLength: 255
+        customer_address: 
+          type: string
+          nullable: true
+          description: Адрес клиента
+        quantity: 
+          type: integer
+          nullable: true
+          description: Количество товара
+          minimum: 1
+        unit_price: 
+          type: number
+          nullable: true
+          description: Цена за единицу
+          minimum: 0
+        vat_rate: 
+          type: number
+          nullable: true
+          description: Ставка НДС в процентах
+          minimum: 0
+          maximum: 100
+        payment_method: 
+          type: string
+          nullable: true
+          description: Способ оплаты
+          enum: [cash, card, bank_transfer, other]
+        payment_status: 
+          type: string
+          nullable: true
+          description: Статус оплаты
+          enum: [pending, paid, partially_paid, cancelled]
+        delivery_status: 
+          type: string
+          nullable: true
+          description: Статус доставки
+          enum: [pending, in_progress, delivered, cancelled]
+        sale_date: 
+          type: string
+          nullable: true
+          format: date
+          description: Дата продажи
+        delivery_date: 
+          type: string
+          nullable: true
+          format: date
+          description: Дата доставки
+        notes: 
+          type: string
+          nullable: true
+          description: Дополнительные заметки
+        is_active: 
+          type: boolean
+          nullable: true
+          description: Статус активности
 
     PaginatedSales:
       type: object
+      description: Пагинированный список продаж
       properties:
         data:
           type: array
+          description: Массив продаж
           items: { $ref: '#/components/schemas/Sale' }
-        links: { $ref: '#/components/schemas/PaginationLinks' }
-        meta: { $ref: '#/components/schemas/PaginationMeta' }
+        links: 
+          $ref: '#/components/schemas/PaginationLinks'
+          description: Ссылки для пагинации
+        meta: 
+          $ref: '#/components/schemas/PaginationMeta'
+          description: Метаинформация о пагинации
 
     PaginatedStocks:
       type: object
@@ -1207,16 +1724,44 @@ components:
 
     SalesStats:
       type: object
+      description: Статистика по продажам
       properties:
-        total_sales: { type: integer }
-        paid_sales: { type: integer }
-        pending_payments: { type: integer }
-        today_sales: { type: integer }
-        month_revenue: { type: number }
-        total_revenue: { type: number }
-        total_quantity: { type: number }
-        average_sale: { type: number }
-        in_delivery: { type: integer }
+        total_sales: 
+          type: integer
+          description: Общее количество продаж
+          example: 150
+        paid_sales: 
+          type: integer
+          description: Количество оплаченных продаж
+          example: 120
+        pending_payments: 
+          type: integer
+          description: Количество продаж в ожидании оплаты
+          example: 25
+        today_sales: 
+          type: integer
+          description: Количество продаж за сегодня
+          example: 8
+        month_revenue: 
+          type: number
+          description: Выручка за текущий месяц
+          example: 150000.00
+        total_revenue: 
+          type: number
+          description: Общая выручка
+          example: 2500000.00
+        total_quantity: 
+          type: number
+          description: Общее количество проданных товаров
+          example: 1500
+        average_sale: 
+          type: number
+          description: Средняя стоимость продажи
+          example: 16666.67
+        in_delivery: 
+          type: integer
+          description: Количество продаж в процессе доставки
+          example: 5
 
     Stock:
       type: object
@@ -1258,7 +1803,6 @@ components:
         priority: { type: string, enum: [low, normal, high, urgent] }
         description: { type: string }
         status: { type: string }
-        attributes: { type: object, additionalProperties: true, description: 'Характеристики по шаблону товара (ключи = переменные из шаблона)' }
 
     UpdateRequestRequest:
       allOf:
