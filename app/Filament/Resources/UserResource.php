@@ -162,7 +162,9 @@ class UserResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('company_id')
                             ->label('Компания')
-                            ->relationship('company', 'name')
+                            ->relationship('company', 'name', function (Builder $query) {
+                                return $query->where('is_archived', false);
+                            })
                             ->searchable()
                             ->preload()
                             ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
@@ -245,7 +247,9 @@ class UserResource extends Resource
 
                 Tables\Filters\SelectFilter::make('company_id')
                     ->label('Компания')
-                    ->relationship('company', 'name'),
+                    ->relationship('company', 'name', function (Builder $query) {
+                        return $query->where('is_archived', false);
+                    }),
 
                 Tables\Filters\Filter::make('phone')
                     ->label('Телефон')

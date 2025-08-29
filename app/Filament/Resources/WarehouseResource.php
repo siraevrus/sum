@@ -44,7 +44,9 @@ class WarehouseResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('company_id')
                             ->label('Компания')
-                            ->relationship('company', 'name')
+                            ->relationship('company', 'name', function (Builder $query) {
+                                return $query->where('is_archived', false);
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -103,7 +105,9 @@ class WarehouseResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('company_id')
                     ->label('Компания')
-                    ->relationship('company', 'name'),
+                    ->relationship('company', 'name', function (Builder $query) {
+                        return $query->where('is_archived', false);
+                    }),
 
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Активные'),

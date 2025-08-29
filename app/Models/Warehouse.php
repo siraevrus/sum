@@ -80,7 +80,11 @@ class Warehouse extends Model
             return [];
         }
 
-        $query = static::query()->active();
+        $query = static::query()
+            ->active()
+            ->whereHas('company', function (Builder $query) {
+                $query->where('is_archived', false);
+            });
 
         if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
             return $query->pluck('name', 'id')->toArray();
