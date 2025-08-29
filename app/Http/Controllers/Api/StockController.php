@@ -20,7 +20,7 @@ class StockController extends Controller
             ->select([
                 'product_template_id',
                 'warehouse_id',
-                DB::raw('COALESCE(producer, "null") as producer'),
+                'producer',
                 DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", COALESCE(producer, "null")) as id'),
                 DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
                 DB::raw('SUM(calculated_volume * quantity) as total_volume'),
@@ -29,7 +29,7 @@ class StockController extends Controller
                 DB::raw('MIN(is_active) as is_active')
             ])
             ->where('is_active', 1)
-            ->groupBy('product_template_id', 'warehouse_id', DB::raw('COALESCE(producer, "null")'))
+            ->groupBy('product_template_id', 'warehouse_id', 'producer')
             ->having('total_quantity', '>', 0);
 
         // Фильтрация по складу
@@ -81,7 +81,7 @@ class StockController extends Controller
             ->select([
                 'product_template_id',
                 'warehouse_id',
-                DB::raw('COALESCE(producer, "null") as producer'),
+                'producer',
                 DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
                 DB::raw('SUM(calculated_volume * quantity) as total_volume'),
                 DB::raw('MIN(name) as name'),
@@ -92,7 +92,7 @@ class StockController extends Controller
             ->where('warehouse_id', $warehouseId)
             ->where('producer', $producer)
             ->where('is_active', 1)
-            ->groupBy('product_template_id', 'warehouse_id', DB::raw('COALESCE(producer, "null")'))
+            ->groupBy('product_template_id', 'warehouse_id', 'producer')
             ->with(['productTemplate', 'warehouse'])
             ->first();
 
