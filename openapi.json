@@ -437,9 +437,39 @@
             "$ref": "#/components/parameters/per_page"
           },
           {
-            "name": "search"
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProductExportRow"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/stocks": {
@@ -501,55 +531,6 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
-          }
-        }
-      }
-    },
-    "/products/export": {
-      "get": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Экспорт товаров",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/page"
-          },
-          {
-            "$ref": "#/components/parameters/per_page"
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ProductExportRow"
-                      }
-                    },
-                    "total": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1517,6 +1498,69 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/MessageOk"
+          },
+          "400": {
+            "$ref": "#/components/responses/CompanyDeleteError"
+          }
+        }
+      }
+    },
+    "/companies/{id}/archive": {
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Архивировать компанию",
+        "description": "Архивирует компанию вместо удаления. Архивированная компания не отображается в обычных списках, но сохраняет все данные и связи.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CompanyArchiveSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/CompanyArchiveError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/companies/{id}/restore": {
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Восстановить компанию из архива",
+        "description": "Восстанавливает компанию из архива, делая её снова активной.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CompanyRestoreSuccess"
+          },
+          "400": {
+            "$ref": "#/components/responses/CompanyRestoreError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -2347,6 +2391,129 @@
             }
           }
         }
+      },
+      "CompanyArchiveSuccess": {
+        "description": "Компания успешно архивирована",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Компания успешно архивирована"
+                },
+                "data": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompanyRestoreSuccess": {
+        "description": "Компания успешно восстановлена",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Компания успешно восстановлена"
+                },
+                "data": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompanyArchiveError": {
+        "description": "Ошибка архивирования компании",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Компания уже архивирована"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompanyRestoreError": {
+        "description": "Ошибка восстановления компании",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Компания не архивирована"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompanyDeleteError": {
+        "description": "Нельзя удалить компанию с привязанными складами или сотрудниками",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Нельзя удалить компанию с привязанными складами или сотрудниками. Архивируйте или удалите связанные записи."
+                },
+                "details": {
+                  "type": "object",
+                  "properties": {
+                    "warehouses_count": {
+                      "type": "integer",
+                      "example": 2
+                    },
+                    "employees_count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "suggestion": {
+                      "type": "string",
+                      "example": "Используйте POST /api/companies/14/archive для архивирования"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -2476,6 +2643,16 @@
             "type": "string",
             "nullable": true
           },
+          "employees_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество сотрудников"
+          },
+          "warehouses_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество складов"
+          },
           "is_archived": {
             "type": "boolean"
           },
@@ -2577,6 +2754,16 @@
             "maxLength": 9,
             "nullable": true,
             "description": "БИК"
+          },
+          "employees_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество сотрудников"
+          },
+          "warehouses_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество складов"
           }
         }
       },
@@ -2661,6 +2848,16 @@
             "maxLength": 9,
             "nullable": true,
             "description": "БИК"
+          },
+          "employees_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество сотрудников"
+          },
+          "warehouses_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Количество складов"
           }
         }
       },
@@ -2683,6 +2880,10 @@
           "attributes": {
             "type": "object",
             "additionalProperties": true,
+            "nullable": true
+          },
+          "transport_number": {
+            "type": "string",
             "nullable": true
           },
           "producer": {
@@ -2756,6 +2957,10 @@
             "additionalProperties": true,
             "description": "Характеристики товара (обязательные для выбранного шаблона)"
           },
+          "transport_number": {
+            "type": "string",
+            "description": "Номер транспортного средства"
+          },
           "producer": {
             "type": "string"
           },
@@ -2786,6 +2991,10 @@
           },
           "quantity": {
             "type": "number"
+          },
+          "transport_number": {
+            "type": "string",
+            "nullable": true
           },
           "calculated_volume": {
             "type": "number"
