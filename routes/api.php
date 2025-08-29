@@ -91,6 +91,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{company}', [CompanyController::class, 'show']);
         Route::put('/{company}', [CompanyController::class, 'update']);
         Route::delete('/{company}', [CompanyController::class, 'destroy']);
+        Route::post('/{company}/archive', [CompanyController::class, 'archive']);
+        Route::post('/{company}/restore', [CompanyController::class, 'restore']);
         Route::get('/{company}/warehouses', [CompanyController::class, 'warehouses']);
     });
 

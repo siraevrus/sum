@@ -193,9 +193,17 @@ class CompanyController extends Controller
 
         // Блокируем удаление, если есть связанные склады или сотрудники
         if ($company->warehouses()->exists() || $company->employees()->exists()) {
+            $warehousesCount = $company->warehouses()->count();
+            $employeesCount = $company->employees()->count();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Нельзя удалить компанию с привязанными складами или сотрудниками. Архивируйте или удалите связанные записи.',
+                'details' => [
+                    'warehouses_count' => $warehousesCount,
+                    'employees_count' => $employeesCount,
+                    'suggestion' => 'Используйте POST /api/companies/'.$company->id.'/archive для архивирования',
+                ],
             ], 400);
         }
 
@@ -212,6 +220,70 @@ class CompanyController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при удалении компании',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Архивировать компанию
+     */
+    public function archive(Company $company): JsonResponse
+    {
+        // Проверяем, что компания не архивирована
+        if ($company->is_archived) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Компания уже архивирована',
+            ], 400);
+        }
+
+        try {
+            // Архивируем компанию
+            $company->archive();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Компания успешно архивирована',
+                'data' => $company->fresh(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при архивировании компании',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Восстановить компанию из архива
+     */
+    public function restore(Company $company): JsonResponse
+    {
+        // Проверяем, что компания архивирована
+        if (! $company->is_archived) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Компания не архивирована',
+            ], 400);
+        }
+
+        try {
+            // Восстанавливаем компанию
+            $company->restore();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Компания успешно восстановлена',
+                'data' => $company->fresh(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при восстановлении компании',
                 'error' => $e->getMessage(),
             ], 500);
         }
