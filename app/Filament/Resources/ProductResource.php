@@ -193,14 +193,18 @@ class ProductResource extends Resource
                             ->label('Описание')
                             ->rows(3)
                             ->maxLength(1000),
+
+                        TextInput::make('calculated_volume')
+                            ->label('Рассчитанный объем (м³)')
+                            ->numeric()
+                            ->disabled()
+                            ->dehydrated()
+                            ->helperText('Объем рассчитывается автоматически на основе характеристик товара')
+                            ->visible(fn (Get $get) => $get('product_template_id') !== null),
                     ]),
 
                 Section::make('Характеристики товара')
-                    ->schema([
-                        // Динамические поля характеристик будут добавляться здесь
-                    ])
                     ->visible(fn (Get $get) => $get('product_template_id') !== null)
-                    ->live()
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
                         if (! $templateId) {
@@ -265,7 +269,18 @@ class ProductResource extends Resource
                                                             'attributes' => $numericAttributes,
                                                             'result' => $result
                                                         ]);
+                                                    } else {
+                                                        // Если расчет не удался, очищаем поле
+                                                        $set('calculated_volume', null);
+                                                        Log::warning('Volume calculation failed', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'error' => $testResult['error']
+                                                        ]);
                                                     }
+                                                } else {
+                                                    // Если нет числовых характеристик, очищаем поле
+                                                    $set('calculated_volume', null);
                                                 }
                                             }
                                             
@@ -394,7 +409,25 @@ class ProductResource extends Resource
                                                         }
                                                         
                                                         $set('calculated_volume', $result);
+                                                        
+                                                        // Логируем для отладки
+                                                        Log::info('Volume calculated', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result
+                                                        ]);
+                                                    } else {
+                                                        // Если расчет не удался, очищаем поле
+                                                        $set('calculated_volume', null);
+                                                        Log::warning('Volume calculation failed', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'error' => $testResult['error']
+                                                        ]);
                                                     }
+                                                } else {
+                                                    // Если нет числовых характеристик, очищаем поле
+                                                    $set('calculated_volume', null);
                                                 }
                                             }
                                             

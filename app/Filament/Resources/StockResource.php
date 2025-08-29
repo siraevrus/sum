@@ -176,10 +176,18 @@ class StockResource extends Resource
                         }
                         
                         $attributesText = '';
-                        if ($record->attributes && is_array($record->attributes)) {
+                        // Получаем характеристики из первого товара в группе
+                        $firstProduct = Product::where('product_template_id', $record->product_template_id)
+                            ->where('warehouse_id', $record->warehouse_id)
+                            ->whereRaw('COALESCE(producer, "null") = ?', [$record->producer ?? 'null'])
+                            ->where('status', Product::STATUS_IN_STOCK)
+                            ->where('is_active', true)
+                            ->first();
+                        
+                        if ($firstProduct && $firstProduct->attributes && is_array($firstProduct->attributes)) {
                             $attributesText = implode(', ', array_map(function($key, $value) {
                                 return "{$key}: {$value}";
-                            }, array_keys($record->attributes), $record->attributes));
+                            }, array_keys($firstProduct->attributes), $firstProduct->attributes));
                         }
                         
                         return "
@@ -244,10 +252,11 @@ class StockResource extends Resource
         // Группируем товары по характеристикам
         return $baseQuery
             ->select([
+                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", COALESCE(producer, "null")) as id'),
                 'product_template_id',
                 'warehouse_id',
-                'producer',
-                'attributes',
+                DB::raw('COALESCE(producer, "null") as producer'),
+                DB::raw('JSON_OBJECT() as attributes'),
                 DB::raw('SUM(quantity) as total_quantity'),
                 DB::raw('SUM(calculated_volume) as total_volume'),
                 DB::raw('COUNT(*) as product_count'),
@@ -256,7 +265,7 @@ class StockResource extends Resource
                 DB::raw('MIN(arrival_date) as first_arrival_date'),
                 DB::raw('MAX(arrival_date) as last_arrival_date')
             ])
-            ->groupBy('product_template_id', 'warehouse_id', 'producer', 'attributes');
+            ->groupBy('product_template_id', 'warehouse_id', DB::raw('COALESCE(producer, "null")'));
     }
 
     public static function getRelations(): array
