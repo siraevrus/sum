@@ -23,15 +23,19 @@ class TestDataSeeder extends Seeder
     public function run(): void
     {
         // Создаем администратора
-        User::create([
-            'name' => 'Администратор',
-            'email' => 'admin@sklad.ru',
-            'password' => Hash::make('password'),
-            'role' => UserRole::ADMIN,
-            'first_name' => 'Администратор',
-            'last_name' => 'Системы',
-            'is_blocked' => false,
-        ]);
+        $admin = User::where('username', 'admin')->first();
+        if (! $admin) {
+            $admin = User::create([
+                'name' => 'Администратор',
+                'username' => 'admin',
+                'email' => 'admin@sklad.ru',
+                'password' => Hash::make('password'),
+                'role' => UserRole::ADMIN,
+                'first_name' => 'Администратор',
+                'last_name' => 'Системы',
+                'is_blocked' => false,
+            ]);
+        }
 
         // Создаем тестовые компании
         $company1 = Company::create([
@@ -89,47 +93,59 @@ class TestDataSeeder extends Seeder
         ]);
 
         // Создаем тестовых сотрудников
-        User::create([
-            'name' => 'Оператор ПК',
-            'email' => 'operator@sklad.ru',
-            'password' => Hash::make('password'),
-            'role' => UserRole::OPERATOR,
-            'first_name' => 'Оператор',
-            'last_name' => 'ПК',
-            'middle_name' => 'Тестовый',
-            'phone' => '+7 (495) 111-11-11',
-            'company_id' => $company1->id,
-            'warehouse_id' => $warehouse1->id,
-            'is_blocked' => false,
-        ]);
+        $operator = User::where('username', 'operator')->first();
+        if (! $operator) {
+            $operator = User::create([
+                'name' => 'Оператор ПК',
+                'username' => 'operator',
+                'email' => 'operator@sklad.ru',
+                'password' => Hash::make('password'),
+                'role' => UserRole::OPERATOR,
+                'first_name' => 'Оператор',
+                'last_name' => 'ПК',
+                'middle_name' => 'Тестовый',
+                'phone' => '+7 (495) 111-11-11',
+                'company_id' => $company1->id,
+                'warehouse_id' => $warehouse1->id,
+                'is_blocked' => false,
+            ]);
+        }
 
-        User::create([
-            'name' => 'Работник склада',
-            'email' => 'worker@sklad.ru',
-            'password' => Hash::make('password'),
-            'role' => UserRole::WAREHOUSE_WORKER,
-            'first_name' => 'Работник',
-            'last_name' => 'Склада',
-            'middle_name' => 'Тестовый',
-            'phone' => '+7 (495) 222-22-22',
-            'company_id' => $company1->id,
-            'warehouse_id' => $warehouse1->id,
-            'is_blocked' => false,
-        ]);
+        $worker = User::where('username', 'worker')->first();
+        if (! $worker) {
+            $worker = User::create([
+                'name' => 'Работник склада',
+                'username' => 'worker',
+                'email' => 'worker@sklad.ru',
+                'password' => Hash::make('password'),
+                'role' => UserRole::WAREHOUSE_WORKER,
+                'first_name' => 'Работник',
+                'last_name' => 'Склада',
+                'middle_name' => 'Тестовый',
+                'phone' => '+7 (495) 222-22-22',
+                'company_id' => $company1->id,
+                'warehouse_id' => $warehouse1->id,
+                'is_blocked' => false,
+            ]);
+        }
 
-        User::create([
-            'name' => 'Менеджер по продажам',
-            'email' => 'manager@sklad.ru',
-            'password' => Hash::make('password'),
-            'role' => UserRole::SALES_MANAGER,
-            'first_name' => 'Менеджер',
-            'last_name' => 'По продажам',
-            'middle_name' => 'Тестовый',
-            'phone' => '+7 (495) 333-33-33',
-            'company_id' => $company2->id,
-            'warehouse_id' => $warehouse3->id,
-            'is_blocked' => false,
-        ]);
+        $manager = User::where('username', 'manager')->first();
+        if (! $manager) {
+            $manager = User::create([
+                'name' => 'Менеджер по продажам',
+                'username' => 'manager',
+                'email' => 'manager@sklad.ru',
+                'password' => Hash::make('password'),
+                'role' => UserRole::SALES_MANAGER,
+                'first_name' => 'Менеджер',
+                'last_name' => 'По продажам',
+                'middle_name' => 'Тестовый',
+                'phone' => '+7 (495) 333-33-33',
+                'company_id' => $company2->id,
+                'warehouse_id' => $warehouse3->id,
+                'is_blocked' => false,
+            ]);
+        }
 
         // Создаем тестовые шаблоны товаров
         $template1 = ProductTemplate::create([
@@ -401,7 +417,6 @@ class TestDataSeeder extends Seeder
             ],
             'calculated_volume' => 0.0225,
             'quantity' => 20,
-            'supplier' => 'ООО "ЛесоСнаб"',
             'producer' => 'ООО "Лесопилка"',
             'transport_number' => 'TR001',
             'tracking_number' => 'TN12345678',
@@ -425,7 +440,6 @@ class TestDataSeeder extends Seeder
             ],
             'calculated_volume' => 0.024,
             'quantity' => 15,
-            'supplier' => 'ООО "ЛесоСнаб"',
             'producer' => 'ООО "Лесопилка"',
             'transport_number' => null,
             'tracking_number' => null,
@@ -449,7 +463,6 @@ class TestDataSeeder extends Seeder
             ],
             'calculated_volume' => 0.135,
             'quantity' => 10,
-            'supplier' => 'ООО "ЛесоСнаб"',
             'producer' => 'ООО "Лесопилка"',
             'transport_number' => 'TR002',
             'tracking_number' => 'TN87654321',
@@ -474,7 +487,6 @@ class TestDataSeeder extends Seeder
             ],
             'calculated_volume' => 1.5708,
             'quantity' => 5,
-            'supplier' => 'ООО "МеталлСнаб"',
             'producer' => 'ООО "МеталлПром"',
             'transport_number' => 'TR003',
             'tracking_number' => 'TN11111111',
@@ -599,7 +611,6 @@ class TestDataSeeder extends Seeder
                 'price_without_vat' => 12500.00,
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
-                'payment_method' => Sale::PAYMENT_METHOD_CARD,
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
                 'delivery_status' => Sale::DELIVERY_STATUS_DELIVERED,
                 'notes' => 'Продажа для строительных работ',
@@ -630,7 +641,6 @@ class TestDataSeeder extends Seeder
                 'price_without_vat' => 13500.00,
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
-                'payment_method' => Sale::PAYMENT_METHOD_BANK_TRANSFER,
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
                 'delivery_status' => Sale::DELIVERY_STATUS_IN_PROGRESS,
                 'notes' => 'Доставка на строительную площадку',
@@ -661,7 +671,6 @@ class TestDataSeeder extends Seeder
                 'price_without_vat' => 16000.00,
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
-                'payment_method' => Sale::PAYMENT_METHOD_CASH,
                 'payment_status' => Sale::PAYMENT_STATUS_PENDING,
                 'delivery_status' => Sale::DELIVERY_STATUS_PENDING,
                 'notes' => 'Ожидает оплаты наличными',
@@ -692,7 +701,6 @@ class TestDataSeeder extends Seeder
                 'price_without_vat' => 20000.00,
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
-                'payment_method' => Sale::PAYMENT_METHOD_CARD,
                 'payment_status' => Sale::PAYMENT_STATUS_CANCELLED,
                 'delivery_status' => Sale::DELIVERY_STATUS_CANCELLED,
                 'notes' => 'Продажа отменена по просьбе клиента',

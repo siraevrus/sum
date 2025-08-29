@@ -7,7 +7,6 @@ use App\Models\ProductAttribute;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-
 class EditProductTemplate extends EditRecord
 {
     protected static string $resource = ProductTemplateResource::class;
@@ -28,17 +27,17 @@ class EditProductTemplate extends EditRecord
     private function updateAttributes(): void
     {
         $attributes = $this->data['attributes'] ?? [];
-        
+
         // Удаляем старые характеристики
         $this->record->attributes()->delete();
-        
+
         // Создаем новые характеристики
         foreach ($attributes as $index => $attribute) {
-            if (!empty($attribute['name']) && !empty($attribute['variable'])) {
+            if (! empty($attribute['name']) && ! empty($attribute['variable'])) {
                 try {
                     // Обрабатываем options для select типа
                     $options = null;
-                    if (isset($attribute['type']) && $attribute['type'] === 'select' && !empty($attribute['options'])) {
+                    if (isset($attribute['type']) && $attribute['type'] === 'select' && ! empty($attribute['options'])) {
                         if (is_string($attribute['options'])) {
                             // Разбиваем строку на массив по запятой
                             $options = array_map('trim', explode(',', $attribute['options']));
@@ -46,7 +45,7 @@ class EditProductTemplate extends EditRecord
                             $options = $attribute['options'];
                         }
                     }
-                    
+
                     ProductAttribute::create([
                         'product_template_id' => $this->record->id,
                         'name' => trim($attribute['name']),
@@ -56,9 +55,9 @@ class EditProductTemplate extends EditRecord
                         'unit' => $attribute['unit'] ?? null,
                         'is_required' => $attribute['is_required'] ?? false,
                         'is_in_formula' => $attribute['is_in_formula'] ?? false,
-                        'sort_order' => $index + 1,
+                        'sort_order' => (int) $index + 1,
                     ]);
-                    
+
                 } catch (\Exception $e) {
                     // Логируем ошибку
                     // Log::error('Error updating attribute', [
@@ -66,7 +65,7 @@ class EditProductTemplate extends EditRecord
                     //     'error' => $e->getMessage(),
                     //     'template_id' => $this->record->id
                     // ]);
-                    
+
                     // Продолжаем создание других характеристик
                     continue;
                 }
@@ -88,7 +87,7 @@ class EditProductTemplate extends EditRecord
                 'is_in_formula' => $attribute->is_in_formula,
             ];
         })->toArray();
-        
+
         return $data;
     }
 }

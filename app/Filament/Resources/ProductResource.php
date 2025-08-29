@@ -68,25 +68,25 @@ class ProductResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Очищаем старые характеристики при смене шаблона
                                         $set('calculated_volume', null);
                                         $set('name', null);
-                                        
+
                                         // Очищаем все поля характеристик
                                         $template = ProductTemplate::find($get('product_template_id'));
                                         if ($template) {
                                             foreach ($template->attributes as $attribute) {
                                                 $set("attribute_{$attribute->variable}", null);
                                             }
-                                            
+
                                             // Если у шаблона есть формула, показываем подсказку
                                             if ($template->formula) {
                                                 $set('calculated_volume', 'Заполните характеристики для расчета объема');
                                             }
                                         }
-                                    })
-                                    ->live(),
+                                    }),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
@@ -131,6 +131,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->helperText('Максимальное значение: 99999. Объем рассчитывается по характеристикам товара.')
                                     ->live()
+                                    ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $templateId = $get('product_template_id');
                                         if ($templateId) {
@@ -139,33 +140,33 @@ class ProductResource extends Resource
                                                 // Рассчитываем объем при изменении количества
                                                 $attributes = [];
                                                 $formData = $get();
-                                                
+
                                                 foreach ($formData as $key => $value) {
                                                     if (str_starts_with($key, 'attribute_') && $value !== null) {
                                                         $attributeName = str_replace('attribute_', '', $key);
                                                         $attributes[$attributeName] = $value;
                                                     }
                                                 }
-                                                
+
                                                 // Рассчитываем объем только для числовых характеристик
-                                                if (!empty($attributes)) {
+                                                if (! empty($attributes)) {
                                                     $numericAttributes = [];
                                                     foreach ($attributes as $key => $value) {
                                                         if (is_numeric($value)) {
                                                             $numericAttributes[$key] = $value;
                                                         }
                                                     }
-                                                    
-                                                    if (!empty($numericAttributes)) {
+
+                                                    if (! empty($numericAttributes)) {
                                                         $testResult = $template->testFormula($numericAttributes);
                                                         if ($testResult['success']) {
                                                             $result = $testResult['result'];
-                                                            
+
                                                             // Ограничиваем максимальное значение объема до 99999
                                                             if ($result > 99999) {
                                                                 $result = 99999;
                                                             }
-                                                            
+
                                                             $set('calculated_volume', $result);
                                                         }
                                                     }
@@ -230,44 +231,45 @@ class ProductResource extends Resource
                                         ->required($attribute->is_required)
                                         ->helperText('Максимальное значение: 9999')
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
                                             $formData = $get();
-                                            
+
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null) {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
-                                            
+
                                             // Рассчитываем объем только для числовых характеристик
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $numericAttributes = [];
                                                 foreach ($attributes as $key => $value) {
                                                     if (is_numeric($value)) {
                                                         $numericAttributes[$key] = $value;
                                                     }
                                                 }
-                                                
-                                                if (!empty($numericAttributes) && $template->formula) {
+
+                                                if (! empty($numericAttributes) && $template->formula) {
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-                                                        
+
                                                         // Ограничиваем максимальное значение объема до 99999
                                                         if ($result > 99999) {
                                                             $result = 99999;
                                                         }
-                                                        
+
                                                         $set('calculated_volume', $result);
-                                                        
+
                                                         // Логируем для отладки
                                                         Log::info('Volume calculated', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
-                                                            'result' => $result
+                                                            'result' => $result,
                                                         ]);
                                                     } else {
                                                         // Если расчет не удался, очищаем поле
@@ -283,9 +285,9 @@ class ProductResource extends Resource
                                                     $set('calculated_volume', null);
                                                 }
                                             }
-                                            
+
                                             // Формируем наименование
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $nameParts = [];
                                                 foreach ($template->attributes as $templateAttribute) {
                                                     $attributeKey = $templateAttribute->variable;
@@ -293,10 +295,10 @@ class ProductResource extends Resource
                                                         $nameParts[] = $attributes[$attributeKey];
                                                     }
                                                 }
-                                                
-                                                if (!empty($nameParts)) {
+
+                                                if (! empty($nameParts)) {
                                                     $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                     $set('name', $generatedName);
                                                 }
                                             }
@@ -308,51 +310,52 @@ class ProductResource extends Resource
                                         ->label($attribute->full_name)
                                         ->required($attribute->is_required)
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
                                             $formData = $get();
-                                            
+
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null) {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
-                                            
+
                                             // Рассчитываем объем только для числовых характеристик
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $numericAttributes = [];
                                                 foreach ($attributes as $key => $value) {
                                                     if (is_numeric($value)) {
                                                         $numericAttributes[$key] = $value;
                                                     }
                                                 }
-                                                
-                                                if (!empty($numericAttributes) && $template->formula) {
+
+                                                if (! empty($numericAttributes) && $template->formula) {
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-                                                        
+
                                                         // Ограничиваем максимальное значение объема до 99999
                                                         if ($result > 99999) {
                                                             $result = 99999;
                                                         }
-                                                        
+
                                                         $set('calculated_volume', $result);
-                                                        
+
                                                         // Логируем для отладки
                                                         Log::info('Volume calculated', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
-                                                            'result' => $result
+                                                            'result' => $result,
                                                         ]);
                                                     }
                                                 }
                                             }
-                                            
+
                                             // Формируем наименование
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $nameParts = [];
                                                 foreach ($template->attributes as $templateAttribute) {
                                                     $attributeKey = $templateAttribute->variable;
@@ -360,10 +363,10 @@ class ProductResource extends Resource
                                                         $nameParts[] = $attributes[$attributeKey];
                                                     }
                                                 }
-                                                
-                                                if (!empty($nameParts)) {
+
+                                                if (! empty($nameParts)) {
                                                     $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                     $set('name', $generatedName);
                                                 }
                                             }
@@ -377,37 +380,38 @@ class ProductResource extends Resource
                                         ->options($options)
                                         ->required($attribute->is_required)
                                         ->live()
+                                        ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
                                             $formData = $get();
-                                            
+
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null) {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
-                                            
+
                                             // Рассчитываем объем только для числовых характеристик
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $numericAttributes = [];
                                                 foreach ($attributes as $key => $value) {
                                                     if (is_numeric($value)) {
                                                         $numericAttributes[$key] = $value;
                                                     }
                                                 }
-                                                
-                                                if (!empty($numericAttributes) && $template->formula) {
+
+                                                if (! empty($numericAttributes) && $template->formula) {
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-                                                        
+
                                                         // Ограничиваем максимальное значение объема до 99999
                                                         if ($result > 99999) {
                                                             $result = 99999;
                                                         }
-                                                        
+
                                                         $set('calculated_volume', $result);
                                                         
                                                         // Логируем для отладки
@@ -430,9 +434,9 @@ class ProductResource extends Resource
                                                     $set('calculated_volume', null);
                                                 }
                                             }
-                                            
+
                                             // Формируем наименование
-                                            if (!empty($attributes)) {
+                                            if (! empty($attributes)) {
                                                 $nameParts = [];
                                                 foreach ($template->attributes as $templateAttribute) {
                                                     $attributeKey = $templateAttribute->variable;
@@ -440,10 +444,10 @@ class ProductResource extends Resource
                                                         $nameParts[] = $attributes[$attributeKey];
                                                     }
                                                 }
-                                                
-                                                if (!empty($nameParts)) {
+
+                                                if (! empty($nameParts)) {
                                                     $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName . ': ' . implode(', ', $nameParts);
+                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                     $set('name', $generatedName);
                                                 }
                                             }
@@ -538,12 +542,12 @@ class ProductResource extends Resource
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    
+
                     // Ограничиваем максимальное значение объема до 99999 (5 символов)
                     if ($result > 99999) {
                         $result = 99999;
                     }
-                    
+
                     $set('calculated_volume', $result);
                 }
             }
@@ -569,7 +573,7 @@ class ProductResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('quantity')
-                    ->label('Количество')
+                    ->label('Поступило')
                     ->sortable()
                     ->badge()
                     ->color(function (string $state): string {
@@ -577,6 +581,31 @@ class ProductResource extends Resource
                             return 'success';
                         }
                         if ($state > 0) {
+                            return 'warning';
+                        }
+
+                        return 'danger';
+                    }),
+
+                Tables\Columns\TextColumn::make('sold_quantity')
+                    ->label('Продано')
+                    ->sortable()
+                    ->badge()
+                    ->color('danger'),
+
+                Tables\Columns\TextColumn::make('available_quantity')
+                    ->label('Доступно')
+                    ->formatStateUsing(function (Product $record): string {
+                        return (string) $record->getAvailableQuantity();
+                    })
+                    ->sortable()
+                    ->badge()
+                    ->color(function (Product $record): string {
+                        $available = $record->getAvailableQuantity();
+                        if ($available > 10) {
+                            return 'success';
+                        }
+                        if ($available > 0) {
                             return 'warning';
                         }
 

@@ -11,6 +11,14 @@ class EditSale extends EditRecord
 {
     protected static string $resource = SaleResource::class;
 
+    protected function authorizeAccess(): void
+    {
+        parent::authorizeAccess();
+        if ($this->record->payment_status === \App\Models\Sale::PAYMENT_STATUS_CANCELLED) {
+            abort(403, 'Редактирование отменённой продажи запрещено.');
+        }
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -34,19 +42,19 @@ class EditSale extends EditRecord
                 $data['warehouse_id'] = $product->warehouse_id;
             }
         }
-        
+
         // Рассчитываем общую сумму
         $data['total_price'] = ($data['cash_amount'] ?? 0) + ($data['nocash_amount'] ?? 0);
-        
+
         // Рассчитываем цену за единицу
         $data['unit_price'] = $data['total_price'] / ($data['quantity'] ?? 1);
-        
+
         // Рассчитываем цену без НДС
         $data['price_without_vat'] = $data['total_price'] / 1.2; // НДС 20%
-        
+
         // Рассчитываем сумму НДС
         $data['vat_amount'] = $data['total_price'] - $data['price_without_vat'];
-        
+
         // Устанавливаем значения по умолчанию
         $data['vat_rate'] = $data['vat_rate'] ?? 20.00;
         $data['currency'] = $data['currency'] ?? 'RUB';
@@ -54,7 +62,7 @@ class EditSale extends EditRecord
         $data['payment_status'] = $data['payment_status'] ?? 'pending';
         $data['delivery_status'] = $data['delivery_status'] ?? 'pending';
         $data['is_active'] = $data['is_active'] ?? true;
-        
+
         return $data;
     }
 
@@ -63,15 +71,15 @@ class EditSale extends EditRecord
         $sale = $this->record;
         $originalQuantity = $sale->getOriginal('quantity');
         $newQuantity = $sale->quantity;
-        
+
         // Если количество изменилось, корректируем остатки на складе
         if ($originalQuantity !== $newQuantity && $sale->product) {
             $difference = $newQuantity - $originalQuantity;
-            
+
             if ($difference > 0) {
                 // Увеличили количество - списываем дополнительно
                 $success = $sale->product->decreaseQuantity($difference);
-                if (!$success) {
+                if (! $success) {
                     $this->notify('error', 'Недостаточно товара на складе для увеличения количества');
                 }
             } elseif ($difference < 0) {
@@ -85,4 +93,4 @@ class EditSale extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}

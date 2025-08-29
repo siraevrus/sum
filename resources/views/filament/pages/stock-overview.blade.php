@@ -44,7 +44,7 @@
                                         Товаров: {{ $stats['total_products'] }}
                                     </p>
                                     <p class="text-sm text-gray-600 dark:text-gray-300">
-                                        Общий объем: {{ number_format($stats['total_volume'], 2) }} м³
+                                        Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
                                     </p>
                                     <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[producer][value]' => $producer]) }}" 
                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
@@ -76,7 +76,7 @@
                                             Товаров: {{ $stats['total_products'] }}
                                         </p>
                                         <p class="text-sm text-gray-600 dark:text-gray-300">
-                                            Общий объем: {{ number_format($stats['total_volume'], 2) }} м³
+                                            Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
                                         </p>
                                         <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[warehouse_id][value]' => $warehouseId]) }}" 
                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">

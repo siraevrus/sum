@@ -20,6 +20,8 @@ class Product extends Model
 
     public const STATUS_IN_TRANSIT = 'in_transit';
 
+    public const STATUS_FOR_RECEIPT = 'for_receipt';
+
     protected $fillable = [
         'product_template_id',
         'warehouse_id',
@@ -29,6 +31,7 @@ class Product extends Model
         'attributes',
         'calculated_volume',
         'quantity',
+        'sold_quantity',
         'transport_number',
         'producer',
         'arrival_date',
@@ -47,6 +50,7 @@ class Product extends Model
         'attributes' => 'array',
         'calculated_volume' => 'decimal:4',
         'quantity' => 'integer',
+        'sold_quantity' => 'integer',
         'arrival_date' => 'date',
         'status' => 'string',
         'is_active' => 'boolean',
@@ -107,7 +111,7 @@ class Product extends Model
     {
         return $this->hasMany(Sale::class);
     }
-    
+
     /**
      * Связь с товаром в пути
      */
@@ -166,12 +170,12 @@ class Product extends Model
 
             if ($testResult['success']) {
                 $result = (float) $testResult['result'];
-                
+
                 // Ограничиваем максимальное значение объема до 99999 (5 символов)
                 if ($result > 99999) {
                     $result = 99999;
                 }
-                
+
                 return $result;
             }
 
@@ -196,12 +200,12 @@ class Product extends Model
     public function updateCalculatedVolume(): void
     {
         $volume = $this->calculateVolume();
-        
+
         // Ограничиваем максимальное значение объема до 99999 (5 символов)
         if ($volume !== null && $volume > 99999) {
             $volume = 99999;
         }
-        
+
         $this->calculated_volume = $volume;
         $this->save();
     }
@@ -256,16 +260,25 @@ class Product extends Model
      */
     public function hasStock(): bool
     {
-        return $this->quantity > 0 && $this->is_active;
+        return $this->getAvailableQuantity() > 0 && $this->is_active;
     }
 
     /**
-     * Уменьшить количество товара
+     * Получить доступное количество (остатки)
+     */
+    public function getAvailableQuantity(): int
+    {
+        return $this->quantity - $this->sold_quantity;
+    }
+
+    /**
+     * Уменьшить количество товара (при продаже)
      */
     public function decreaseQuantity(int $amount): bool
     {
         if ($this->quantity >= $amount) {
-            $this->quantity -= $amount;
+            // Увеличиваем проданное количество вместо уменьшения исходного
+            $this->sold_quantity += $amount;
             $this->save();
 
             return true;
@@ -275,12 +288,15 @@ class Product extends Model
     }
 
     /**
-     * Увеличить количество товара
+     * Увеличить количество товара (при отмене продажи)
      */
     public function increaseQuantity(int $amount): void
     {
-        $this->quantity += $amount;
-        $this->save();
+        // Уменьшаем проданное количество при отмене продажи
+        if ($this->sold_quantity >= $amount) {
+            $this->sold_quantity -= $amount;
+            $this->save();
+        }
     }
 
     /**
@@ -350,14 +366,14 @@ class Product extends Model
             'total_volume' => static::sum('calculated_volume'),
         ];
     }
-    
+
     /**
      * Получить сгруппированные остатки товаров
      */
-    public static function getGroupedStock(Builder $query = null): \Illuminate\Database\Eloquent\Collection
+    public static function getGroupedStock(?Builder $query = null): \Illuminate\Database\Eloquent\Collection
     {
         $baseQuery = $query ?? static::query();
-        
+
         return $baseQuery
             ->select([
                 'product_template_id',
@@ -377,7 +393,7 @@ class Product extends Model
             ->orderBy('total_quantity', 'desc')
             ->get();
     }
-    
+
     /**
      * Получить уникальный ключ для группировки
      */
@@ -385,11 +401,11 @@ class Product extends Model
     {
         $attributes = $this->attributes ?? [];
         ksort($attributes); // Сортируем атрибуты для консистентности
-        
+
         return md5(
-            $this->product_template_id . '|' .
-            $this->warehouse_id . '|' .
-            $this->producer . '|' .
+            $this->product_template_id.'|'.
+            $this->warehouse_id.'|'.
+            $this->producer.'|'.
             json_encode($attributes)
         );
     }
@@ -404,16 +420,21 @@ class Product extends Model
         return $this->status === self::STATUS_IN_TRANSIT;
     }
 
+    public function isForReceipt(): bool
+    {
+        return $this->status === self::STATUS_FOR_RECEIPT;
+    }
+
     public function markInStock(): void
     {
         $this->status = self::STATUS_IN_STOCK;
         $this->arrival_date = $this->arrival_date ?? now();
         $this->save();
-        
+
         // Удаляем запись из таблицы товаров в пути
         $this->removeFromTransitRecord();
     }
-    
+
     /**
      * Удалить запись из таблицы товаров в пути
      */
@@ -429,9 +450,9 @@ class Product extends Model
             ])->delete();
         } catch (\Exception $e) {
             // Логируем ошибку, но не прерываем выполнение
-            Log::error('Ошибка при удалении записи из пути: ' . $e->getMessage(), [
+            Log::error('Ошибка при удалении записи из пути: '.$e->getMessage(), [
                 'product_id' => $this->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -440,11 +461,17 @@ class Product extends Model
     {
         $this->status = self::STATUS_IN_TRANSIT;
         $this->save();
-        
+
         // Создаем запись в таблице товаров в пути
         $this->createInTransitRecord();
     }
-    
+
+    public function markForReceipt(): void
+    {
+        $this->status = self::STATUS_FOR_RECEIPT;
+        $this->save();
+    }
+
     /**
      * Создать запись в таблице товаров в пути
      */
@@ -459,7 +486,7 @@ class Product extends Model
                 'producer' => $this->producer,
                 'status' => \App\Models\ProductInTransit::STATUS_IN_TRANSIT,
             ])->first();
-            
+
             if ($existingRecord) {
                 // Обновляем существующую запись
                 $existingRecord->update([
@@ -469,9 +496,10 @@ class Product extends Model
                     'shipping_date' => $this->shipping_date ?? now(),
                     'expected_arrival_date' => $this->expected_arrival_date ?? now()->addDays(7),
                 ]);
+
                 return;
             }
-            
+
             // Создаем новую запись
             \App\Models\ProductInTransit::create([
                 'product_template_id' => $this->product_template_id,
@@ -495,9 +523,9 @@ class Product extends Model
             ]);
         } catch (\Exception $e) {
             // Логируем ошибку, но не прерываем выполнение
-            Log::error('Ошибка при создании записи в пути: ' . $e->getMessage(), [
+            Log::error('Ошибка при создании записи в пути: '.$e->getMessage(), [
                 'product_id' => $this->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
