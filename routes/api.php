@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductTemplateController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -144,5 +145,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{productTemplate}/attributes', [ProductTemplateController::class, 'addAttribute']);
         Route::put('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'updateAttribute']);
         Route::delete('/{productTemplate}/attributes/{attribute}', [ProductTemplateController::class, 'deleteAttribute']);
+    });
+
+    // Остатки товаров
+    Route::prefix('stocks')->group(function () {
+        Route::get('/', [StockController::class, 'index']);
+        Route::get('/{stock}', [StockController::class, 'show']);
     });
 });
