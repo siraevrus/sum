@@ -71,25 +71,18 @@ class SaleResource extends Resource
      */
     private static function getMaxAvailableQuantity(string $productId): int
     {
-        if (! str_contains($productId, '|')) {
+        // Получаем товар по ID
+        $product = \App\Models\Product::find($productId);
+        if (!$product) {
             return 0;
         }
 
-        $parts = explode('|', $productId);
-        if (count($parts) < 4) {
-            return 0;
-        }
-
-        $productTemplateId = $parts[0];
-        $warehouseId = $parts[1];
-        $producer = $parts[2];
-        $name = base64_decode($parts[3]);
-
-        // Доступное количество = сумма количеств по products (без вычитания продаж)
-        $availableQuantity = \App\Models\Product::where('product_template_id', $productTemplateId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('producer', $producer)
-            ->where('name', $name)
+        // Доступное количество = сумма количеств по products с теми же характеристиками
+        $availableQuantity = \App\Models\Product::where('product_template_id', $product->product_template_id)
+            ->where('warehouse_id', $product->warehouse_id)
+            ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
+            ->where('status', \App\Models\Product::STATUS_IN_STOCK)
+            ->where('is_active', true)
             ->sum('quantity');
 
         return max(0, $availableQuantity);
@@ -135,8 +128,11 @@ class SaleResource extends Resource
                                             if (! $warehouseId) {
                                                 return [];
                                             }
-                                            $query = Product::query()
+                                            
+                                            // Получаем доступные товары с группировкой
+                                            $availableProducts = Product::query()
                                                 ->select([
+                                                    'id',
                                                     'product_template_id',
                                                     'warehouse_id',
                                                     'producer',
@@ -147,13 +143,25 @@ class SaleResource extends Resource
                                                 ->where('status', Product::STATUS_IN_STOCK)
                                                 ->where('is_active', true)
                                                 ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
-                                                ->having('available_quantity', '>', 0);
-                                            $availableProducts = $query->get();
+                                                ->having('available_quantity', '>', 0)
+                                                ->get();
+                                            
                                             $options = [];
                                             foreach ($availableProducts as $product) {
-                                                $key = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer}|".base64_encode($product->name);
                                                 $producerLabel = $product->producer ? " ({$product->producer})" : '';
-                                                $options[$key] = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
+                                                $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
+                                                
+                                                // Используем ID первого товара из группы как ключ
+                                                $firstProduct = Product::where('product_template_id', $product->product_template_id)
+                                                    ->where('warehouse_id', $product->warehouse_id)
+                                                    ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
+                                                    ->where('status', Product::STATUS_IN_STOCK)
+                                                    ->where('is_active', true)
+                                                    ->first();
+                                                
+                                                if ($firstProduct) {
+                                                    $options[$firstProduct->id] = $displayName;
+                                                }
                                             }
 
                                             return $options;
