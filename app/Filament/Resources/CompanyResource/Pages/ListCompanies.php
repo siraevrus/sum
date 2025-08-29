@@ -14,6 +14,11 @@ class ListCompanies extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            Actions\Action::make('archived')
+                ->label('Архивированные компании')
+                ->icon('heroicon-o-archive-box')
+                ->color('gray')
+                ->url(route('filament.admin.resources.companies.index', ['tableFilters[is_archived][value]' => 'true'])),
         ];
     }
 }

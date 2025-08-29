@@ -149,7 +149,17 @@ class CompanyResource extends Resource
             ->emptyStateDescription('Создайте первую компанию, чтобы начать работу.')
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_archived')
-                    ->label('Архивированные'),
+                    ->label('Архивированные')
+                    ->query(function (Builder $query, array $data): Builder {
+                        if ($data['value'] === true) {
+                            return $query->where('is_archived', true);
+                        }
+                        if ($data['value'] === false) {
+                            return $query->where('is_archived', false);
+                        }
+
+                        return $query;
+                    }),
                 Tables\Filters\TernaryFilter::make('trashed')
                     ->label('Удаленные')
                     ->query(function (Builder $query, array $data): Builder {
@@ -177,6 +187,11 @@ class CompanyResource extends Resource
                     ->visible(fn (Company $record): bool => ! $record->is_archived)
                     ->action(function (Company $record): void {
                         $record->archive();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Компания архивирована')
+                            ->body('Компания успешно архивирована и скрыта из списка.')
+                            ->success()
+                            ->send();
                     }),
 
                 Tables\Actions\Action::make('restore')
@@ -187,6 +202,11 @@ class CompanyResource extends Resource
                     ->visible(fn (Company $record): bool => $record->is_archived)
                     ->action(function (Company $record): void {
                         $record->restore();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Компания восстановлена')
+                            ->body('Компания успешно восстановлена из архива.')
+                            ->success()
+                            ->send();
                     }),
 
                 Tables\Actions\Action::make('restore_deleted')
@@ -240,6 +260,7 @@ class CompanyResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery();
+        return parent::getEloquentQuery()
+            ->where('is_archived', false);
     }
 }
