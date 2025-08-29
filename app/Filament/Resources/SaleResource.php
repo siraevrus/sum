@@ -132,7 +132,6 @@ class SaleResource extends Resource
                                             // Получаем доступные товары с группировкой
                                             $availableProducts = Product::query()
                                                 ->select([
-                                                    'id',
                                                     'product_template_id',
                                                     'warehouse_id',
                                                     'producer',
