@@ -29,6 +29,7 @@ class ProductTemplateResource extends Resource
     protected static ?string $pluralModelLabel = 'Шаблоны товаров';
 
     protected static ?int $navigationSort = 4;
+    
 
     public static function canViewAny(): bool
     {

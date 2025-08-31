@@ -16,10 +16,26 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.PORT }}
+        script_stop: true
+        debug: true
         script: |
+          echo "Starting deployment..."
+          echo "Current directory: $(pwd)"
+          echo "Current user: $(whoami)"
+          
           cd /var/www/sklad
+          echo "Changed to /var/www/sklad"
+          
+          echo "Pulling latest changes..."
           git pull origin main
+          
+          echo "Running migrations..."
           php artisan migrate --force
+          
+          echo "Clearing caches..."
           php artisan config:clear
           php artisan route:clear
           php artisan cache:clear
+          php artisan api:cache
+          
+          echo "Deployment completed successfully!"
