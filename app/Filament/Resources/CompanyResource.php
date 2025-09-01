@@ -117,6 +117,7 @@ class CompanyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordCheckboxPosition('none')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Название компании')
