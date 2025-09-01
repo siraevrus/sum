@@ -10,7 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class CompanyResource extends Resource
@@ -117,6 +116,8 @@ class CompanyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->checkIfRecordIsSelectedUsing(fn (): bool => false)
+            ->recordCheckboxPosition('none')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Название компании')
@@ -254,28 +255,6 @@ class CompanyResource extends Resource
                         // Скрываем кнопку удаления если есть связанные записи
                         return ! ($record->warehouses()->exists() || $record->employees()->exists());
                     }),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->before(function (Collection $records) {
-                            // Фильтруем записи, которые можно удалить
-                            $deletableRecords = $records->filter(function ($record) {
-                                return ! ($record->warehouses()->exists() || $record->employees()->exists());
-                            });
-
-                            if ($deletableRecords->count() !== $records->count()) {
-                                // Если есть записи, которые нельзя удалить, показываем предупреждение
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Некоторые компании не могут быть удалены')
-                                    ->body('Компании с связанными складами или сотрудниками пропущены.')
-                                    ->warning()
-                                    ->send();
-                            }
-
-                            return $deletableRecords;
-                        }),
-                ]),
             ]);
     }
 
