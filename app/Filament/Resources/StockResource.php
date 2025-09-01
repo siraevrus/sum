@@ -154,13 +154,13 @@ class StockResource extends Resource
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('total_quantity', '>', 0);
+                        return $query->whereRaw('(quantity - COALESCE(sold_quantity, 0)) > 0');
                     }),
                 Tables\Filters\Filter::make('low_stock')
                     ->label('Низкий остаток')
                     ->query(function (Builder $query): Builder {
-                        return $query->where('total_quantity', '<=', 10)
-                            ->where('total_quantity', '>', 0);
+                        return $query->whereRaw('(quantity - COALESCE(sold_quantity, 0)) <= 10')
+                            ->whereRaw('(quantity - COALESCE(sold_quantity, 0)) > 0');
                     }),
             ])
             ->actions([
@@ -184,9 +184,9 @@ class StockResource extends Resource
                             ->where('status', Product::STATUS_IN_STOCK)
                             ->where('is_active', true)
                             ->first();
-                        
+
                         if ($firstProduct && $firstProduct->attributes && is_array($firstProduct->attributes)) {
-                            $attributesText = implode(', ', array_map(function($key, $value) {
+                            $attributesText = implode(', ', array_map(function ($key, $value) {
                                 return "{$key}: {$value}";
                             }, array_keys($firstProduct->attributes), $firstProduct->attributes));
                         }
@@ -250,23 +250,29 @@ class StockResource extends Resource
             $baseQuery->where('warehouse_id', $user->warehouse_id);
         }
 
-        // Группируем товары по характеристикам
+        // Используем простой подход без сложных GROUP BY для совместимости
         return $baseQuery
             ->select([
-                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", COALESCE(producer, "null")) as id'),
+                'id',
                 'product_template_id',
                 'warehouse_id',
-                DB::raw('COALESCE(producer, "null") as producer'),
-                DB::raw('JSON_OBJECT() as attributes'),
-                DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
-                DB::raw('SUM(calculated_volume * quantity) as total_volume'),
-                DB::raw('COUNT(*) as product_count'),
-                DB::raw('MIN(name) as name'),
-                DB::raw('MIN(description) as description'),
-                DB::raw('MIN(arrival_date) as first_arrival_date'),
-                DB::raw('MAX(arrival_date) as last_arrival_date'),
+                'producer',
+                'name',
+                'description',
+                'arrival_date',
+                'quantity',
+                'sold_quantity',
+                'calculated_volume',
+                'is_active',
+                'status',
+                // Добавляем вычисляемые столбцы для совместимости с таблицей
+                DB::raw('(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
+                DB::raw('(calculated_volume * quantity) as total_volume'),
+                DB::raw('1 as product_count'),
+                DB::raw('arrival_date as last_arrival_date'),
             ])
-            ->groupBy('product_template_id', 'warehouse_id', DB::raw('COALESCE(producer, "null")'));
+            ->orderBy('name')
+            ->orderBy('producer');
     }
 
     public static function getRelations(): array
