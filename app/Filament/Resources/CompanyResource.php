@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class CompanyResource extends Resource
@@ -224,22 +225,56 @@ class CompanyResource extends Resource
                     }),
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->before(function (Company $record) {
+                    ->requiresConfirmation()
+                    ->modalHeading('Удалить компанию?')
+                    ->modalDescription(function (Company $record) {
                         if ($record->warehouses()->exists() || $record->employees()->exists()) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Нельзя удалить компанию')
-                                ->body('У компании есть связанные склады или сотрудники. Сначала удалите/перенесите их или архивируйте компанию.')
-                                ->danger()
-                                ->send();
-                            
-                            // Прерываем выполнение действия
-                            throw new \Exception('Cannot delete company with related records');
+                            return 'У компании есть связанные склады или сотрудники. Сначала удалите/перенесите их или архивируйте компанию.';
                         }
+
+                        return 'Вы уверены, что хотите удалить эту компанию? Это действие нельзя отменить.';
+                    })
+                    ->modalSubmitActionLabel('Да, удалить')
+                    ->modalCancelActionLabel('Отмена')
+                    ->action(function (Company $record) {
+                        if ($record->warehouses()->exists() || $record->employees()->exists()) {
+                            // Не выполняем удаление, просто возвращаемся
+                            return;
+                        }
+
+                        $record->delete();
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Компания удалена')
+                            ->body('Компания успешно удалена.')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(function (Company $record) {
+                        // Скрываем кнопку удаления если есть связанные записи
+                        return ! ($record->warehouses()->exists() || $record->employees()->exists());
                     }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Collection $records) {
+                            // Фильтруем записи, которые можно удалить
+                            $deletableRecords = $records->filter(function ($record) {
+                                return ! ($record->warehouses()->exists() || $record->employees()->exists());
+                            });
+
+                            if ($deletableRecords->count() !== $records->count()) {
+                                // Если есть записи, которые нельзя удалить, показываем предупреждение
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Некоторые компании не могут быть удалены')
+                                    ->body('Компании с связанными складами или сотрудниками пропущены.')
+                                    ->warning()
+                                    ->send();
+                            }
+
+                            return $deletableRecords;
+                        }),
                 ]),
             ]);
     }
