@@ -147,7 +147,7 @@ class UserResource extends Resource
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')
-                            ->password()
+                            
                             ->required(fn (string $context): bool => $context === 'create')
                             ->dehydrated(fn ($state) => filled($state))
                             ->minLength(8),
