@@ -226,12 +226,14 @@ class CompanyResource extends Resource
                     ->label('')
                     ->before(function (Company $record) {
                         if ($record->warehouses()->exists() || $record->employees()->exists()) {
-                            throw new \Filament\Notifications\NotificationException(
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Нельзя удалить компанию')
-                                    ->body('У компании есть связанные склады или сотрудники. Сначала удалите/перенесите их или архивируйте компанию.')
-                                    ->danger()
-                            );
+                            \Filament\Notifications\Notification::make()
+                                ->title('Нельзя удалить компанию')
+                                ->body('У компании есть связанные склады или сотрудники. Сначала удалите/перенесите их или архивируйте компанию.')
+                                ->danger()
+                                ->send();
+                            
+                            // Прерываем выполнение действия
+                            throw new \Exception('Cannot delete company with related records');
                         }
                     }),
             ])
