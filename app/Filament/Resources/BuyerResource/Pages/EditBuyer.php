@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\ClientResource\Pages;
+namespace App\Filament\Resources\BuyerResource\Pages;
 
-use App\Filament\Resources\ClientResource;
+use App\Filament\Resources\BuyerResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditClient extends EditRecord
+class EditBuyer extends EditRecord
 {
-    protected static string $resource = ClientResource::class;
+    protected static string $resource = BuyerResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -17,7 +17,3 @@ class EditClient extends EditRecord
         ];
     }
 }
-
-
-
-
