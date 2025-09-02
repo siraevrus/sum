@@ -175,39 +175,18 @@ class StockOverview extends Page implements HasTable
      */
     public function getProducerStats(): array
     {
-        $user = Auth::user();
-        $query = Product::query();
+        $producers = \App\Models\Producer::with('products')->get();
 
-        // Фильтрация по компании пользователя
-        if ($user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
-        }
-
-        // Получаем товары с производителями
-        $products = $query->whereNotNull('producer_id')
-            ->with('producer')
-            ->get();
-
-        // Группируем по производителю
-        $grouped = $products->groupBy('producer_id');
-        
         $result = [];
-        
-        foreach ($grouped as $producerId => $products) {
-            $producer = $products->first()->producer;
-            if (is_object($producer) && property_exists($producer, 'name')) {
-                $result[$producer->name] = [
-                    'total_products' => $products->count(),
-                    'total_quantity' => $products->sum('quantity'),
-                    'total_volume' => $products->sum(function ($product) {
-                        return ($product->calculated_volume ?? 0) * $product->quantity;
-                    }),
-                ];
-            }
+        foreach ($producers as $producer) {
+            $result[$producer->name] = [
+                'total_products' => $producer->products->count(),
+                'total_quantity' => $producer->products->sum('quantity'),
+                'total_volume' => $producer->products->sum(function ($product) {
+                    return ($product->calculated_volume ?? 0) * $product->quantity;
+                }),
+            ];
         }
-        
         return $result;
     }
 
