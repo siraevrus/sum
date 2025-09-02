@@ -245,15 +245,19 @@ class ReceiptResource extends Resource
     {
         return $infolist
             ->schema([
-                InfoSection::make('Информация о товаре')
+                InfoSection::make('Детальная информация о товаре')
                     ->schema([
                         TextEntry::make('name')->label('Наименование'),
-                        TextEntry::make('producer')->label('Производитель'),
+                        TextEntry::make('producer.name')->label('Производитель'),
                         TextEntry::make('quantity')->label('Количество'),
                         TextEntry::make('calculated_volume')->label('Объем'),
-                        KeyValueEntry::make('attributes')
-                            ->label('Характеристики')
-                            ->visible(fn($state) => is_array($state) && count($state) > 0),
+                        TextEntry::make('transport_number')->label('Номер транспорта'),
+                        TextEntry::make('shipping_location')->label('Место отгрузки'),
+                        TextEntry::make('shipping_date')->label('Дата отгрузки'),
+                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата прибытия'),
+                        TextEntry::make('arrival_date')->label('Дата поступления'),
+                        TextEntry::make('document_path')->label('Документы')->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state),
+                        KeyValueEntry::make('attributes')->label('Характеристики')->visible(fn($state) => is_array($state) && count($state) > 0),
                     ])
             ]);
     }
@@ -281,7 +285,7 @@ class ReceiptResource extends Resource
                     ->date()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),

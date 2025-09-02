@@ -83,8 +83,11 @@ class StockOverview extends Page implements HasTable
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser()),
                 Tables\Filters\SelectFilter::make('producer_id')
-                    ->label('Производитель')
+                    ->label('Производитель (по id)')
                     ->options(fn () => \App\Models\Producer::pluck('name', 'id')),
+                Tables\Filters\SelectFilter::make('producers')
+                    ->label('Производитель (по имени)')
+                    ->options(fn () => \App\Models\Producer::pluck('name', 'name')),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(fn (Builder $query): Builder => $query->where('quantity', '>', 0)),
@@ -115,6 +118,14 @@ class StockOverview extends Page implements HasTable
         $producerId = request()->get('tableFilters.producer_id.value');
         if ($producerId) {
             $query->where('producer_id', $producerId);
+        }
+
+        // Применяем фильтр по имени производителя, если он установлен
+        $producerName = request()->get('tableFilters.producers.value');
+        if ($producerName) {
+            $query->whereHas('producer', function ($q) use ($producerName) {
+                $q->where('name', $producerName);
+            });
         }
 
         // Применяем фильтр по складу, если он установлен
