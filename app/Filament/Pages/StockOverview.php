@@ -186,7 +186,9 @@ class StockOverview extends Page implements HasTable
      */
     public function getProducerStats(): array
     {
-        $producers = \App\Models\Producer::with('products')->get();
+        $producers = \App\Models\Producer::with(['products' => function ($query) {
+            $query->where('status', 'in_stock');
+        }])->get();
 
         $result = [];
         foreach ($producers as $producer) {

@@ -275,40 +275,7 @@ class ReceiptResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('shipping_location')
-                    ->label('Место отгрузки')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('shipping_date')
-                    ->label('Дата отгрузки')
-                    ->date()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('producer.name')
-                    ->label('Производитель')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('attributes')
-                    ->label('Характеристики')
-                    ->formatStateUsing(function (Product $record): string {
-                        if (empty($record->attributes) || ! is_array($record->attributes)) {
-                            return 'Не указаны';
-                        }
-
-                        $parts = [];
-                        foreach ($record->attributes as $key => $value) {
-                            if ($value !== null && $value !== '') {
-                                $parts[] = "{$key}: {$value}";
-                            }
-                        }
-
-                        return ! empty($parts) ? implode(', ', $parts) : 'Не указаны';
-                    })
-                    ->searchable()
-                    ->sortable(),
-
+                // Скрыты: 'Место отгрузки', 'Дата отгрузки', 'Производитель', 'Ожидаемая дата'
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Количество')
                     ->sortable()
@@ -335,19 +302,7 @@ class ReceiptResource extends Resource
                     })
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('expected_arrival_date')
-                    ->label('Ожидаемая дата')
-                    ->date()
-                    ->sortable()
-                    ->color(function (Product $record): string {
-                        $expected = $record->expected_arrival_date;
-                        if (! $expected) {
-                            return 'success';
-                        }
-
-                        return ($record->status === Product::STATUS_FOR_RECEIPT && $expected < now()) ? 'danger' : 'success';
-                    }),
-
+                // Ожидаемая дата скрыта
                 Tables\Columns\TextColumn::make('actual_arrival_date')
                     ->label('Фактическая дата')
                     ->date()
