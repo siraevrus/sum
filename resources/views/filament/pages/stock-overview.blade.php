@@ -38,16 +38,16 @@
                     <div class="p-6">
                         @if(count($this->getProducerStats()) > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                @foreach($this->getProducerStats() as $producer => $stats)
+                                @foreach($this->getProducerStats() as $producerId => $stats)
                                     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $producer }}</h4>
+                                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $stats['name'] }}</h4>
                                         <p class="text-sm text-gray-600 dark:text-gray-300">
                                             Товаров: {{ $stats['total_products'] }}
                                         </p>
                                         <p class="text-sm text-gray-600 dark:text-gray-300">
                                             Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
                                         </p>
-                                        <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[producers][value]' => $producer]) }}" 
+                                        <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[producer_id][value]' => $producerId]) }}" 
                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
                                             Просмотреть →
                                         </a>

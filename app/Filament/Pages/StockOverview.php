@@ -190,7 +190,8 @@ class StockOverview extends Page implements HasTable
 
         $result = [];
         foreach ($producers as $producer) {
-            $result[$producer->name] = [
+            $result[$producer->id] = [
+                'name' => $producer->name,
                 'total_products' => $producer->products->count(),
                 'total_quantity' => $producer->products->sum('quantity'),
                 'total_volume' => $producer->products->sum(function ($product) {
