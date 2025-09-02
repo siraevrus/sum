@@ -53,6 +53,7 @@ class BuyerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('customer_name')->label('Имя клиента')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('customer_phone')->label('Телефон клиента')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Дата создания')->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
                 //

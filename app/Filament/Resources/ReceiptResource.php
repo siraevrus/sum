@@ -365,14 +365,6 @@ class ReceiptResource extends Resource
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
-
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Статус')
-                    ->options([
-                        Product::STATUS_FOR_RECEIPT => 'Для приемки',
-                    ])
-                    ->searchable(),
-
                 Tables\Filters\SelectFilter::make('shipping_location')
                     ->label('Место отгрузки')
                     ->options(function () {
@@ -384,19 +376,10 @@ class ReceiptResource extends Resource
                             ->sort()
                             ->values()
                             ->toArray();
-
                         return array_combine($locations, $locations);
                     })
                     ->searchable(),
-
-                Tables\Filters\Filter::make('ready_for_receipt')
-                    ->label('Готовы к приемке')
-                    ->query(function (Builder $query): Builder {
-                        return $query->where('status', Product::STATUS_FOR_RECEIPT);
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        return 'Готовы к приемке';
-                    }),
+                // Убраны фильтры 'ready_for_receipt' и 'status'
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
@@ -430,7 +413,7 @@ class ReceiptResource extends Resource
                         ->requiresConfirmation()
                         ->modalHeading('Подтверждение приемки товаров')
                         ->modalDescription('Вы уверены, что хотите подтвердить приемку выбранных товаров?')
-                        ->action(function (array $records): void {
+                        ->action(function (\Illuminate\Support\Collection $records): void {
                             foreach ($records as $record) {
                                 if ($record->status === Product::STATUS_FOR_RECEIPT) {
                                     $record->update([

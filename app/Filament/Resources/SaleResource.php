@@ -129,33 +129,31 @@ class SaleResource extends Resource
                                                 return [];
                                             }
 
-                                            // Получаем доступные товары с группировкой и подгружаем производителя
+                                            // Получаем доступные товары с группировкой
                                             $availableProducts = Product::query()
                                                 ->select([
                                                     'product_template_id',
                                                     'warehouse_id',
-                                                    'producer_id',
+                                                    'producer',
                                                     'name',
                                                     DB::raw('SUM(quantity) as available_quantity'),
                                                 ])
-                                                ->with('producer')
                                                 ->where('warehouse_id', $warehouseId)
                                                 ->where('status', Product::STATUS_IN_STOCK)
                                                 ->where('is_active', true)
-                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer_id', 'name'])
+                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
                                                 ->having('available_quantity', '>', 0)
                                                 ->get();
 
                                             $options = [];
                                             foreach ($availableProducts as $product) {
-                                                $producerName = $product->producer ? $product->producer->name : null;
-                                                $producerLabel = $producerName ? " ({$producerName})" : '';
+                                                $producerLabel = $product->producer ? " ({$product->producer})" : '';
                                                 $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
 
                                                 // Используем ID первого товара из группы как ключ
                                                 $firstProduct = Product::where('product_template_id', $product->product_template_id)
                                                     ->where('warehouse_id', $product->warehouse_id)
-                                                    ->where('producer_id', $product->producer_id)
+                                                    ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
                                                     ->where('status', Product::STATUS_IN_STOCK)
                                                     ->where('is_active', true)
                                                     ->first();
@@ -303,10 +301,6 @@ class SaleResource extends Resource
 
                 Tables\Columns\TextColumn::make('product.name')
                     ->label('Товар')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('product.producer.name')
-                    ->label('Производитель')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('customer_name')

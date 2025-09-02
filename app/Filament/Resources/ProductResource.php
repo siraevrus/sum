@@ -610,22 +610,25 @@ class ProductResource extends Resource
                     ->label('Производитель')
                     ->options(function () {
                         $producers = Product::getProducers();
-
                         return array_combine($producers, $producers);
                     })
                     ->searchable(),
 
-                Filter::make('arrival_date_from')
-                    ->label('Дата поступления от')
+                Filter::make('arrival_date_range')
+                    ->label('Период поступления')
                     ->form([
-                        Forms\Components\DatePicker::make('date_from')
-                            ->label('С даты'),
+                        Forms\Components\DatePicker::make('date_from')->label('С даты'),
+                        Forms\Components\DatePicker::make('date_to')->label('По дату'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['date_from'],
                                 fn (Builder $query, $date): Builder => $query->where('arrival_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_to'],
+                                fn (Builder $query, $date): Builder => $query->where('arrival_date', '<=', $date),
                             );
                     }),
             ])
