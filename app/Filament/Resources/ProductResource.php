@@ -62,32 +62,6 @@ class ProductResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('product_template_id')
-                                    ->label('Шаблон товара')
-                                    ->options(ProductTemplate::pluck('name', 'id'))
-                                    ->required()
-                                    ->searchable()
-                                    ->live()
-                                    ->debounce(300)
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        // Очищаем старые характеристики при смене шаблона
-                                        $set('calculated_volume', null);
-                                        $set('name', null);
-
-                                        // Очищаем все поля характеристик
-                                        $template = ProductTemplate::find($get('product_template_id'));
-                                        if ($template) {
-                                            foreach ($template->attributes as $attribute) {
-                                                $set("attribute_{$attribute->variable}", null);
-                                            }
-
-                                            // Если у шаблона есть формула, показываем подсказку
-                                            if ($template->formula) {
-                                                $set('calculated_volume', 'Заполните характеристики для расчета объема');
-                                            }
-                                        }
-                                    }),
-
                                 Select::make('warehouse_id')
                                     ->label('Склад')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -98,7 +72,6 @@ class ProductResource extends Resource
                                         if (! $user) {
                                             return null;
                                         }
-
                                         return $user->isAdmin() ? null : $user->warehouse_id;
                                     })
                                     ->visible(function () {
@@ -106,16 +79,9 @@ class ProductResource extends Resource
                                         if (! $user) {
                                             return false;
                                         }
-
                                         return $user->isAdmin();
                                     })
                                     ->searchable(),
-
-                                TextInput::make('name')
-                                    ->label('Наименование')
-                                    ->maxLength(255)
-                                    ->disabled()
-                                    ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
                                 Select::make('producer_id')
                                     ->label('Производитель')
@@ -124,6 +90,42 @@ class ProductResource extends Resource
                                     ->preload()
                                     ->placeholder('Выберите производителя')
                                     ->required(),
+
+                                DatePicker::make('arrival_date')
+                                    ->label('Дата поступления')
+                                    ->required()
+                                    ->default(now()),
+
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспортного средства')
+                                    ->maxLength(255),
+
+                                Select::make('product_template_id')
+                                    ->label('Шаблон товара')
+                                    ->options(ProductTemplate::pluck('name', 'id'))
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->debounce(300)
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $set('calculated_volume', null);
+                                        $set('name', null);
+                                        $template = ProductTemplate::find($get('product_template_id'));
+                                        if ($template) {
+                                            foreach ($template->attributes as $attribute) {
+                                                $set("attribute_{$attribute->variable}", null);
+                                            }
+                                            if ($template->formula) {
+                                                $set('calculated_volume', 'Заполните характеристики для расчета объема');
+                                            }
+                                        }
+                                    }),
+
+                                TextInput::make('name')
+                                    ->label('Наименование')
+                                    ->maxLength(255)
+                                    ->disabled()
+                                    ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -134,15 +136,6 @@ class ProductResource extends Resource
                                     ->maxLength(5)
                                     ->required()
                                     ->helperText('Максимальное значение: 99999. Объем рассчитывается при сохранении товара.'),
-
-                                TextInput::make('transport_number')
-                                    ->label('Номер транспортного средства')
-                                    ->maxLength(255),
-
-                                DatePicker::make('arrival_date')
-                                    ->label('Дата поступления')
-                                    ->required()
-                                    ->default(now()),
 
                                 Toggle::make('is_active')
                                     ->label('Активен')

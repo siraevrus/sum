@@ -256,14 +256,16 @@ class ProductTemplateResource extends Resource
                                         if (is_array($state)) {
                                             return implode(', ', $state);
                                         }
-
                                         return (string) $state;
                                     })
                                     ->visible(fn ($record) => ($record->type ?? null) === 'select'),
                                 IconEntry::make('is_required')->label('Обязательно')->boolean(),
                                 IconEntry::make('is_in_formula')->label('В формуле')->boolean(),
                                 TextEntry::make('sort_order')->label('Порядок'),
-                            ])->columns(3),
+                            ])->columns(3)
+                            ->state(function ($record) {
+                                return $record->attributes->sortBy('sort_order')->values()->toArray();
+                            }),
                     ]),
             ]);
     }

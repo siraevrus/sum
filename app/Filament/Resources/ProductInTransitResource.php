@@ -61,6 +61,10 @@ class ProductInTransitResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
+                                TextInput::make('shipping_location')
+                                    ->label('Место отгрузки')
+                                    ->maxLength(255)
+                                    ->required(),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
@@ -72,7 +76,6 @@ class ProductInTransitResource extends Resource
                                         if (! $user) {
                                             return null;
                                         }
-
                                         return $user->isAdmin() ? null : $user->warehouse_id;
                                     })
                                     ->visible(function () {
@@ -80,28 +83,18 @@ class ProductInTransitResource extends Resource
                                         if (! $user) {
                                             return false;
                                         }
-
                                         return $user->isAdmin();
                                     })
                                     ->searchable(),
-
-                                TextInput::make('shipping_location')
-                                    ->label('Место отгрузки')
-                                    ->maxLength(255)
-                                    ->required(),
 
                                 DatePicker::make('shipping_date')
                                     ->label('Дата отгрузки')
                                     ->required()
                                     ->default(now()),
 
-                                TextInput::make('transport_number')
-                                    ->label('Номер транспорта')
-                                    ->maxLength(255),
-
                                 DatePicker::make('expected_arrival_date')
                                     ->label('Ожидаемая дата прибытия')
-                                    ->default(now()->addDays(7)),
+                                    ->default(null),
 
                                 Select::make('status')
                                     ->label('Статус')
@@ -112,11 +105,6 @@ class ProductInTransitResource extends Resource
                                     ])
                                     ->required()
                                     ->default(Product::STATUS_IN_TRANSIT),
-
-                                Toggle::make('is_active')
-                                    ->label('Активен')
-                                    ->hidden()
-                                    ->default(true),
                             ]),
 
                         Textarea::make('notes')
@@ -166,7 +154,10 @@ class ProductInTransitResource extends Resource
                                             ->numeric()
                                             ->default(1)
                                             ->minValue(1)
-                                            ->required(),
+                                            ->maxValue(99999)
+                                            ->maxLength(5)
+                                            ->required()
+                                            ->helperText('Максимальное значение: 99999. Объем рассчитывается при сохранении товара.'),
 
                                         TextInput::make('calculated_volume')
                                             ->label('Рассчитанный объем')
@@ -209,7 +200,10 @@ class ProductInTransitResource extends Resource
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->numeric()
-                                                        ->required($attribute->is_required);
+                                                        ->maxValue(9999)
+                                                        ->maxLength(4)
+                                                        ->required($attribute->is_required)
+                                                        ->helperText('Максимальное значение: 9999');
                                                     break;
 
                                                 case 'text':

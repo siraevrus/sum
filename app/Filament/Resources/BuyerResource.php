@@ -38,7 +38,7 @@ class BuyerResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return Sale::query()
-            ->select('id', 'customer_name', 'customer_phone')
+            ->select('id', 'customer_name', 'customer_phone', 'sale_date')
             ->orderBy('customer_name');
     }
 
@@ -53,7 +53,7 @@ class BuyerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('customer_name')->label('Имя клиента')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('customer_phone')->label('Телефон клиента')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Дата создания')->dateTime('d.m.Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('sale_date')->label('Дата')->date('d.m.Y')->sortable(),
             ])
             ->filters([
                 //
