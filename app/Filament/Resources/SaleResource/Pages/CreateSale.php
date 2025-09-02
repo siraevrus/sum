@@ -66,7 +66,6 @@ class CreateSale extends CreateRecord
         $data['currency'] = $data['currency'] ?? 'RUB';
         $data['exchange_rate'] = $data['exchange_rate'] ?? 1.0000;
         $data['payment_status'] = $data['payment_status'] ?? 'pending';
-        $data['delivery_status'] = $data['delivery_status'] ?? 'pending';
         $data['is_active'] = $data['is_active'] ?? true;
 
         return $data;
@@ -123,8 +122,6 @@ class CreateSale extends CreateRecord
 
             // Обновляем статусы продажи
             $sale->payment_status = \App\Models\Sale::PAYMENT_STATUS_PAID;
-            $sale->delivery_status = \App\Models\Sale::DELIVERY_STATUS_DELIVERED;
-            $sale->delivery_date = now();
             $sale->save();
         });
 

@@ -36,23 +36,29 @@
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Остатки по производителям</h3>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            @foreach($this->getProducerStats() as $producer => $stats)
-                                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                                    <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $producer }}</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">
-                                        Товаров: {{ $stats['total_products'] }}
-                                    </p>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">
-                                        Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
-                                    </p>
-                                    <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[producer][value]' => $producer]) }}" 
-                                       class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                                        Просмотреть →
-                                    </a>
-                                </div>
-                            @endforeach
-                        </div>
+                        @if(count($this->getProducerStats()) > 0)
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                @foreach($this->getProducerStats() as $producer => $stats)
+                                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $producer }}</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            Товаров: {{ $stats['total_products'] }}
+                                        </p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
+                                        </p>
+                                        <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[producer_id][value]' => $producer]) }}" 
+                                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                            Просмотреть →
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-8">
+                                <p class="text-gray-500 dark:text-gray-400">Нет данных о производителях</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -64,28 +70,34 @@
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Остатки по складам</h3>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            @foreach($this->getWarehouseStats() as $warehouseId => $stats)
-                                @php
-                                    $warehouse = \App\Models\Warehouse::find($warehouseId);
-                                @endphp
-                                @if($warehouse)
-                                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $warehouse->name }}</h4>
-                                        <p class="text-sm text-gray-600 dark:text-gray-300">
-                                            Товаров: {{ $stats['total_products'] }}
-                                        </p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-300">
-                                            Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
-                                        </p>
-                                        <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[warehouse_id][value]' => $warehouseId]) }}" 
-                                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
-                                            Просмотреть →
-                                        </a>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
+                        @if(count($this->getWarehouseStats()) > 0)
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                @foreach($this->getWarehouseStats() as $warehouseId => $stats)
+                                    @php
+                                        $warehouse = \App\Models\Warehouse::find($warehouseId);
+                                    @endphp
+                                    @if($warehouse)
+                                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                                            <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">{{ $warehouse->name }}</h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                                Товаров: {{ $stats['total_products'] }}
+                                            </p>
+                                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                                Общий объем: {{ number_format($stats['total_volume'], 2, '.', ' ') }} м³
+                                            </p>
+                                            <a href="{{ route('filament.admin.resources.stocks.index', ['tableFilters[warehouse_id][value]' => $warehouseId]) }}" 
+                                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                                                Просмотреть →
+                                            </a>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-8">
+                                <p class="text-gray-500 dark:text-gray-400">Нет данных о складах</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -28,7 +28,14 @@ class AttributesRelationManager extends RelationManager
                     ->required()
                     ->maxLength(50)
                     ->helperText('Только английские буквы, цифры и подчеркивание')
-                    ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/']),
+                    ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/'])
+                    ->unique(ignorable: fn ($record) => $record, modifyRuleUsing: function ($rule, $get) {
+                        $parentId = $this->getOwnerRecord()->id;
+                        return $rule->where('product_template_id', $parentId);
+                    })
+                    ->validationMessages([
+                        'unique' => 'Переменная должна быть уникальной для данного шаблона.'
+                    ]),
 
                 Forms\Components\Select::make('type')
                     ->label('Тип данных')

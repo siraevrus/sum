@@ -612,11 +612,9 @@ class TestDataSeeder extends Seeder
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
-                'delivery_status' => Sale::DELIVERY_STATUS_DELIVERED,
                 'notes' => 'Продажа для строительных работ',
                 'invoice_number' => 'INV-001234',
                 'sale_date' => now()->subDays(5),
-                'delivery_date' => now()->subDays(3),
                 'is_active' => true,
             ]);
         }
@@ -642,11 +640,9 @@ class TestDataSeeder extends Seeder
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
-                'delivery_status' => Sale::DELIVERY_STATUS_IN_PROGRESS,
                 'notes' => 'Доставка на строительную площадку',
                 'invoice_number' => 'INV-001235',
                 'sale_date' => now()->subDays(2),
-                'delivery_date' => null,
                 'is_active' => true,
             ]);
         }
@@ -672,11 +668,9 @@ class TestDataSeeder extends Seeder
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
                 'payment_status' => Sale::PAYMENT_STATUS_PENDING,
-                'delivery_status' => Sale::DELIVERY_STATUS_PENDING,
                 'notes' => 'Ожидает оплаты наличными',
                 'invoice_number' => 'INV-001236',
                 'sale_date' => now(),
-                'delivery_date' => null,
                 'is_active' => true,
             ]);
         }
@@ -702,13 +696,16 @@ class TestDataSeeder extends Seeder
                 'currency' => 'RUB',
                 'exchange_rate' => 1.0000,
                 'payment_status' => Sale::PAYMENT_STATUS_CANCELLED,
-                'delivery_status' => Sale::DELIVERY_STATUS_CANCELLED,
                 'notes' => 'Продажа отменена по просьбе клиента',
                 'invoice_number' => 'INV-001237',
                 'sale_date' => now()->subDays(10),
-                'delivery_date' => null,
                 'is_active' => true,
             ]);
         }
+
+        // Удаляем товары с несуществующим producer_id
+        \App\Models\Product::whereNotNull('producer_id')
+            ->whereDoesntHave('producer')
+            ->delete();
     }
 }

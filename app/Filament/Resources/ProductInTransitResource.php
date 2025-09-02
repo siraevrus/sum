@@ -153,9 +153,13 @@ class ProductInTransitResource extends Resource
                                             ->disabled()
                                             ->helperText('Автоматически формируется из характеристик товара'),
 
-                                        TextInput::make('producer')
+                                        Select::make('producer_id')
                                             ->label('Производитель')
-                                            ->maxLength(255),
+                                            ->options(function () {
+                                                return \App\Models\Producer::pluck('name', 'id');
+                                            })
+                                            ->searchable()
+                                            ->required(),
 
                                         TextInput::make('quantity')
                                             ->label('Количество')
@@ -227,12 +231,6 @@ class ProductInTransitResource extends Resource
                                         return $fields;
                                     })
                                     ->visible(fn (Get $get) => $get('product_template_id') !== null),
-
-                                Textarea::make('description')
-                                    ->label('Описание')
-                                    ->rows(2)
-                                    ->maxLength(1000)
-                                    ->columnSpanFull(),
                             ])
                             ->addActionLabel('Добавить товар')
                             ->reorderable()
@@ -283,8 +281,13 @@ class ProductInTransitResource extends Resource
                     ->date()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
+                    ->formatStateUsing(function (
+                        $state
+                    ) {
+                        return $state ?: 'Не указан';
+                    })
                     ->searchable()
                     ->sortable(),
 

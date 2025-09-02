@@ -40,6 +40,13 @@ class EditProductInTransit extends EditRecord
                 }
             }
 
+            // Подставляем имя производителя по producer_id
+            if (isset($first['producer_id'])) {
+                $producer = \App\Models\Producer::find($first['producer_id']);
+                $data['producer_id'] = $first['producer_id'];
+                $data['producer'] = $producer?->name;
+            }
+
             unset($data['products']);
         } else {
             // Обрабатываем характеристики из плоских полей (fallback)
@@ -121,6 +128,7 @@ class EditProductInTransit extends EditRecord
             'product_template_id' => $data['product_template_id'] ?? null,
             'name' => $data['name'] ?? null,
             'producer' => $data['producer'] ?? null,
+            'producer_id' => $data['producer_id'] ?? null,
             'quantity' => $data['quantity'] ?? 1,
             'calculated_volume' => $data['calculated_volume'] ?? null,
             'description' => $data['description'] ?? null,

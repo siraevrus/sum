@@ -117,7 +117,6 @@ class CompanyResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->recordCheckboxPosition('none')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Название компании')
@@ -239,7 +238,11 @@ class CompanyResource extends Resource
                     ->modalCancelActionLabel('Отмена')
                     ->action(function (Company $record) {
                         if ($record->warehouses()->exists() || $record->employees()->exists()) {
-                            // Не выполняем удаление, просто возвращаемся
+                            \Filament\Notifications\Notification::make()
+                                ->title('Нельзя удалить компанию')
+                                ->body('Нельзя удалить компанию, у которой есть склады или сотрудники. Архивируйте компанию или удалите связанные записи.')
+                                ->danger()
+                                ->send();
                             return;
                         }
 
@@ -298,7 +301,6 @@ class CompanyResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->where('is_archived', false);
+        return parent::getEloquentQuery();
     }
 }

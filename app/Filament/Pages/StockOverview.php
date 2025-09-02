@@ -42,7 +42,7 @@ class StockOverview extends Page implements HasTable
                     ->label('Наименование')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),
@@ -82,9 +82,9 @@ class StockOverview extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser()),
-                Tables\Filters\SelectFilter::make('producer')
+                Tables\Filters\SelectFilter::make('producer_id')
                     ->label('Производитель')
-                    ->options(fn () => Product::distinct()->pluck('producer', 'producer')->filter()),
+                    ->options(fn () => \App\Models\Producer::pluck('name', 'id')),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(fn (Builder $query): Builder => $query->where('quantity', '>', 0)),
@@ -98,13 +98,35 @@ class StockOverview extends Page implements HasTable
     protected function getTableQuery(): Builder
     {
         $user = Auth::user();
-        $query = Product::query();
+        if (!$user) {
+            return Product::query()->whereRaw('1 = 0');
+        }
+        
+        $query = Product::query()->with('producer');
 
         // Фильтрация по компании пользователя
         if ($user->company_id) {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
+        }
+
+        // Применяем фильтр по производителю, если он установлен
+        $producerId = request()->get('tableFilters.producer_id.value');
+        if ($producerId) {
+            $query->where('producer_id', $producerId);
+        }
+
+        // Применяем фильтр по складу, если он установлен
+        $warehouseId = request()->get('tableFilters.warehouse_id.value');
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        // Применяем фильтр "В наличии", если он активен
+        $inStockFilter = request()->get('tableFilters.in_stock.isActive');
+        if ($inStockFilter === 'true') {
+            $query->where('quantity', '>', 0);
         }
 
         return $query;
@@ -122,12 +144,16 @@ class StockOverview extends Page implements HasTable
             });
         }
 
-        // Группируем по производителю, не учитывая наименование и характеристики
-        return $query->select('producer')
-            ->distinct()
-            ->whereNotNull('producer')
-            ->pluck('producer')
-            ->filter()
+        // Группируем по производителю через связь
+        return $query->whereHas('producer')
+            ->with('producer')
+            ->get()
+            ->groupBy('producer.id')
+            ->map(function ($products) {
+                $producer = $products->first()->producer;
+                return $producer ? $producer->name : null;
+            })
+            ->filter() // Убираем null значения
             ->toArray();
     }
 
@@ -159,16 +185,30 @@ class StockOverview extends Page implements HasTable
             });
         }
 
-        // Группируем по производителю, не учитывая наименование и характеристики
-        return $query->select('producer')
-            ->selectRaw('COUNT(*) as total_products')
-            ->selectRaw('SUM(quantity) as total_quantity')
-            ->selectRaw('SUM(calculated_volume * quantity) as total_volume')
-            ->whereNotNull('producer')
-            ->groupBy('producer')
-            ->get()
-            ->keyBy('producer')
-            ->toArray();
+        // Получаем товары с производителями
+        $products = $query->whereNotNull('producer_id')
+            ->with('producer')
+            ->get();
+
+        // Группируем по производителю
+        $grouped = $products->groupBy('producer_id');
+        
+        $result = [];
+        
+        foreach ($grouped as $producerId => $products) {
+            $producer = $products->first()->producer;
+            if (is_object($producer) && property_exists($producer, 'name')) {
+                $result[$producer->name] = [
+                    'total_products' => $products->count(),
+                    'total_quantity' => $products->sum('quantity'),
+                    'total_volume' => $products->sum(function ($product) {
+                        return ($product->calculated_volume ?? 0) * $product->quantity;
+                    }),
+                ];
+            }
+        }
+        
+        return $result;
     }
 
     /**

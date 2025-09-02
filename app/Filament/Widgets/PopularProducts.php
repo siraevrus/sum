@@ -76,7 +76,7 @@ class PopularProducts extends BaseWidget
                     ->money('RUB')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
                     ->sortable()
                     ->placeholder('Не указан'),

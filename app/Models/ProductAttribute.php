@@ -45,7 +45,13 @@ class ProductAttribute extends Model
             return [];
         }
 
-        return is_array($this->options) ? $this->options : explode(',', $this->options);
+        $options = is_array($this->options) ? $this->options : explode(',', $this->options);
+        // Возвращаем массив вида ['Россия' => 'Россия', ...]
+        $assoc = [];
+        foreach ($options as $option) {
+            $assoc[$option] = $option;
+        }
+        return $assoc;
     }
 
     /**

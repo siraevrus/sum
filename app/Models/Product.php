@@ -33,7 +33,7 @@ class Product extends Model
         'quantity',
         'sold_quantity',
         'transport_number',
-        'producer',
+        'producer_id',
         'arrival_date',
         'status',
         'is_active',
@@ -94,6 +94,14 @@ class Product extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Связь с производителем
+     */
+    public function producer(): BelongsTo
+    {
+        return $this->belongsTo(Producer::class);
     }
 
     /**

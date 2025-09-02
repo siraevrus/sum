@@ -32,11 +32,9 @@ class Sale extends Model
         'currency',
         'exchange_rate',
         'payment_status',
-        'delivery_status',
         'notes',
         'invoice_number',
         'sale_date',
-        'delivery_date',
         'is_active',
     ];
 
@@ -51,7 +49,6 @@ class Sale extends Model
         'price_without_vat' => 'decimal:2',
         'exchange_rate' => 'decimal:4',
         'sale_date' => 'date',
-        'delivery_date' => 'date',
         'is_active' => 'boolean',
     ];
 
@@ -63,15 +60,6 @@ class Sale extends Model
     const PAYMENT_STATUS_PARTIALLY_PAID = 'partially_paid';
 
     const PAYMENT_STATUS_CANCELLED = 'cancelled';
-
-    // Статусы доставки
-    const DELIVERY_STATUS_PENDING = 'pending';
-
-    const DELIVERY_STATUS_IN_PROGRESS = 'in_progress';
-
-    const DELIVERY_STATUS_DELIVERED = 'delivered';
-
-    const DELIVERY_STATUS_CANCELLED = 'cancelled';
 
     /**
      * Связь с товаром
@@ -162,8 +150,6 @@ class Sale extends Model
 
         if ($success) {
             $this->payment_status = self::PAYMENT_STATUS_PAID;
-            $this->delivery_status = self::DELIVERY_STATUS_DELIVERED;
-            $this->delivery_date = now();
             $this->save();
 
             return true;
@@ -185,7 +171,6 @@ class Sale extends Model
         $this->product->increaseQuantity($this->quantity);
 
         $this->payment_status = self::PAYMENT_STATUS_CANCELLED;
-        $this->delivery_status = self::DELIVERY_STATUS_CANCELLED;
         $this->save();
 
         return true;
@@ -215,34 +200,6 @@ class Sale extends Model
             self::PAYMENT_STATUS_PAID => 'success',
             self::PAYMENT_STATUS_PARTIALLY_PAID => 'info',
             self::PAYMENT_STATUS_CANCELLED => 'danger',
-            default => 'gray',
-        };
-    }
-
-    /**
-     * Получить статус доставки на русском языке
-     */
-    public function getDeliveryStatusLabel(): string
-    {
-        return match ($this->delivery_status) {
-            self::DELIVERY_STATUS_PENDING => 'Ожидает доставки',
-            self::DELIVERY_STATUS_IN_PROGRESS => 'В доставке',
-            self::DELIVERY_STATUS_DELIVERED => 'Доставлено',
-            self::DELIVERY_STATUS_CANCELLED => 'Отменено',
-            default => 'Неизвестно',
-        };
-    }
-
-    /**
-     * Получить цвет статуса доставки
-     */
-    public function getDeliveryStatusColor(): string
-    {
-        return match ($this->delivery_status) {
-            self::DELIVERY_STATUS_PENDING => 'warning',
-            self::DELIVERY_STATUS_IN_PROGRESS => 'info',
-            self::DELIVERY_STATUS_DELIVERED => 'success',
-            self::DELIVERY_STATUS_CANCELLED => 'danger',
             default => 'gray',
         };
     }
@@ -278,18 +235,6 @@ class Sale extends Model
     }
 
     /**
-     * Проверить, просрочена ли доставка (более 7 дней)
-     */
-    public function isDeliveryOverdue(): bool
-    {
-        if ($this->delivery_status !== self::DELIVERY_STATUS_IN_PROGRESS) {
-            return false;
-        }
-
-        return $this->sale_date->diffInDays(now()) > 7;
-    }
-
-    /**
      * Scope для активных продаж
      */
     public function scopeActive(Builder $query): void
@@ -303,14 +248,6 @@ class Sale extends Model
     public function scopeByPaymentStatus(Builder $query, string $status): void
     {
         $query->where('payment_status', $status);
-    }
-
-    /**
-     * Scope для фильтрации по статусу доставки
-     */
-    public function scopeByDeliveryStatus(Builder $query, string $status): void
-    {
-        $query->where('delivery_status', $status);
     }
 
     /**
@@ -338,15 +275,6 @@ class Sale extends Model
     }
 
     /**
-     * Scope для просроченных доставок
-     */
-    public function scopeDeliveryOverdue(Builder $query): void
-    {
-        $query->where('delivery_status', self::DELIVERY_STATUS_IN_PROGRESS)
-            ->where('sale_date', '<', now()->subDays(7));
-    }
-
-    /**
      * Scope для оплаченных продаж
      */
     public function scopePaid(Builder $query): void
@@ -363,7 +291,6 @@ class Sale extends Model
             'total_sales' => static::count(),
             'paid_sales' => static::paid()->count(),
             'pending_payments' => static::byPaymentStatus(self::PAYMENT_STATUS_PENDING)->count(),
-            'delivery_overdue' => static::deliveryOverdue()->count(),
             'total_revenue' => static::paid()->sum('total_price'),
             'total_quantity' => static::sum('quantity'),
         ];

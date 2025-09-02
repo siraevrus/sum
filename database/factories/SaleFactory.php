@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Warehouse;
+use App\Models\Sale;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -30,20 +30,11 @@ class SaleFactory extends Factory
         $product = Product::where('quantity', '>', 0)->inRandomOrder()->first();
         $user = User::inRandomOrder()->first();
 
-
-
         $paymentStatuses = [
             Sale::PAYMENT_STATUS_PENDING,
             Sale::PAYMENT_STATUS_PAID,
             Sale::PAYMENT_STATUS_PARTIALLY_PAID,
             Sale::PAYMENT_STATUS_CANCELLED,
-        ];
-
-        $deliveryStatuses = [
-            Sale::DELIVERY_STATUS_PENDING,
-            Sale::DELIVERY_STATUS_IN_PROGRESS,
-            Sale::DELIVERY_STATUS_DELIVERED,
-            Sale::DELIVERY_STATUS_CANCELLED,
         ];
 
         $quantity = $this->faker->numberBetween(1, 5);
@@ -73,11 +64,9 @@ class SaleFactory extends Factory
             'cash_amount' => $this->faker->randomFloat(2, 0, $totalPrice),
             'nocash_amount' => $this->faker->randomFloat(2, 0, $totalPrice),
             'payment_status' => $this->faker->randomElement($paymentStatuses),
-            'delivery_status' => $this->faker->randomElement($deliveryStatuses),
             'notes' => $this->faker->optional()->sentence(),
             'invoice_number' => $this->faker->optional()->regexify('INV-\d{6}'),
             'sale_date' => $this->faker->dateTimeBetween('-30 days', 'now'),
-            'delivery_date' => $this->faker->optional()->dateTimeBetween('-30 days', 'now'),
             'is_active' => $this->faker->boolean(80), // 80% продаж активны
         ];
     }
@@ -90,8 +79,6 @@ class SaleFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
-                'delivery_status' => Sale::DELIVERY_STATUS_DELIVERED,
-                'delivery_date' => $this->faker->dateTimeBetween('-30 days', 'now'),
             ];
         });
     }
@@ -104,8 +91,6 @@ class SaleFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'payment_status' => Sale::PAYMENT_STATUS_PENDING,
-                'delivery_status' => Sale::DELIVERY_STATUS_PENDING,
-                'delivery_date' => null,
             ];
         });
     }
@@ -118,8 +103,6 @@ class SaleFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'payment_status' => Sale::PAYMENT_STATUS_CANCELLED,
-                'delivery_status' => Sale::DELIVERY_STATUS_CANCELLED,
-                'delivery_date' => null,
             ];
         });
     }
@@ -132,8 +115,6 @@ class SaleFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
-                'delivery_status' => Sale::DELIVERY_STATUS_IN_PROGRESS,
-                'delivery_date' => null,
             ];
         });
     }
@@ -146,10 +127,8 @@ class SaleFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'payment_status' => Sale::PAYMENT_STATUS_PAID,
-                'delivery_status' => Sale::DELIVERY_STATUS_IN_PROGRESS,
                 'sale_date' => $this->faker->dateTimeBetween('-30 days', '-10 days'),
-                'delivery_date' => null,
             ];
         });
     }
-} 
+}

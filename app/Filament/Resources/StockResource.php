@@ -85,7 +85,7 @@ class StockResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),
@@ -144,13 +144,9 @@ class StockResource extends Resource
                 Tables\Filters\SelectFilter::make('warehouse_id')
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser()),
-                Tables\Filters\SelectFilter::make('producer')
+                Tables\Filters\SelectFilter::make('producer_id')
                     ->label('Производитель')
-                    ->options(function () {
-                        $producers = Product::getProducers();
-
-                        return array_combine($producers, $producers);
-                    }),
+                    ->options(fn () => \App\Models\Producer::pluck('name', 'id')),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
                     ->query(function (Builder $query): Builder {
@@ -180,7 +176,7 @@ class StockResource extends Resource
                         // Получаем характеристики из первого товара в группе
                         $firstProduct = Product::where('product_template_id', $record->product_template_id)
                             ->where('warehouse_id', $record->warehouse_id)
-                            ->whereRaw('COALESCE(producer, "null") = ?', [$record->producer ?? 'null'])
+                            ->where('producer_id', $record->producer_id)
                             ->where('status', Product::STATUS_IN_STOCK)
                             ->where('is_active', true)
                             ->first();
@@ -197,7 +193,7 @@ class StockResource extends Resource
                                     <strong>Шаблон:</strong> {$templateName}
                                 </div>
                                 <div>
-                                    <strong>Производитель:</strong> {$record->producer}
+                                    <strong>Производитель:</strong> ".($record->producer ? $record->producer->name : 'Не указан')."
                                 </div>
                                 <div>
                                     <strong>Склад:</strong> {$record->warehouse?->name}
@@ -256,7 +252,7 @@ class StockResource extends Resource
                 'id',
                 'product_template_id',
                 'warehouse_id',
-                'producer',
+                'producer_id',
                 'name',
                 'description',
                 'arrival_date',
@@ -271,8 +267,9 @@ class StockResource extends Resource
                 DB::raw('1 as product_count'),
                 DB::raw('arrival_date as last_arrival_date'),
             ])
+            ->with('producer')
             ->orderBy('name')
-            ->orderBy('producer');
+            ->orderBy('producer_id');
     }
 
     public static function getRelations(): array
@@ -306,10 +303,10 @@ class StockResource extends Resource
         if (is_object($record)) {
             $templateId = $record->product_template_id ?? '';
             $warehouseId = $record->warehouse_id ?? '';
-            $producer = $record->producer ?? '';
+            $producerId = $record->producer_id ?? '';
             $attributes = is_array($record->attributes) ? json_encode($record->attributes) : '';
 
-            return md5($templateId.'_'.$warehouseId.'_'.$producer.'_'.$attributes);
+            return md5($templateId.'_'.$warehouseId.'_'.$producerId.'_'.$attributes);
         }
 
         return md5(serialize($record));

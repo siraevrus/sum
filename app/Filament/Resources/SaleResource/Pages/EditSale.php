@@ -55,12 +55,16 @@ class EditSale extends EditRecord
         // Рассчитываем сумму НДС
         $data['vat_amount'] = $data['total_price'] - $data['price_without_vat'];
 
-        // Устанавливаем значения по умолчанию
+        // Устанавливаем значения по умолчанию только для новых записей
         $data['vat_rate'] = $data['vat_rate'] ?? 20.00;
         $data['currency'] = $data['currency'] ?? 'RUB';
         $data['exchange_rate'] = $data['exchange_rate'] ?? 1.0000;
-        $data['payment_status'] = $data['payment_status'] ?? 'pending';
-        $data['delivery_status'] = $data['delivery_status'] ?? 'pending';
+
+        // Не изменяем статус оплаты существующих записей
+        if (! isset($data['payment_status'])) {
+            $data['payment_status'] = $this->record->payment_status ?? 'pending';
+        }
+
         $data['is_active'] = $data['is_active'] ?? true;
 
         return $data;

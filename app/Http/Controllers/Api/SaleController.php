@@ -8,7 +8,6 @@ use App\Models\Sale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 class SaleController extends Controller
 {
@@ -30,9 +29,6 @@ class SaleController extends Controller
             })
             ->when($request->payment_status, function ($query, $status) {
                 $query->where('payment_status', $status);
-            })
-            ->when($request->delivery_status, function ($query, $status) {
-                $query->where('delivery_status', $status);
             })
             ->when($request->payment_method, function ($query, $method) {
                 $query->where('payment_method', $method);
@@ -111,7 +107,6 @@ class SaleController extends Controller
             'vat_rate' => 'nullable|numeric|min:0|max:100',
             'payment_method' => 'required|string|in:cash,card,bank_transfer,other',
             'payment_status' => 'nullable|string|in:pending,paid,partially_paid,cancelled',
-            'delivery_status' => 'nullable|string|in:pending,in_progress,delivered,cancelled',
             'notes' => 'nullable|string',
             'sale_date' => 'required|date',
             'is_active' => 'boolean',
@@ -149,7 +144,6 @@ class SaleController extends Controller
             'total_price' => ($request->unit_price * $request->quantity) * (1 + ($request->get('vat_rate', 20.00) / 100)),
             'payment_method' => $request->payment_method,
             'payment_status' => $request->get('payment_status', Sale::PAYMENT_STATUS_PENDING),
-            'delivery_status' => $request->get('delivery_status', Sale::DELIVERY_STATUS_PENDING),
             'notes' => $request->notes,
             'sale_date' => $request->sale_date,
             'is_active' => $request->get('is_active', true),
@@ -185,17 +179,15 @@ class SaleController extends Controller
             'vat_rate' => 'nullable|numeric|min:0|max:100',
             'payment_method' => 'sometimes|string|in:cash,card,bank_transfer,other',
             'payment_status' => 'sometimes|string|in:pending,paid,partially_paid,cancelled',
-            'delivery_status' => 'sometimes|string|in:pending,in_progress,delivered,cancelled',
             'notes' => 'nullable|string',
             'sale_date' => 'sometimes|date',
-            'delivery_date' => 'nullable|date',
             'is_active' => 'boolean',
         ]);
 
         $sale->update($request->only([
             'customer_name', 'customer_phone', 'customer_email', 'customer_address',
             'quantity', 'unit_price', 'vat_rate', 'payment_method', 'payment_status',
-            'delivery_status', 'notes', 'sale_date', 'delivery_date', 'is_active',
+            'notes', 'sale_date', 'is_active',
         ]));
 
         // Пересчитываем цены если изменились количество или цена
@@ -308,12 +300,9 @@ class SaleController extends Controller
             $query->where('sale_date', '<=', $request->date_to);
         }
 
-        // Фильтры по статусам
+        // Фильтр по статусу оплаты
         if ($request->payment_status) {
             $query->where('payment_status', $request->payment_status);
-        }
-        if ($request->delivery_status) {
-            $query->where('delivery_status', $request->delivery_status);
         }
 
         $stats = [
@@ -328,7 +317,6 @@ class SaleController extends Controller
             'total_revenue' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)->sum('total_price'),
             'total_quantity' => (clone $query)->sum('quantity'),
             'average_sale' => (clone $query)->where('payment_status', Sale::PAYMENT_STATUS_PAID)->avg('total_price'),
-            'in_delivery' => (clone $query)->where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)->count(),
         ];
 
         return response()->json($stats);
@@ -352,9 +340,6 @@ class SaleController extends Controller
             })
             ->when($request->payment_status, function ($query, $status) {
                 $query->where('payment_status', $status);
-            })
-            ->when($request->delivery_status, function ($query, $status) {
-                $query->where('delivery_status', $status);
             })
             ->when($request->payment_method, function ($query, $method) {
                 $query->where('payment_method', $method);
@@ -394,10 +379,8 @@ class SaleController extends Controller
                 'unit_price' => $sale->unit_price,
                 'total_price' => $sale->total_price,
                 'payment_status' => $sale->payment_status,
-                'delivery_status' => $sale->delivery_status,
                 'payment_method' => $sale->payment_method,
                 'sale_date' => $sale->sale_date,
-                'delivery_date' => $sale->delivery_date,
                 'created_by' => $sale->user->name ?? '',
                 'created_at' => $sale->created_at->format('Y-m-d H:i:s'),
             ];

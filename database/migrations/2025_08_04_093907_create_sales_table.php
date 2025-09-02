@@ -31,11 +31,9 @@ return new class extends Migration
             $table->decimal('exchange_rate', 10, 4)->default(1.0000); // курс валюты
             $table->enum('payment_method', ['cash', 'card', 'bank_transfer', 'other'])->default('cash');
             $table->enum('payment_status', ['pending', 'paid', 'partially_paid', 'cancelled'])->default('pending');
-            $table->enum('delivery_status', ['pending', 'in_progress', 'delivered', 'cancelled'])->default('pending');
             $table->text('notes')->nullable(); // заметки
             $table->string('invoice_number')->nullable(); // номер счета
             $table->date('sale_date'); // дата продажи
-            $table->date('delivery_date')->nullable(); // дата доставки
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             
@@ -48,7 +46,6 @@ return new class extends Migration
             $table->index(['product_id', 'sale_date']);
             $table->index('sale_number');
             $table->index('payment_status');
-            $table->index('delivery_status');
             $table->index('sale_date');
         });
     }

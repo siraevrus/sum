@@ -73,7 +73,7 @@ class SaleResource extends Resource
     {
         // Получаем товар по ID
         $product = \App\Models\Product::find($productId);
-        if (!$product) {
+        if (! $product) {
             return 0;
         }
 
@@ -128,36 +128,38 @@ class SaleResource extends Resource
                                             if (! $warehouseId) {
                                                 return [];
                                             }
-                                            
-                                            // Получаем доступные товары с группировкой
+
+                                            // Получаем доступные товары с группировкой и подгружаем производителя
                                             $availableProducts = Product::query()
                                                 ->select([
                                                     'product_template_id',
                                                     'warehouse_id',
-                                                    'producer',
+                                                    'producer_id',
                                                     'name',
                                                     DB::raw('SUM(quantity) as available_quantity'),
                                                 ])
+                                                ->with('producer')
                                                 ->where('warehouse_id', $warehouseId)
                                                 ->where('status', Product::STATUS_IN_STOCK)
                                                 ->where('is_active', true)
-                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
+                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer_id', 'name'])
                                                 ->having('available_quantity', '>', 0)
                                                 ->get();
-                                            
+
                                             $options = [];
                                             foreach ($availableProducts as $product) {
-                                                $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                                $producerName = $product->producer ? $product->producer->name : null;
+                                                $producerLabel = $producerName ? " ({$producerName})" : '';
                                                 $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
-                                                
+
                                                 // Используем ID первого товара из группы как ключ
                                                 $firstProduct = Product::where('product_template_id', $product->product_template_id)
                                                     ->where('warehouse_id', $product->warehouse_id)
-                                                    ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
+                                                    ->where('producer_id', $product->producer_id)
                                                     ->where('status', Product::STATUS_IN_STOCK)
                                                     ->where('is_active', true)
                                                     ->first();
-                                                
+
                                                 if ($firstProduct) {
                                                     $options[$firstProduct->id] = $displayName;
                                                 }
@@ -231,6 +233,11 @@ class SaleResource extends Resource
                                     ->default('RUB')
                                     ->required(),
 
+                                TextInput::make('exchange_rate')
+                                    ->label('Курс валюты')
+                                    ->default(1)
+                                    ->helperText('Курс валюты к рублю'),
+
                                 TextInput::make('nocash_amount')
                                     ->label('Сумма (безнал)')
                                     ->numeric()
@@ -298,6 +305,10 @@ class SaleResource extends Resource
                     ->label('Товар')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('product.producer.name')
+                    ->label('Производитель')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Клиент')
                     ->sortable()
@@ -312,6 +323,11 @@ class SaleResource extends Resource
                     ->label('Общая сумма')
                     ->formatStateUsing(fn ($state, $record) => number_format($state, 2, '.', ' '))
                     ->suffix(fn ($record) => ' '.($record->currency ?? ''))
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('exchange_rate')
+                    ->label('Курс валюты')
+                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 2, '.', ' ') : '1.00')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('sale_date')

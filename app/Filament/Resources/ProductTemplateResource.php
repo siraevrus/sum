@@ -92,7 +92,18 @@ class ProductTemplateResource extends Resource
                                     ->required()
                                     ->maxLength(50)
                                     ->helperText('Только английские буквы, цифры и подчеркивание')
-                                    ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/']),
+                                    ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/'])
+                                    ->distinct()
+                                    ->validationMessages([
+                                        'distinct' => 'дайте уникальные имена переменным',
+                                    ])
+                                    ->afterStateHydrated(function ($component, $state, $set, $get) {
+                                        $variables = collect($get('../../attributes'))->pluck('variable');
+                                        $duplicates = $variables->duplicates();
+                                        if ($duplicates->contains($state)) {
+                                            $component->extraAttributes(['style' => 'border-color: #dc2626;']); // красная рамка
+                                        }
+                                    }),
 
                                 Forms\Components\Select::make('type')
                                     ->label('Тип данных')
@@ -138,6 +149,7 @@ class ProductTemplateResource extends Resource
                             ->reorderableWithButtons()
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                            ->required()
                             ->saveRelationshipsUsing(function ($operation, $state, ProductTemplate $record) {
                                 // Сохраняем атрибуты вручную, чтобы поддержать create/edit
                                 $record->attributes()->delete();

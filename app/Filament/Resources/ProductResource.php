@@ -117,9 +117,13 @@ class ProductResource extends Resource
                                     ->disabled()
                                     ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
-                                TextInput::make('producer')
+                                Select::make('producer_id')
                                     ->label('Производитель')
-                                    ->maxLength(255),
+                                    ->options(\App\Models\Producer::pluck('name', 'id'))
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder('Выберите производителя')
+                                    ->required(),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -129,51 +133,7 @@ class ProductResource extends Resource
                                     ->maxValue(99999)
                                     ->maxLength(5)
                                     ->required()
-                                    ->helperText('Максимальное значение: 99999. Объем рассчитывается по характеристикам товара.')
-                                    ->live()
-                                    ->debounce(300)
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::find($templateId);
-                                            if ($template && $template->formula) {
-                                                // Рассчитываем объем при изменении количества
-                                                $attributes = [];
-                                                $formData = $get();
-
-                                                foreach ($formData as $key => $value) {
-                                                    if (str_starts_with($key, 'attribute_') && $value !== null) {
-                                                        $attributeName = str_replace('attribute_', '', $key);
-                                                        $attributes[$attributeName] = $value;
-                                                    }
-                                                }
-
-                                                // Рассчитываем объем только для числовых характеристик
-                                                if (! empty($attributes)) {
-                                                    $numericAttributes = [];
-                                                    foreach ($attributes as $key => $value) {
-                                                        if (is_numeric($value)) {
-                                                            $numericAttributes[$key] = $value;
-                                                        }
-                                                    }
-
-                                                    if (! empty($numericAttributes)) {
-                                                        $testResult = $template->testFormula($numericAttributes);
-                                                        if ($testResult['success']) {
-                                                            $result = $testResult['result'];
-
-                                                            // Ограничиваем максимальное значение объема до 99999
-                                                            if ($result > 99999) {
-                                                                $result = 99999;
-                                                            }
-
-                                                            $set('calculated_volume', $result);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }),
+                                    ->helperText('Максимальное значение: 99999. Объем рассчитывается при сохранении товара.'),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспортного средства')
@@ -190,18 +150,10 @@ class ProductResource extends Resource
                                     ->default(true),
                             ]),
 
-                        Textarea::make('description')
-                            ->label('Описание')
+                        Textarea::make('notes')
+                            ->label('Заметки')
                             ->rows(3)
                             ->maxLength(1000),
-
-                        TextInput::make('calculated_volume')
-                            ->label('Рассчитанный объем (м³)')
-                            ->numeric()
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('Объем рассчитывается автоматически на основе характеристик товара')
-                            ->visible(fn (Get $get) => $get('product_template_id') !== null),
                     ]),
 
                 Section::make('Характеристики товара')
@@ -277,7 +229,7 @@ class ProductResource extends Resource
                                                         Log::warning('Volume calculation failed', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
-                                                            'error' => $testResult['error']
+                                                            'error' => $testResult['error'],
                                                         ]);
                                                     }
                                                 } else {
@@ -413,12 +365,12 @@ class ProductResource extends Resource
                                                         }
 
                                                         $set('calculated_volume', $result);
-                                                        
+
                                                         // Логируем для отладки
                                                         Log::info('Volume calculated', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
-                                                            'result' => $result
+                                                            'result' => $result,
                                                         ]);
                                                     } else {
                                                         // Если расчет не удался, очищаем поле
@@ -426,7 +378,7 @@ class ProductResource extends Resource
                                                         Log::warning('Volume calculation failed', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
-                                                            'error' => $testResult['error']
+                                                            'error' => $testResult['error'],
                                                         ]);
                                                     }
                                                 } else {
@@ -567,7 +519,7 @@ class ProductResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer')
+                Tables\Columns\TextColumn::make('producer.name')
                     ->label('Производитель')
                     ->searchable()
                     ->sortable(),
@@ -592,25 +544,6 @@ class ProductResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('danger'),
-
-                Tables\Columns\TextColumn::make('available_quantity')
-                    ->label('Доступно')
-                    ->formatStateUsing(function (Product $record): string {
-                        return (string) $record->getAvailableQuantity();
-                    })
-                    ->sortable()
-                    ->badge()
-                    ->color(function (Product $record): string {
-                        $available = $record->getAvailableQuantity();
-                        if ($available > 10) {
-                            return 'success';
-                        }
-                        if ($available > 0) {
-                            return 'warning';
-                        }
-
-                        return 'danger';
-                    }),
 
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')

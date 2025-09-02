@@ -74,6 +74,11 @@ class MultipleProductsTest extends TestCase
             $this->fail('Не удалось создать тестовые данные');
         }
 
+        $producers = [
+            'Производитель 1' => 1, // замените на актуальные id из вашей базы
+            'Производитель 2' => 2,
+        ];
+
         $formData = [
             'shipment_number' => 'TEST-001',
             'warehouse_id' => $warehouse->id,
@@ -85,7 +90,7 @@ class MultipleProductsTest extends TestCase
             'products' => [
                 [
                     'product_template_id' => $template->id,
-                    'producer' => 'Производитель 1',
+                    'producer_id' => $producers['Производитель 1'],
                     'quantity' => 5,
                     'description' => 'Первый товар',
                     'attribute_length' => 10,
@@ -94,7 +99,7 @@ class MultipleProductsTest extends TestCase
                 ],
                 [
                     'product_template_id' => $template->id,
-                    'producer' => 'Производитель 2',
+                    'producer_id' => $producers['Производитель 2'],
                     'quantity' => 3,
                     'description' => 'Второй товар',
                     'attribute_length' => 8,
@@ -122,6 +127,11 @@ class MultipleProductsTest extends TestCase
             $this->fail('Не удалось создать тестовые данные');
         }
 
+        $producers = [
+            'Производитель 1' => 1, // замените на актуальные id из вашей базы
+            'Производитель 2' => 2,
+        ];
+
         $formData = [
             'shipment_number' => 'TRANSIT-001',
             'warehouse_id' => $warehouse->id,
@@ -134,7 +144,7 @@ class MultipleProductsTest extends TestCase
             'products' => [
                 [
                     'product_template_id' => $template->id,
-                    'producer' => 'Производитель 1',
+                    'producer_id' => $producers['Производитель 1'],
                     'quantity' => 2,
                     'description' => 'Товар в пути 1',
                     'attribute_length' => 15,
@@ -143,7 +153,7 @@ class MultipleProductsTest extends TestCase
                 ],
                 [
                     'product_template_id' => $template->id,
-                    'producer' => 'Производитель 2',
+                    'producer_id' => $producers['Производитель 2'],
                     'quantity' => 1,
                     'description' => 'Товар в пути 2',
                     'attribute_length' => 20,

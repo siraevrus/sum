@@ -58,6 +58,13 @@ class CreateProductInTransit extends CreateRecord
             'arrival_date' => ($data['shipping_date'] ?? null) ?: now()->toDateString(),
         ]);
 
+        // Подставляем имя производителя по producer_id
+        if (!empty($firstProduct['producer_id'])) {
+            $producer = \App\Models\Producer::find($firstProduct['producer_id']);
+            $recordData['producer_id'] = $firstProduct['producer_id'];
+            $recordData['producer'] = $producer?->name;
+        }
+
         // Рассчет объема для первого товара
         if (! empty($recordData['product_template_id'])) {
             $template = ProductTemplate::find($recordData['product_template_id']);
@@ -137,6 +144,13 @@ class CreateProductInTransit extends CreateRecord
                     'attributes' => $productAttributes,
                     'arrival_date' => ($data['shipping_date'] ?? null) ?: now()->toDateString(),
                 ]);
+
+                // Подставляем имя производителя по producer_id
+                if (!empty($additionalProductData['producer_id'])) {
+                    $producer = \App\Models\Producer::find($additionalProductData['producer_id']);
+                    $additionalProductData['producer_id'] = $additionalProductData['producer_id'];
+                    $additionalProductData['producer'] = $producer?->name;
+                }
 
                 // Рассчет объема для дополнительного товара
                 if (! empty($additionalProductData['product_template_id'])) {

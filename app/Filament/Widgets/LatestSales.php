@@ -64,19 +64,6 @@ class LatestSales extends BaseWidget
                     })
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('delivery_status')
-                    ->label('Доставка')
-                    ->colors([
-                        'warning' => Sale::DELIVERY_STATUS_PENDING,
-                        'info' => Sale::DELIVERY_STATUS_IN_PROGRESS,
-                        'success' => Sale::DELIVERY_STATUS_DELIVERED,
-                        'danger' => Sale::DELIVERY_STATUS_CANCELLED,
-                    ])
-                    ->formatStateUsing(function (Sale $record): string {
-                        return $record->getDeliveryStatusLabel();
-                    })
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('sale_date')
                     ->label('Дата продажи')
                     ->date()

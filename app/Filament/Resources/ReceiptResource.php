@@ -22,6 +22,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\GridEntry;
+use Filament\Infolists\Components\KeyValueEntry;
 
 class ReceiptResource extends Resource
 {
@@ -233,6 +238,23 @@ class ReceiptResource extends Resource
                             ->previewable()
                             ->imagePreviewHeight('250'),
                     ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Информация о товаре')
+                    ->schema([
+                        TextEntry::make('name')->label('Наименование'),
+                        TextEntry::make('producer')->label('Производитель'),
+                        TextEntry::make('quantity')->label('Количество'),
+                        TextEntry::make('calculated_volume')->label('Объем'),
+                        KeyValueEntry::make('attributes')
+                            ->label('Характеристики')
+                            ->visible(fn($state) => is_array($state) && count($state) > 0),
+                    ])
             ]);
     }
 

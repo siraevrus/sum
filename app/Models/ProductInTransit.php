@@ -28,6 +28,7 @@ class ProductInTransit extends Model
         'quantity',
         'transport_number',
         'producer',
+        'producer_id',
         'shipping_location',
         'shipping_date',
         'tracking_number',
@@ -87,6 +88,14 @@ class ProductInTransit extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'warehouse_id', 'id');
+    }
+
+    /**
+     * Связь с производителем
+     */
+    public function producer(): BelongsTo
+    {
+        return $this->belongsTo(Producer::class, 'producer_id');
     }
 
     /**
@@ -162,7 +171,7 @@ class ProductInTransit extends Model
         $name = $this->name;
         
         if ($this->producer) {
-            $name .= ' (' . $this->producer . ')';
+            $name .= ' (' . $this->producer->name . ')';
         }
         
         return $name;
@@ -199,7 +208,7 @@ class ProductInTransit extends Model
                 'attributes' => $this->attributes,
                 'calculated_volume' => $this->calculated_volume,
                 'quantity' => $this->quantity,
-                'producer' => $this->producer,
+                'producer' => $this->producer->id, // Сохраняем ID производителя
                 'arrival_date' => $this->actual_arrival_date ?? now(),
                 'is_active' => true,
             ]);
