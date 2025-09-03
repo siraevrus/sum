@@ -42,6 +42,11 @@ class CreateProduct extends CreateRecord
             $data['attributes'] = [];
         }
         
+        // Добавляем quantity в характеристики для формулы, если есть
+        if (isset($data['quantity'])) {
+            $attributes['quantity'] = $data['quantity'];
+        }
+        
         // Рассчитываем и сохраняем объем
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
@@ -64,7 +69,9 @@ class CreateProduct extends CreateRecord
                     $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
                 }
                 
+                \Log::info('Attributes for formula', $attributes);
                 $testResult = $template->testFormula($attributes);
+                \Log::info('Formula result', $testResult);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
                     

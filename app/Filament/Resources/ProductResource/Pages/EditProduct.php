@@ -46,8 +46,11 @@ class EditProduct extends EditRecord
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
-                // Используем только характеристики для формулы (без количества)
+                // Используем характеристики для формулы и добавляем количество
                 $attributes = $data['attributes'];
+                if (isset($data['quantity'])) {
+                    $attributes['quantity'] = $data['quantity'];
+                }
                 
                 // Формируем наименование из характеристик
                 $nameParts = [];
@@ -64,7 +67,10 @@ class EditProduct extends EditRecord
                     $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
                 }
                 
+                \Log::info('Quantity for formula', ['quantity' => $data['quantity'] ?? null]);
+                \Log::info('Attributes for formula (EditProduct)', $attributes);
                 $testResult = $template->testFormula($attributes);
+                \Log::info('Formula result (EditProduct)', $testResult);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
                     

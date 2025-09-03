@@ -125,6 +125,7 @@ class ProductResource extends Resource
                                     ->label('Наименование')
                                     ->maxLength(255)
                                     ->disabled()
+                                    ->hidden(fn() => true)
                                     ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
 
                                 TextInput::make('quantity')

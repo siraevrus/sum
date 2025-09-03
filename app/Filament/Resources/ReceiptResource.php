@@ -104,8 +104,12 @@ class ReceiptResource extends Resource
                                 DatePicker::make('expected_arrival_date')
                                     ->label('Ожидаемая дата прибытия'),
 
-                                DatePicker::make('actual_arrival_date')
-                                    ->label('Фактическая дата прибытия'),
+                                Textarea::make('notes')
+                                    ->label('Заметки')
+                                    ->rows(3)
+                                    ->maxLength(1000),
+
+                                // Удалено поле actual_arrival_date
                             ]),
                     ]),
 
@@ -133,10 +137,8 @@ class ReceiptResource extends Resource
                                             ->label('Наименование')
                                             ->maxLength(255)
                                             ->required()
-                                            ->reactive()
-                                            ->afterStateUpdated(function (Set $set, Get $get) {
-                                                static::calculateVolumeForItem($set, $get);
-                                            }),
+                                            ->disabled()
+                                            ->hidden(fn() => true),
 
                                         TextInput::make('quantity')
                                             ->label('Количество')
@@ -155,13 +157,15 @@ class ReceiptResource extends Resource
                                             ->disabled()
                                             ->dehydrated(false),
 
-                                        TextInput::make('producer')
+                                        Select::make('producer_id')
                                             ->label('Производитель')
-                                            ->maxLength(255),
+                                            ->options(\App\Models\Producer::pluck('name', 'id'))
+                                            ->searchable()
+                                            ->preload()
+                                            ->placeholder('Выберите производителя')
+                                            ->required(),
 
-                                        TextInput::make('tracking_number')
-                                            ->label('Номер отслеживания')
-                                            ->maxLength(255),
+                                        // Удалено поле tracking_number
                                     ]),
 
                                 // Динамические поля для характеристик
@@ -209,11 +213,7 @@ class ReceiptResource extends Resource
                                     })
                                     ->visible(fn (Get $get) => $get('product_template_id') !== null),
 
-                                Textarea::make('description')
-                                    ->label('Описание')
-                                    ->rows(2)
-                                    ->maxLength(1000)
-                                    ->columnSpanFull(),
+                                // Удалено поле description
                             ])
                             ->addActionLabel('Добавить товар')
                             ->reorderable()
@@ -337,6 +337,7 @@ class ReceiptResource extends Resource
                 // Убраны фильтры 'ready_for_receipt' и 'status'
             ])
             ->actions([
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\Action::make('confirm_receipt')
                     ->label('Подтвердить')
@@ -401,6 +402,7 @@ class ReceiptResource extends Resource
         return [
             'index' => Pages\ListReceipts::route('/'),
             'view' => Pages\ViewReceipt::route('/{record}'),
+            'edit' => Pages\EditReceipt::route('/{record}/edit'),
         ];
     }
 

@@ -115,7 +115,7 @@ class ProductTemplate extends Model
             return [
                 'success' => true,
                 'error' => null,
-                'result' => round($result, 2)
+                'result' => round($result, 3)
             ];
         } catch (\Exception $e) {
             return [

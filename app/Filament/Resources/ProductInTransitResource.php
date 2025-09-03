@@ -105,6 +105,10 @@ class ProductInTransitResource extends Resource
                                     ])
                                     ->required()
                                     ->default(Product::STATUS_IN_TRANSIT),
+
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспорта')
+                                    ->maxLength(255),
                             ]),
 
                         Textarea::make('notes')
@@ -139,6 +143,7 @@ class ProductInTransitResource extends Resource
                                             ->label('Наименование')
                                             ->maxLength(255)
                                             ->disabled()
+                                            ->hidden(fn() => true)
                                             ->helperText('Автоматически формируется из характеристик товара'),
 
                                         Select::make('producer_id')
@@ -259,6 +264,13 @@ class ProductInTransitResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
                     ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('calculated_volume')
+                    ->label('Объем')
+                    ->formatStateUsing(function ($state) {
+                        return $state ? number_format($state, 3) . ' м³' : '-';
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
