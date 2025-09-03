@@ -153,16 +153,102 @@ class ReceiptResource extends Resource
                                             ->default(1)
                                             ->minValue(1)
                                             ->required()
-                                            ->reactive()
+                                            ->live()
+                                            ->debounce(300)
                                             ->afterStateUpdated(function (Set $set, Get $get) {
-                                                static::calculateVolumeForItem($set, $get);
+                                                // Пересчитываем объем при изменении количества
+                                                $templateId = $get('product_template_id');
+                                                if (!$templateId) return;
+                                                
+                                                $template = ProductTemplate::with('attributes')->find($templateId);
+                                                if (!$template) return;
+
+                                                $attributes = [];
+                                                $formData = $get();
+
+                                                foreach ($formData as $key => $value) {
+                                                    if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                        $attributeName = str_replace('attribute_', '', $key);
+                                                        $attributes[$attributeName] = $value;
+                                                    }
+                                                }
+
+                                                // Рассчитываем объем для заполненных числовых характеристик
+                                                $numericAttributes = [];
+                                                foreach ($attributes as $key => $value) {
+                                                    if (is_numeric($value) && $value > 0) {
+                                                        $numericAttributes[$key] = $value;
+                                                    }
+                                                }
+
+                                                // Добавляем количество в атрибуты для формулы
+                                                $quantity = $get('quantity') ?? 1;
+                                                if (is_numeric($quantity) && $quantity > 0) {
+                                                    $numericAttributes['quantity'] = $quantity;
+                                                }
+
+                                                // Логируем атрибуты для отладки
+                                                \Log::info('Attributes for volume calculation (quantity - ReceiptResource)', [
+                                                    'template' => $template->name,
+                                                    'all_attributes' => $attributes,
+                                                    'numeric_attributes' => $numericAttributes,
+                                                    'quantity' => $quantity,
+                                                    'formula' => $template->formula,
+                                                ]);
+
+                                                // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                if (! empty($numericAttributes) && $template->formula) {
+                                                    $testResult = $template->testFormula($numericAttributes);
+                                                    if ($testResult['success']) {
+                                                        $result = $testResult['result'];
+                                                        $set('calculated_volume', $result);
+
+                                                        // Логируем для отладки
+                                                        \Log::info('Volume calculated from quantity change (ReceiptResource)', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                        ]);
+                                                    } else {
+                                                        // Если расчет не удался, показываем ошибку
+                                                        $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                        \Log::warning('Volume calculation failed from quantity change (ReceiptResource)', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'error' => $testResult['error'],
+                                                        ]);
+                                                    }
+                                                } else {
+                                                    // Если недостаточно данных для расчета, показываем подсказку
+                                                    if (empty($numericAttributes)) {
+                                                        $set('calculated_volume', 'Заполните числовые характеристики');
+                                                    } else {
+                                                        $set('calculated_volume', 'Формула не задана');
+                                                    }
+                                                }
                                             }),
 
                                         TextInput::make('calculated_volume')
                                             ->label('Объем')
                                             ->numeric()
                                             ->disabled()
-                                            ->dehydrated(false),
+                                            ->live()
+                                            ->formatStateUsing(function ($state) {
+                                                // Если это число - форматируем, если строка - показываем как есть
+                                                if (is_numeric($state)) {
+                                                    return number_format($state, 3, '.', ' ');
+                                                }
+                                                return $state ?: '0.000';
+                                            })
+                                            ->suffix(function (Get $get) {
+                                                $templateId = $get('product_template_id');
+                                                if ($templateId) {
+                                                    $template = ProductTemplate::find($templateId);
+                                                    return $template ? $template->unit : '';
+                                                }
+                                                return '';
+                                            })
+                                            ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества'),
 
                                         Select::make('producer_id')
                                             ->label('Производитель')
@@ -198,13 +284,179 @@ class ReceiptResource extends Resource
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->numeric()
-                                                        ->required($attribute->is_required);
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->debounce(300)
+                                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                            // Рассчитываем объем при изменении характеристики
+                                                            $attributes = [];
+                                                            $formData = $get();
+
+                                                            foreach ($formData as $key => $value) {
+                                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                                    $attributeName = str_replace('attribute_', '', $key);
+                                                                    $attributes[$attributeName] = $value;
+                                                                }
+                                                            }
+
+                                                            // Рассчитываем объем для заполненных числовых характеристик
+                                                            $numericAttributes = [];
+                                                            foreach ($attributes as $key => $value) {
+                                                                if (is_numeric($value) && $value > 0) {
+                                                                    $numericAttributes[$key] = $value;
+                                                                }
+                                                            }
+
+                                                            // Добавляем количество в атрибуты для формулы
+                                                            $quantity = $get('quantity') ?? 1;
+                                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                                $numericAttributes['quantity'] = $quantity;
+                                                            }
+
+                                                            // Логируем атрибуты для отладки
+                                                            \Log::info('Attributes for volume calculation (number - ReceiptResource)', [
+                                                                'template' => $template->name,
+                                                                'all_attributes' => $attributes,
+                                                                'numeric_attributes' => $numericAttributes,
+                                                                'quantity' => $quantity,
+                                                                'formula' => $template->formula,
+                                                            ]);
+
+                                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                            if (! empty($numericAttributes) && $template->formula) {
+                                                                $testResult = $template->testFormula($numericAttributes);
+                                                                if ($testResult['success']) {
+                                                                    $result = $testResult['result'];
+                                                                    $set('calculated_volume', $result);
+
+                                                                    // Логируем для отладки
+                                                                    \Log::info('Volume calculated (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                } else {
+                                                                    // Если расчет не удался, показываем ошибку
+                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    \Log::warning('Volume calculation failed (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'error' => $testResult['error'],
+                                                                    ]);
+                                                                }
+                                                            } else {
+                                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                                if (empty($numericAttributes)) {
+                                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                                } else {
+                                                                    $set('calculated_volume', 'Формула не задана');
+                                                                }
+                                                            }
+
+                                                            // Формируем наименование из заполненных характеристик
+                                                            $nameParts = [];
+                                                            foreach ($template->attributes as $templateAttribute) {
+                                                                $attributeKey = $templateAttribute->variable;
+                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                    $nameParts[] = $attributes[$attributeKey];
+                                                                }
+                                                            }
+
+                                                            if (! empty($nameParts)) {
+                                                                $templateName = $template->name ?? 'Товар';
+                                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                                $set('name', $generatedName);
+                                                            }
+                                                        });
                                                     break;
 
                                                 case 'text':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
-                                                        ->required($attribute->is_required);
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->debounce(300)
+                                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                            // Рассчитываем объем при изменении характеристики
+                                                            $attributes = [];
+                                                            $formData = $get();
+
+                                                            foreach ($formData as $key => $value) {
+                                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                                    $attributeName = str_replace('attribute_', '', $key);
+                                                                    $attributes[$attributeName] = $value;
+                                                                }
+                                                            }
+
+                                                            // Рассчитываем объем для заполненных числовых характеристик
+                                                            $numericAttributes = [];
+                                                            foreach ($attributes as $key => $value) {
+                                                                if (is_numeric($value) && $value > 0) {
+                                                                    $numericAttributes[$key] = $value;
+                                                                }
+                                                            }
+
+                                                            // Добавляем количество в атрибуты для формулы
+                                                            $quantity = $get('quantity') ?? 1;
+                                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                                $numericAttributes['quantity'] = $quantity;
+                                                            }
+
+                                                            // Логируем атрибуты для отладки
+                                                            \Log::info('Attributes for volume calculation (text - ReceiptResource)', [
+                                                                'template' => $template->name,
+                                                                'all_attributes' => $attributes,
+                                                                'numeric_attributes' => $numericAttributes,
+                                                                'quantity' => $quantity,
+                                                                'formula' => $template->formula,
+                                                            ]);
+
+                                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                            if (! empty($numericAttributes) && $template->formula) {
+                                                                $testResult = $template->testFormula($numericAttributes);
+                                                                if ($testResult['success']) {
+                                                                    $result = $testResult['result'];
+                                                                    $set('calculated_volume', $result);
+
+                                                                    // Логируем для отладки
+                                                                    \Log::info('Volume calculated (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                } else {
+                                                                    // Если расчет не удался, показываем ошибку
+                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    \Log::warning('Volume calculation failed (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'error' => $testResult['error'],
+                                                                    ]);
+                                                                }
+                                                            } else {
+                                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                                if (empty($numericAttributes)) {
+                                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                                } else {
+                                                                    $set('calculated_volume', 'Формула не задана');
+                                                                }
+                                                            }
+
+                                                            // Формируем наименование из заполненных характеристик
+                                                            $nameParts = [];
+                                                            foreach ($template->attributes as $templateAttribute) {
+                                                                $attributeKey = $templateAttribute->variable;
+                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                    $nameParts[] = $attributes[$attributeKey];
+                                                                }
+                                                            }
+
+                                                            if (! empty($nameParts)) {
+                                                                $templateName = $template->name ?? 'Товар';
+                                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                                $set('name', $generatedName);
+                                                            }
+                                                        });
                                                     break;
 
                                                 case 'select':
@@ -212,7 +464,90 @@ class ReceiptResource extends Resource
                                                     $fields[] = Select::make($fieldName)
                                                         ->label($attribute->name)
                                                         ->options($options)
-                                                        ->required($attribute->is_required);
+                                                        ->required($attribute->is_required)
+                                                        ->live()
+                                                        ->debounce(300)
+                                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                            // Рассчитываем объем при изменении характеристики
+                                                            $attributes = [];
+                                                            $formData = $get();
+
+                                                            foreach ($formData as $key => $value) {
+                                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                                    $attributeName = str_replace('attribute_', '', $key);
+                                                                    $attributes[$attributeName] = $value;
+                                                                }
+                                                            }
+
+                                                            // Рассчитываем объем для заполненных числовых характеристик
+                                                            $numericAttributes = [];
+                                                            foreach ($attributes as $key => $value) {
+                                                                if (is_numeric($value) && $value > 0) {
+                                                                    $numericAttributes[$key] = $value;
+                                                                }
+                                                            }
+
+                                                            // Добавляем количество в атрибуты для формулы
+                                                            $quantity = $get('quantity') ?? 1;
+                                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                                $numericAttributes['quantity'] = $quantity;
+                                                            }
+
+                                                            // Логируем атрибуты для отладки
+                                                            \Log::info('Attributes for volume calculation (select - ReceiptResource)', [
+                                                                'template' => $template->name,
+                                                                'all_attributes' => $attributes,
+                                                                'numeric_attributes' => $numericAttributes,
+                                                                'quantity' => $quantity,
+                                                                'formula' => $template->formula,
+                                                            ]);
+
+                                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                            if (! empty($numericAttributes) && $template->formula) {
+                                                                $testResult = $template->testFormula($numericAttributes);
+                                                                if ($testResult['success']) {
+                                                                    $result = $testResult['result'];
+                                                                    $set('calculated_volume', $result);
+
+                                                                    // Логируем для отладки
+                                                                    \Log::info('Volume calculated (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                } else {
+                                                                    // Если расчет не удался, показываем ошибку
+                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    \Log::warning('Volume calculation failed (ReceiptResource)', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'error' => $testResult['error'],
+                                                                    ]);
+                                                                }
+                                                            } else {
+                                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                                if (empty($numericAttributes)) {
+                                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                                } else {
+                                                                    $set('calculated_volume', 'Формула не задана');
+                                                                }
+                                                            }
+
+                                                            // Формируем наименование из заполненных характеристик
+                                                            $nameParts = [];
+                                                            foreach ($template->attributes as $templateAttribute) {
+                                                                $attributeKey = $templateAttribute->variable;
+                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                    $nameParts[] = $attributes[$attributeKey];
+                                                                }
+                                                            }
+
+                                                            if (! empty($nameParts)) {
+                                                                $templateName = $template->name ?? 'Товар';
+                                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                                $set('name', $generatedName);
+                                                            }
+                                                        });
                                                     break;
                                             }
                                         }
@@ -507,5 +842,100 @@ class ReceiptResource extends Resource
                 $set('calculated_volume', null);
             }
         }
+    }
+
+    /**
+     * Обработать данные формы перед сохранением
+     */
+    public static function mutateFormDataBeforeSave(array $data): array
+    {
+        // Логируем данные для отладки
+        \Log::info('ReceiptResource: Data before save', $data);
+        
+        // Обрабатываем характеристики из repeater, если они есть
+        if (isset($data['products']) && is_array($data['products']) && !empty($data['products'])) {
+            $firstProduct = $data['products'][0];
+            
+            // Собираем характеристики
+            $attributes = [];
+            foreach ($firstProduct as $key => $value) {
+                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                    $attributeName = str_replace('attribute_', '', $key);
+                    $attributes[$attributeName] = $value;
+                }
+            }
+            
+            // Обновляем основные поля
+            $data['attributes'] = $attributes;
+            $data['product_template_id'] = $firstProduct['product_template_id'] ?? null;
+            $data['producer_id'] = $firstProduct['producer_id'] ?? null;
+            $data['name'] = $firstProduct['name'] ?? null;
+            $data['quantity'] = $firstProduct['quantity'] ?? 1;
+            $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
+            
+            // Рассчитываем объем, если есть шаблон и характеристики
+            if (!empty($data['product_template_id']) && !empty($attributes)) {
+                $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+                if ($template && $template->formula) {
+                    // Создаем копию атрибутов для формулы, включая quantity
+                    $formulaAttributes = $attributes;
+                    if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
+                        $formulaAttributes['quantity'] = $data['quantity'];
+                    }
+                    
+                    // Логируем атрибуты для отладки
+                    \Log::info('ReceiptResource: Attributes for formula', [
+                        'template' => $template->name,
+                        'attributes' => $attributes,
+                        'formula_attributes' => $formulaAttributes,
+                        'quantity' => $data['quantity'] ?? 'not set',
+                        'formula' => $template->formula,
+                    ]);
+                    
+                    $testResult = $template->testFormula($formulaAttributes);
+                    \Log::info('ReceiptResource: Formula result', $testResult);
+                    
+                    if ($testResult['success']) {
+                        $result = $testResult['result'];
+                        $data['calculated_volume'] = $result;
+                        \Log::info('ReceiptResource: Volume calculated and saved', [
+                            'calculated_volume' => $result,
+                        ]);
+                    } else {
+                        \Log::warning('ReceiptResource: Volume calculation failed', [
+                            'error' => $testResult['error'],
+                            'attributes' => $formulaAttributes,
+                        ]);
+                    }
+                }
+                
+                // Формируем наименование из характеристик
+                if (!empty($attributes)) {
+                    $nameParts = [];
+                    foreach ($template->attributes as $templateAttribute) {
+                        $attributeKey = $templateAttribute->variable;
+                        if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                            $nameParts[] = $attributes[$attributeKey];
+                        }
+                    }
+                    
+                    if (!empty($nameParts)) {
+                        $templateName = $template->name ?? 'Товар';
+                        $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                        \Log::info('ReceiptResource: Name generated', ['name' => $data['name']]);
+                    } else {
+                        // Если не удалось сформировать имя из характеристик, используем название шаблона
+                        $data['name'] = $template->name ?? 'Товар';
+                        \Log::info('ReceiptResource: Name generated from template', ['name' => $data['name']]);
+                    }
+                }
+            }
+            
+            // Удаляем поле products, так как оно не нужно в основной модели
+            unset($data['products']);
+        }
+        
+        \Log::info('ReceiptResource: Data after processing', $data);
+        return $data;
     }
 }

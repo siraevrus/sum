@@ -85,6 +85,15 @@ class CreateProductInTransit extends CreateRecord
                 // Добавляем количество
                 $attrsForFormula['quantity'] = (int) ($recordData['quantity'] ?? 1);
 
+                // Логируем атрибуты для отладки
+                \Log::info('CreateProductInTransit: Attributes for formula (main product)', [
+                    'template' => $template->name,
+                    'attributes' => $attributes,
+                    'formula_attributes' => $attrsForFormula,
+                    'quantity' => $recordData['quantity'] ?? 'not set',
+                    'formula' => $template->formula,
+                ]);
+
                 // Формируем наименование из характеристик
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
@@ -102,8 +111,18 @@ class CreateProductInTransit extends CreateRecord
 
                 if (! empty($attrsForFormula)) {
                     $testResult = $template->testFormula($attrsForFormula);
+                    \Log::info('CreateProductInTransit: Formula result (main product)', $testResult);
+                    
                     if ($testResult['success']) {
                         $recordData['calculated_volume'] = (float) $testResult['result'];
+                        \Log::info('CreateProductInTransit: Volume calculated and saved (main product)', [
+                            'calculated_volume' => $recordData['calculated_volume'],
+                        ]);
+                    } else {
+                        \Log::warning('CreateProductInTransit: Volume calculation failed (main product)', [
+                            'error' => $testResult['error'],
+                            'attributes' => $attrsForFormula,
+                        ]);
                     }
                 }
             }
@@ -172,6 +191,15 @@ class CreateProductInTransit extends CreateRecord
                         // Добавляем количество
                         $attrsForFormula['quantity'] = (int) ($additionalProductData['quantity'] ?? 1);
 
+                        // Логируем атрибуты для отладки
+                        \Log::info('CreateProductInTransit: Attributes for formula (additional product)', [
+                            'template' => $template->name,
+                            'attributes' => $productAttributes,
+                            'formula_attributes' => $attrsForFormula,
+                            'quantity' => $additionalProductData['quantity'] ?? 'not set',
+                            'formula' => $template->formula,
+                        ]);
+
                         // Формируем наименование из характеристик
                         $nameParts = [];
                         foreach ($template->attributes as $templateAttribute) {
@@ -189,8 +217,18 @@ class CreateProductInTransit extends CreateRecord
 
                         if (! empty($attrsForFormula)) {
                             $testResult = $template->testFormula($attrsForFormula);
+                            \Log::info('CreateProductInTransit: Formula result (additional product)', $testResult);
+                            
                             if ($testResult['success']) {
                                 $additionalProductData['calculated_volume'] = (float) $testResult['result'];
+                                \Log::info('CreateProductInTransit: Volume calculated and saved (additional product)', [
+                                    'calculated_volume' => $additionalProductData['calculated_volume'],
+                                ]);
+                            } else {
+                                \Log::warning('CreateProductInTransit: Volume calculation failed (additional product)', [
+                                    'error' => $testResult['error'],
+                                    'attributes' => $attrsForFormula,
+                                ]);
                             }
                         }
                     }

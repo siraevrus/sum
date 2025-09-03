@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
 use App\Models\Product;
+use App\Models\ProductTemplate;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -73,6 +74,102 @@ class EditReceipt extends EditRecord
             }
         }
         $data['products'] = [$item];
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Обрабатываем характеристики из repeater
+        $products = $data['products'] ?? [];
+        if (!empty($products)) {
+            $firstProduct = $products[0];
+            
+            // Собираем характеристики
+            $attributes = [];
+            foreach ($firstProduct as $key => $value) {
+                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                    $attributeName = str_replace('attribute_', '', $key);
+                    $attributes[$attributeName] = $value;
+                }
+            }
+            
+            // Удаляем временные поля характеристик
+            foreach ($firstProduct as $key => $value) {
+                if (str_starts_with($key, 'attribute_')) {
+                    unset($firstProduct[$key]);
+                }
+            }
+            
+            // Обновляем основные поля
+            $data['attributes'] = $attributes;
+            $data['product_template_id'] = $firstProduct['product_template_id'] ?? null;
+            $data['producer_id'] = $firstProduct['producer_id'] ?? null;
+            $data['name'] = $firstProduct['name'] ?? null;
+            $data['quantity'] = $firstProduct['quantity'] ?? 1;
+            $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
+            
+            // Рассчитываем объем, если есть шаблон и характеристики
+            if (!empty($data['product_template_id']) && !empty($attributes)) {
+                $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+                if ($template && $template->formula) {
+                    // Создаем копию атрибутов для формулы, включая quantity
+                    $formulaAttributes = $attributes;
+                    if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
+                        $formulaAttributes['quantity'] = $data['quantity'];
+                    }
+                    
+                    // Логируем атрибуты для отладки
+                    \Log::info('EditReceipt: Attributes for formula', [
+                        'template' => $template->name,
+                        'attributes' => $attributes,
+                        'formula_attributes' => $formulaAttributes,
+                        'quantity' => $data['quantity'] ?? 'not set',
+                        'formula' => $template->formula,
+                    ]);
+                    
+                    $testResult = $template->testFormula($formulaAttributes);
+                    \Log::info('EditReceipt: Formula result', $testResult);
+                    
+                    if ($testResult['success']) {
+                        $result = $testResult['result'];
+                        $data['calculated_volume'] = $result;
+                        \Log::info('EditReceipt: Volume calculated and saved', [
+                            'calculated_volume' => $result,
+                        ]);
+                    } else {
+                        \Log::warning('EditReceipt: Volume calculation failed', [
+                            'error' => $testResult['error'],
+                            'attributes' => $formulaAttributes,
+                        ]);
+                    }
+                }
+                
+                // Формируем наименование из характеристик
+                if (!empty($attributes)) {
+                    $nameParts = [];
+                    foreach ($template->attributes as $templateAttribute) {
+                        $attributeKey = $templateAttribute->variable;
+                        if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                            $nameParts[] = $attributes[$attributeKey];
+                        }
+                    }
+                    
+                    if (!empty($nameParts)) {
+                        $templateName = $template->name ?? 'Товар';
+                        $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                        \Log::info('EditReceipt: Name generated', ['name' => $data['name']]);
+                    } else {
+                        // Если не удалось сформировать имя из характеристик, используем название шаблона
+                        $data['name'] = $template->name ?? 'Товар';
+                        \Log::info('EditReceipt: Using template name', ['name' => $data['name']]);
+                    }
+                }
+            }
+            
+            // Удаляем поле products, так как оно не нужно в основной модели
+            unset($data['products']);
+        }
+        
         return $data;
     }
 }
