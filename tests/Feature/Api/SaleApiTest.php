@@ -66,7 +66,6 @@ class SaleApiTest extends TestCase
                             'unit_price',
                             'total_price',
                             'payment_status',
-                            'delivery_status',
                             'sale_date',
                             'created_at',
                             'updated_at',
@@ -108,7 +107,6 @@ class SaleApiTest extends TestCase
             'unit_price' => 1000.00,
             'payment_method' => 'cash',
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
             'sale_date' => now()->toDateString(),
         ];
 
@@ -296,8 +294,8 @@ class SaleApiTest extends TestCase
                     '*' => [
                         'id', 'sale_number', 'customer_name', 'customer_phone', 'customer_email',
                         'product_name', 'warehouse', 'quantity', 'unit_price', 'total_price',
-                        'payment_status', 'delivery_status', 'payment_method', 'sale_date',
-                        'delivery_date', 'created_by', 'created_at'
+                        'payment_status', 'sale_date',
+                        'created_by', 'created_at'
                     ]
                 ],
                 'total'

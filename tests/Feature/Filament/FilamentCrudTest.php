@@ -80,7 +80,6 @@ class FilamentCrudTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $response = $this->actingAs($this->admin)->get("/admin/sales/{$sale->id}/edit");
@@ -94,7 +93,6 @@ class FilamentCrudTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $response = $this->actingAs($this->admin)->get("/admin/sales/{$sale->id}");
@@ -288,7 +286,6 @@ class FilamentCrudTest extends TestCase
             'warehouse_id' => $otherWarehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin/sales');
@@ -352,7 +349,6 @@ class FilamentCrudTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $this->assertNotNull($sale->product);

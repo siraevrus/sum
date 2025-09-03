@@ -41,8 +41,12 @@ class CreateProductInTransit extends CreateRecord
             }
         }
 
+        // Ensure warehouse_id is set for non-admin users
+        $user = Auth::user();
+        $warehouseId = isset($data['warehouse_id']) ? $data['warehouse_id'] : ($user && !$user->isAdmin() ? $user->warehouse_id : null);
+
         $recordData = array_merge($firstProduct, [
-            'warehouse_id' => $data['warehouse_id'] ?? null,
+            'warehouse_id' => $warehouseId,
             'shipping_location' => $data['shipping_location'] ?? null,
             'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
             'transport_number' => $data['transport_number'] ?? null,
@@ -130,7 +134,7 @@ class CreateProductInTransit extends CreateRecord
                 }
 
                 $additionalProductData = array_merge($product, [
-                    'warehouse_id' => $data['warehouse_id'] ?? null,
+                    'warehouse_id' => $warehouseId,
                     'shipping_location' => $data['shipping_location'] ?? null,
                     'shipping_date' => $data['shipping_date'] ?? now()->toDateString(),
                     'transport_number' => $data['transport_number'] ?? null,

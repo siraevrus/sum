@@ -319,10 +319,10 @@ class SaleResource extends Resource
                     ->suffix(fn ($record) => ' '.($record->currency ?? ''))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('exchange_rate')
-                    ->label('Курс валюты')
-                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 2, '.', ' ') : '1.00')
-                    ->sortable(),
+                // Tables\Columns\TextColumn::make('exchange_rate')
+                //     ->label('Курс валюты')
+                //     ->formatStateUsing(fn ($state) => $state ? number_format($state, 2, '.', ' ') : '1.00')
+                //     ->sortable(),
 
                 Tables\Columns\TextColumn::make('sale_date')
                     ->label('Дата продажи')
@@ -351,6 +351,12 @@ class SaleResource extends Resource
                         \App\Models\Sale::PAYMENT_STATUS_PAID => 'Оплачено',
                         \App\Models\Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
                     ]),
+
+                SelectFilter::make('user_id')
+                    ->label('Продавец')
+                    ->options(function () {
+                        return \App\Models\User::pluck('name', 'id')->toArray();
+                    }),
 
                 Filter::make('active')
                     ->label('Только активные')

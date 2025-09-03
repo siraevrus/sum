@@ -72,10 +72,8 @@ class ProducerResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->label('Редактировать'),
-                Tables\Actions\DeleteAction::make()
-                    ->label('Удалить'),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

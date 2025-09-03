@@ -65,7 +65,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         Request::factory()->count(2)->create([
@@ -97,7 +96,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin');
@@ -125,7 +123,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         Sale::factory()->count(2)->create([
@@ -133,7 +130,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin');
@@ -194,7 +190,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         $startTime = microtime(true);
@@ -225,7 +220,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         Request::factory()->count($requestCount)->create([
@@ -288,7 +282,6 @@ class DashboardTest extends TestCase
             'warehouse_id' => $this->warehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'cancelled',
-            'delivery_status' => 'cancelled',
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin');

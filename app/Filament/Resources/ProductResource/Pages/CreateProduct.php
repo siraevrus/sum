@@ -14,6 +14,12 @@ class CreateProduct extends CreateRecord
     {
         $data['created_by'] = Auth::id();
         
+        // Ensure warehouse_id is set for non-admin users
+        $user = Auth::user();
+        if (!isset($data['warehouse_id']) && $user && !$user->isAdmin()) {
+            $data['warehouse_id'] = $user->warehouse_id;
+        }
+        
         // Обрабатываем характеристики
         $attributes = [];
         foreach ($data as $key => $value) {

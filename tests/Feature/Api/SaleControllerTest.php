@@ -64,7 +64,6 @@ class SaleControllerTest extends TestCase
                             'unit_price',
                             'total_price',
                             'payment_status',
-                            'delivery_status',
                             'sale_date',
                             'created_at',
                             'updated_at',
@@ -106,7 +105,6 @@ class SaleControllerTest extends TestCase
             'unit_price' => 1000.00,
             'payment_method' => 'cash',
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
             'sale_date' => now()->toDateString(),
         ];
 
@@ -269,7 +267,6 @@ class SaleControllerTest extends TestCase
                     'total_revenue',
                     'average_sale',
                     'pending_payments',
-                    'in_delivery',
                 ]);
     }
 

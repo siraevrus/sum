@@ -57,7 +57,6 @@ class IntegrationTest extends TestCase
             'unit_price' => 1000.00,
             'payment_method' => 'cash',
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
             'sale_date' => now()->toDateString(),
         ];
 
@@ -104,7 +103,6 @@ class IntegrationTest extends TestCase
                     'total_revenue',
                     'average_sale',
                     'pending_payments',
-                    'in_delivery',
                 ]);
     }
 

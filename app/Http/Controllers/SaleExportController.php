@@ -31,10 +31,6 @@ class SaleExportController extends Controller
             $query->where('payment_status', $request->payment_status);
         }
         
-        if ($request->has('delivery_status')) {
-            $query->where('delivery_status', $request->delivery_status);
-        }
-        
         if ($request->has('date_from')) {
             $query->where('sale_date', '>=', $request->date_from);
         }
@@ -68,7 +64,6 @@ class SaleExportController extends Controller
                 'Общая сумма',
                 'Способ оплаты',
                 'Статус оплаты',
-                'Статус доставки',
                 'Дата продажи',
                 'Дата доставки',
                 'Продавец',
@@ -90,7 +85,6 @@ class SaleExportController extends Controller
                     $sale->total_price,
                     $sale->getPaymentMethodLabel(),
                     $sale->getPaymentStatusLabel(),
-                    $sale->getDeliveryStatusLabel(),
                     $sale->sale_date->format('Y-m-d'),
                     $sale->delivery_date?->format('Y-m-d') ?? 'Не указана',
                     $sale->user?->name ?? 'Не указан',

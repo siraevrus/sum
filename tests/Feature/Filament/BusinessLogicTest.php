@@ -109,7 +109,6 @@ class BusinessLogicTest extends TestCase
             'user_id' => $this->admin->id,
             'quantity' => 20,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         // Обрабатываем продажу
@@ -209,7 +208,6 @@ class BusinessLogicTest extends TestCase
             'vat_amount' => 2000.00,
             'price_without_vat' => 8000.00,
             'payment_status' => 'paid',
-            'delivery_status' => 'delivered',
         ]);
 
         $this->assertEquals(10000.00, $sale->total_price);

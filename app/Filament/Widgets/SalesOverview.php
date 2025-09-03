@@ -46,11 +46,6 @@ class SalesOverview extends BaseWidget
                 ->description('Продажи в ожидании оплаты')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),
-
-            Stat::make('В доставке', Sale::where('delivery_status', Sale::DELIVERY_STATUS_IN_PROGRESS)->count())
-                ->description('Продажи в процессе доставки')
-                ->descriptionIcon('heroicon-m-truck')
-                ->color('info'),
         ];
     }
 } 

@@ -164,7 +164,6 @@ class FilamentResourceTest extends TestCase
             'warehouse_id' => $otherWarehouse->id,
             'user_id' => $this->admin->id,
             'payment_status' => 'pending',
-            'delivery_status' => 'pending',
         ]);
 
         $response = $this->actingAs($this->admin)->get('/admin/sales');
