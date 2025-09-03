@@ -59,10 +59,10 @@ class BuyerResource extends Resource
                 //
             ])
             ->actions([
-                //
+                Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([
-                //
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
