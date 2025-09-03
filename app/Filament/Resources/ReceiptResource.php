@@ -85,29 +85,35 @@ class ReceiptResource extends Resource
 
                                         return $user->isAdmin();
                                     })
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                     ->searchable(),
 
                                 TextInput::make('shipping_location')
                                     ->label('Место отгрузки')
                                     ->maxLength(255)
-                                    ->required(),
+                                    ->required()
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 DatePicker::make('shipping_date')
                                     ->label('Дата отгрузки')
                                     ->required()
-                                    ->default(now()),
+                                    ->default(now())
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 DatePicker::make('expected_arrival_date')
-                                    ->label('Ожидаемая дата прибытия'),
+                                    ->label('Ожидаемая дата прибытия')
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 Textarea::make('notes')
                                     ->label('Заметки')
                                     ->rows(3)
-                                    ->maxLength(1000),
+                                    ->maxLength(1000)
+                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 // Удалено поле actual_arrival_date
                             ]),
@@ -131,7 +137,8 @@ class ReceiptResource extends Resource
                                             ->afterStateUpdated(function (Set $set) {
                                                 $set('name', '');
                                                 $set('calculated_volume', null);
-                                            }),
+                                            })
+                                            ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                         TextInput::make('name')
                                             ->label('Наименование')

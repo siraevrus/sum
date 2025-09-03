@@ -74,12 +74,6 @@ class CreateProduct extends CreateRecord
                 \Log::info('Formula result', $testResult);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    
-                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                    if ($result > 99999) {
-                        $result = 99999;
-                    }
-                    
                     $data['calculated_volume'] = $result;
                 }
             }
@@ -99,12 +93,6 @@ class CreateProduct extends CreateRecord
                     $testResult = $template->testFormula($data['attributes']);
                     if ($testResult['success']) {
                         $result = $testResult['result'];
-                        
-                        // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                        if ($result > 99999) {
-                            $result = 99999;
-                        }
-                        
                         $data['calculated_volume'] = $result;
                     }
                 }

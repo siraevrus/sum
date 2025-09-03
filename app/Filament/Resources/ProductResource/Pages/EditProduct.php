@@ -73,12 +73,6 @@ class EditProduct extends EditRecord
                 \Log::info('Formula result (EditProduct)', $testResult);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    
-                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                    if ($result > 99999) {
-                        $result = 99999;
-                    }
-                    
                     $data['calculated_volume'] = $result;
                 }
             }
@@ -118,12 +112,6 @@ class EditProduct extends EditRecord
                 $testResult = $template->testFormula($data['attributes']);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    
-                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                    if ($result > 99999) {
-                        $result = 99999;
-                    }
-                    
                     $data['calculated_volume'] = $result;
                 }
             }

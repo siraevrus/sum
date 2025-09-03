@@ -60,7 +60,7 @@ class ProductResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 Select::make('warehouse_id')
                                     ->label('Склад')
@@ -96,10 +96,6 @@ class ProductResource extends Resource
                                     ->required()
                                     ->default(now()),
 
-                                TextInput::make('transport_number')
-                                    ->label('Номер транспортного средства')
-                                    ->maxLength(255),
-
                                 Select::make('product_template_id')
                                     ->label('Шаблон товара')
                                     ->options(ProductTemplate::pluck('name', 'id'))
@@ -121,22 +117,23 @@ class ProductResource extends Resource
                                         }
                                     }),
 
-                                TextInput::make('name')
-                                    ->label('Наименование')
-                                    ->maxLength(255)
-                                    ->disabled()
-                                    ->hidden(fn() => true)
-                                    ->helperText('Автоматически формируется из характеристик товара (нередактируемое)'),
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспорта')
+                                    ->maxLength(255),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->maxValue(99999)
-                                    ->maxLength(5)
-                                    ->required()
-                                    ->helperText('Максимальное значение: 99999. Объем рассчитывается при сохранении товара.'),
+                                    ->required(),
+
+                                TextInput::make('name')
+                                    ->label('Наименование')
+                                    ->maxLength(255)
+                                    ->disabled()
+                                    ->hidden(fn() => true)
+                                    ->helperText('Автоматически формируется из характеристик товара'),
 
                                 Toggle::make('is_active')
                                     ->label('Активен')
@@ -144,10 +141,15 @@ class ProductResource extends Resource
                                     ->default(true),
                             ]),
 
-                        Textarea::make('notes')
-                            ->label('Заметки')
-                            ->rows(3)
-                            ->maxLength(1000),
+                        // Компактная сетка для заметок
+                        Grid::make(1)
+                            ->schema([
+                                Textarea::make('notes')
+                                    ->label('Заметки')
+                                    ->rows(2)
+                                    ->maxLength(500)
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
 
                 Section::make('Характеристики товара')
@@ -172,10 +174,7 @@ class ProductResource extends Resource
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->numeric()
-                                        ->maxValue(9999)
-                                        ->maxLength(4)
                                         ->required($attribute->is_required)
-                                        ->helperText('Максимальное значение: 9999')
                                         ->live()
                                         ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -203,12 +202,6 @@ class ProductResource extends Resource
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-
-                                                        // Ограничиваем максимальное значение объема до 99999
-                                                        if ($result > 99999) {
-                                                            $result = 99999;
-                                                        }
-
                                                         $set('calculated_volume', $result);
 
                                                         // Логируем для отладки
@@ -282,12 +275,6 @@ class ProductResource extends Resource
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-
-                                                        // Ограничиваем максимальное значение объема до 99999
-                                                        if ($result > 99999) {
-                                                            $result = 99999;
-                                                        }
-
                                                         $set('calculated_volume', $result);
 
                                                         // Логируем для отладки
@@ -352,12 +339,6 @@ class ProductResource extends Resource
                                                     $testResult = $template->testFormula($numericAttributes);
                                                     if ($testResult['success']) {
                                                         $result = $testResult['result'];
-
-                                                        // Ограничиваем максимальное значение объема до 99999
-                                                        if ($result > 99999) {
-                                                            $result = 99999;
-                                                        }
-
                                                         $set('calculated_volume', $result);
 
                                                         // Логируем для отладки
@@ -415,24 +396,25 @@ class ProductResource extends Resource
 
                 Section::make('Расчет объема')
                     ->schema([
-                        TextInput::make('calculated_volume')
-                            ->label('Рассчитанный объем')
-                            ->disabled()
-                            ->live()
-                            ->formatStateUsing(function ($state) {
-                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
-                            })
-                            ->suffix(function (Get $get) {
-                                $templateId = $get('product_template_id');
-                                if ($templateId) {
-                                    $template = ProductTemplate::find($templateId);
-
-                                    return $template ? $template->unit : '';
-                                }
-
-                                return '';
-                            })
-                            ->helperText('Объем рассчитывается автоматически на основе числовых характеристик товара по формуле шаблона'),
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('calculated_volume')
+                                    ->label('Рассчитанный объем')
+                                    ->disabled()
+                                    ->live()
+                                    ->formatStateUsing(function ($state) {
+                                        return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                                    })
+                                    ->suffix(function (Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+                                            return $template ? $template->unit : '';
+                                        }
+                                        return '';
+                                    })
+                                    ->helperText('Автоматический расчет по формуле'),
+                            ]),
                     ])
                     ->visible(function (Get $get) {
                         return $get('product_template_id') !== null;
@@ -484,19 +466,13 @@ class ProductResource extends Resource
                 }
             }
 
-            if (! empty($numericAttributes)) {
-                $testResult = $template->testFormula($numericAttributes);
-                if ($testResult['success']) {
-                    $result = $testResult['result'];
-
-                    // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                    if ($result > 99999) {
-                        $result = 99999;
+                            if (! empty($numericAttributes)) {
+                    $testResult = $template->testFormula($numericAttributes);
+                    if ($testResult['success']) {
+                        $result = $testResult['result'];
+                        $set('calculated_volume', $result);
                     }
-
-                    $set('calculated_volume', $result);
                 }
-            }
         }
     }
 

@@ -94,7 +94,7 @@ class SaleResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(3)
                             ->schema([
                                 TextInput::make('sale_number')
                                     ->label('Номер продажи')
@@ -116,79 +116,83 @@ class SaleResource extends Resource
                                         static::calculateTotalPrice($set, $get);
                                     }),
 
-                                Forms\Components\Fieldset::make('Товар')->schema([
-                                    Forms\Components\Select::make('product_id')
-                                        ->label('Товар')
-                                        ->options(function (Get $get) {
-                                            $record = $get('record');
-                                            if ($record && $record->exists) {
-                                                return [];
-                                            }
-                                            $warehouseId = $get('warehouse_id');
-                                            if (! $warehouseId) {
-                                                return [];
-                                            }
+                                DatePicker::make('sale_date')
+                                    ->label('Дата продажи')
+                                    ->required()
+                                    ->default(now()),
 
-                                            // Получаем доступные товары с группировкой
-                                            $availableProducts = Product::query()
-                                                ->select([
-                                                    'product_template_id',
-                                                    'warehouse_id',
-                                                    'producer',
-                                                    'name',
-                                                    DB::raw('SUM(quantity) as available_quantity'),
-                                                ])
-                                                ->where('warehouse_id', $warehouseId)
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Товар')
+                                    ->options(function (Get $get) {
+                                        $record = $get('record');
+                                        if ($record && $record->exists) {
+                                            return [];
+                                        }
+                                        $warehouseId = $get('warehouse_id');
+                                        if (! $warehouseId) {
+                                            return [];
+                                        }
+
+                                        // Получаем доступные товары с группировкой
+                                        $availableProducts = Product::query()
+                                            ->select([
+                                                'product_template_id',
+                                                'warehouse_id',
+                                                'producer',
+                                                'name',
+                                                DB::raw('SUM(quantity) as available_quantity'),
+                                            ])
+                                            ->where('warehouse_id', $warehouseId)
+                                            ->where('status', Product::STATUS_IN_STOCK)
+                                            ->where('is_active', true)
+                                            ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
+                                            ->having('available_quantity', '>', 0)
+                                            ->get();
+
+                                        $options = [];
+                                        foreach ($availableProducts as $product) {
+                                            $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                            $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
+
+                                            // Используем ID первого товара из группы как ключ
+                                            $firstProduct = Product::where('product_template_id', $product->product_template_id)
+                                                ->where('warehouse_id', $product->warehouse_id)
+                                                ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
                                                 ->where('status', Product::STATUS_IN_STOCK)
                                                 ->where('is_active', true)
-                                                ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
-                                                ->having('available_quantity', '>', 0)
-                                                ->get();
+                                                ->first();
 
-                                            $options = [];
-                                            foreach ($availableProducts as $product) {
-                                                $producerLabel = $product->producer ? " ({$product->producer})" : '';
-                                                $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
-
-                                                // Используем ID первого товара из группы как ключ
-                                                $firstProduct = Product::where('product_template_id', $product->product_template_id)
-                                                    ->where('warehouse_id', $product->warehouse_id)
-                                                    ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
-                                                    ->where('status', Product::STATUS_IN_STOCK)
-                                                    ->where('is_active', true)
-                                                    ->first();
-
-                                                if ($firstProduct) {
-                                                    $options[$firstProduct->id] = $displayName;
-                                                }
+                                            if ($firstProduct) {
+                                                $options[$firstProduct->id] = $displayName;
                                             }
+                                        }
 
-                                            return $options;
-                                        })
-                                        ->required()
-                                        ->searchable()
-                                        ->preload()
-                                        ->live()
-                                        ->debounce(300)
-                                        ->afterStateUpdated(function (Set $set, Get $get) {
-                                            $set('quantity', 1);
-                                            static::calculateTotalPrice($set, $get);
-                                        })
-                                        ->visible(fn ($get) => ! ($get('record') && $get('record')->exists)),
-                                    Forms\Components\Placeholder::make('product_info')
-                                        ->label('Товар')
-                                        ->content(function ($get) {
-                                            $record = $get('record');
-                                            if ($record && $record->exists) {
-                                                $product = Product::find($record->product_id);
+                                        return $options;
+                                    })
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->live()
+                                    ->debounce(300)
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        $set('quantity', 1);
+                                        static::calculateTotalPrice($set, $get);
+                                    })
+                                    ->visible(fn ($get) => ! ($get('record') && $get('record')->exists)),
 
-                                                return $product ? "{$product->id} — {$product->name}" : '—';
-                                            }
+                                Forms\Components\Placeholder::make('product_info')
+                                    ->label('Товар')
+                                    ->content(function ($get) {
+                                        $record = $get('record');
+                                        if ($record && $record->exists) {
+                                            $product = Product::find($record->product_id);
 
-                                            return null;
-                                        })
-                                        ->visible(fn ($get) => $get('record') && $get('record')->exists),
-                                ]),
+                                            return $product ? "{$product->id} — {$product->name}" : '—';
+                                        }
+
+                                        return null;
+                                    })
+                                    ->visible(fn ($get) => $get('record') && $get('record')->exists),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
@@ -210,8 +214,34 @@ class SaleResource extends Resource
                                         return 999999;
                                     }),
 
+                                TextInput::make('total_price')
+                                    ->label('Общая сумма')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->required(),
+
+                                Toggle::make('is_active')
+                                    ->label('Активна')
+                                    ->hidden()
+                                    ->default(true),
+                            ]),
+
+                        // Компактная сетка для финансовых полей
+                        Grid::make(4)
+                            ->schema([
                                 TextInput::make('cash_amount')
                                     ->label('Сумма (нал)')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->required()
+                                    ->live()
+                                    ->debounce(300)
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        static::calculateTotalPrice($set, $get);
+                                    }),
+
+                                TextInput::make('nocash_amount')
+                                    ->label('Сумма (безнал)')
                                     ->numeric()
                                     ->default(0)
                                     ->required()
@@ -235,33 +265,6 @@ class SaleResource extends Resource
                                     ->label('Курс валюты')
                                     ->default(1)
                                     ->helperText('Курс валюты к рублю'),
-
-                                TextInput::make('nocash_amount')
-                                    ->label('Сумма (безнал)')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->required()
-                                    ->live()
-                                    ->debounce(300)
-                                    ->afterStateUpdated(function (Set $set, Get $get) {
-                                        static::calculateTotalPrice($set, $get);
-                                    }),
-
-                                TextInput::make('total_price')
-                                    ->label('Общая сумма')
-                                    ->numeric()
-                                    ->disabled()
-                                    ->required(),
-
-                                DatePicker::make('sale_date')
-                                    ->label('Дата продажи')
-                                    ->required()
-                                    ->default(now()),
-
-                                Toggle::make('is_active')
-                                    ->label('Активна')
-                                    ->hidden()
-                                    ->default(true),
                             ]),
                     ]),
 
@@ -285,8 +288,9 @@ class SaleResource extends Resource
                     ->schema([
                         Textarea::make('notes')
                             ->label('Заметки')
-                            ->rows(3)
-                            ->maxLength(1000),
+                            ->rows(2)
+                            ->maxLength(500)
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

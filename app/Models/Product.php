@@ -178,12 +178,6 @@ class Product extends Model
 
             if ($testResult['success']) {
                 $result = (float) $testResult['result'];
-
-                // Ограничиваем максимальное значение объема до 99999 (5 символов)
-                if ($result > 99999) {
-                    $result = 99999;
-                }
-
                 return $result;
             }
 
@@ -208,12 +202,6 @@ class Product extends Model
     public function updateCalculatedVolume(): void
     {
         $volume = $this->calculateVolume();
-
-        // Ограничиваем максимальное значение объема до 99999 (5 символов)
-        if ($volume !== null && $volume > 99999) {
-            $volume = 99999;
-        }
-
         $this->calculated_volume = $volume;
         $this->save();
     }
