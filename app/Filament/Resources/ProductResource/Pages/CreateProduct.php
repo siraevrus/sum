@@ -51,15 +51,18 @@ class CreateProduct extends CreateRecord
         if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
-                // Используем только характеристики для формулы (без количества)
-                $attributes = $data['attributes'];
+                // Создаем копию атрибутов для формулы, включая quantity
+                $formulaAttributes = $data['attributes'];
+                if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
+                    $formulaAttributes['quantity'] = $data['quantity'];
+                }
                 
                 // Формируем наименование из характеристик
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
-                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                        $nameParts[] = $attributes[$attributeKey];
+                    if (isset($data['attributes'][$attributeKey]) && $data['attributes'][$attributeKey] !== null) {
+                        $nameParts[] = $data['attributes'][$attributeKey];
                     }
                 }
                 
@@ -69,12 +72,29 @@ class CreateProduct extends CreateRecord
                     $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
                 }
                 
-                \Log::info('Attributes for formula', $attributes);
-                $testResult = $template->testFormula($attributes);
+                \Log::info('Attributes for formula (including quantity)', [
+                    'template' => $template->name,
+                    'attributes' => $data['attributes'],
+                    'formula_attributes' => $formulaAttributes,
+                    'quantity' => $data['quantity'] ?? 'not set',
+                    'formula' => $template->formula,
+                ]);
+                
+                $testResult = $template->testFormula($formulaAttributes);
                 \Log::info('Formula result', $testResult);
+                
                 if ($testResult['success']) {
                     $result = $testResult['result'];
                     $data['calculated_volume'] = $result;
+                    \Log::info('Volume calculated and saved', [
+                        'calculated_volume' => $result,
+                        'final_data' => $data,
+                    ]);
+                } else {
+                    \Log::warning('Volume calculation failed', [
+                        'error' => $testResult['error'],
+                        'attributes' => $formulaAttributes,
+                    ]);
                 }
             }
         }
@@ -90,10 +110,29 @@ class CreateProduct extends CreateRecord
             if ($template && $template->formula) {
                 // Если есть характеристики, рассчитываем объем
                 if (isset($data['attributes']) && is_array($data['attributes']) && !empty($data['attributes'])) {
-                    $testResult = $template->testFormula($data['attributes']);
+                    // Создаем копию атрибутов для формулы, включая quantity
+                    $formulaAttributes = $data['attributes'];
+                    if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
+                        $formulaAttributes['quantity'] = $data['quantity'];
+                    }
+                    
+                    \Log::info('BeforeFill: Attributes for formula', [
+                        'template' => $template->name,
+                        'attributes' => $data['attributes'],
+                        'formula_attributes' => $formulaAttributes,
+                        'quantity' => $data['quantity'] ?? 'not set',
+                    ]);
+                    
+                    $testResult = $template->testFormula($formulaAttributes);
                     if ($testResult['success']) {
                         $result = $testResult['result'];
                         $data['calculated_volume'] = $result;
+                        \Log::info('BeforeFill: Volume calculated', ['result' => $result]);
+                    } else {
+                        \Log::warning('BeforeFill: Volume calculation failed', [
+                            'error' => $testResult['error'],
+                            'attributes' => $formulaAttributes,
+                        ]);
                     }
                 }
             }

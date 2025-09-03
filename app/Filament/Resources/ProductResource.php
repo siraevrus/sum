@@ -126,7 +126,81 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->debounce(300)
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Пересчитываем объем при изменении количества
+                                        $templateId = $get('product_template_id');
+                                        if (!$templateId) return;
+                                        
+                                        $template = ProductTemplate::with('attributes')->find($templateId);
+                                        if (!$template) return;
+
+                                        $attributes = [];
+                                        $formData = $get();
+
+                                        foreach ($formData as $key => $value) {
+                                            if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                $attributeName = str_replace('attribute_', '', $key);
+                                                $attributes[$attributeName] = $value;
+                                            }
+                                        }
+
+                                        // Рассчитываем объем для заполненных числовых характеристик
+                                        $numericAttributes = [];
+                                        foreach ($attributes as $key => $value) {
+                                            if (is_numeric($value) && $value > 0) {
+                                                $numericAttributes[$key] = $value;
+                                            }
+                                        }
+
+                                        // Добавляем количество в атрибуты для формулы
+                                        $quantity = $get('quantity') ?? 1;
+                                        if (is_numeric($quantity) && $quantity > 0) {
+                                            $numericAttributes['quantity'] = $quantity;
+                                        }
+
+                                        // Логируем атрибуты для отладки
+                                        Log::info('Attributes for volume calculation (quantity)', [
+                                            'template' => $template->name,
+                                            'all_attributes' => $attributes,
+                                            'numeric_attributes' => $numericAttributes,
+                                            'quantity' => $quantity,
+                                            'formula' => $template->formula,
+                                        ]);
+
+                                        // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                        if (! empty($numericAttributes) && $template->formula) {
+                                            $testResult = $template->testFormula($numericAttributes);
+                                            if ($testResult['success']) {
+                                                $result = $testResult['result'];
+                                                $set('calculated_volume', $result);
+
+                                                // Логируем для отладки
+                                                Log::info('Volume calculated from quantity change', [
+                                                    'template' => $template->name,
+                                                    'attributes' => $numericAttributes,
+                                                    'result' => $result,
+                                                ]);
+                                            } else {
+                                                // Если расчет не удался, показываем ошибку
+                                                $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                Log::warning('Volume calculation failed from quantity change', [
+                                                    'template' => $template->name,
+                                                    'attributes' => $numericAttributes,
+                                                    'error' => $testResult['error'],
+                                                ]);
+                                            }
+                                        } else {
+                                            // Если недостаточно данных для расчета, показываем подсказку
+                                            if (empty($numericAttributes)) {
+                                                $set('calculated_volume', 'Заполните числовые характеристики');
+                                            } else {
+                                                $set('calculated_volume', 'Формула не задана');
+                                            }
+                                        }
+                                    }),
 
                                 TextInput::make('name')
                                     ->label('Наименование')
@@ -183,63 +257,79 @@ class ProductResource extends Resource
                                             $formData = $get();
 
                                             foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
 
-                                            // Рассчитываем объем только для числовых характеристик
-                                            if (! empty($attributes)) {
-                                                $numericAttributes = [];
-                                                foreach ($attributes as $key => $value) {
-                                                    if (is_numeric($value)) {
-                                                        $numericAttributes[$key] = $value;
-                                                    }
-                                                }
-
-                                                if (! empty($numericAttributes) && $template->formula) {
-                                                    $testResult = $template->testFormula($numericAttributes);
-                                                    if ($testResult['success']) {
-                                                        $result = $testResult['result'];
-                                                        $set('calculated_volume', $result);
-
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    } else {
-                                                        // Если расчет не удался, очищаем поле
-                                                        $set('calculated_volume', null);
-                                                        Log::warning('Volume calculation failed', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'error' => $testResult['error'],
-                                                        ]);
-                                                    }
-                                                } else {
-                                                    // Если нет числовых характеристик, очищаем поле
-                                                    $set('calculated_volume', null);
+                                            // Рассчитываем объем для заполненных числовых характеристик
+                                            $numericAttributes = [];
+                                            foreach ($attributes as $key => $value) {
+                                                if (is_numeric($value) && $value > 0) {
+                                                    $numericAttributes[$key] = $value;
                                                 }
                                             }
 
-                                            // Формируем наименование
-                                            if (! empty($attributes)) {
-                                                $nameParts = [];
-                                                foreach ($template->attributes as $templateAttribute) {
-                                                    $attributeKey = $templateAttribute->variable;
-                                                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                                                        $nameParts[] = $attributes[$attributeKey];
-                                                    }
-                                                }
+                                            // Добавляем количество в атрибуты для формулы
+                                            $quantity = $get('quantity') ?? 1;
+                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                $numericAttributes['quantity'] = $quantity;
+                                            }
 
-                                                if (! empty($nameParts)) {
-                                                    $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                    $set('name', $generatedName);
+                                            // Логируем атрибуты для отладки
+                                            Log::info('Attributes for volume calculation (number)', [
+                                                'template' => $template->name,
+                                                'all_attributes' => $attributes,
+                                                'numeric_attributes' => $numericAttributes,
+                                                'quantity' => $quantity,
+                                                'formula' => $template->formula,
+                                            ]);
+
+                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                            if (! empty($numericAttributes) && $template->formula) {
+                                                $testResult = $template->testFormula($numericAttributes);
+                                                if ($testResult['success']) {
+                                                    $result = $testResult['result'];
+                                                    $set('calculated_volume', $result);
+
+                                                    // Логируем для отладки
+                                                    Log::info('Volume calculated', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'result' => $result,
+                                                    ]);
+                                                } else {
+                                                    // Если расчет не удался, показываем ошибку
+                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    Log::warning('Volume calculation failed', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'error' => $testResult['error'],
+                                                    ]);
                                                 }
+                                            } else {
+                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                if (empty($numericAttributes)) {
+                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                } else {
+                                                    $set('calculated_volume', 'Формула не задана');
+                                                }
+                                            }
+
+                                            // Формируем наименование из заполненных характеристик
+                                            $nameParts = [];
+                                            foreach ($template->attributes as $templateAttribute) {
+                                                $attributeKey = $templateAttribute->variable;
+                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                    $nameParts[] = $attributes[$attributeKey];
+                                                }
+                                            }
+
+                                            if (! empty($nameParts)) {
+                                                $templateName = $template->name ?? 'Товар';
+                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                $set('name', $generatedName);
                                             }
                                         });
                                     break;
@@ -256,52 +346,70 @@ class ProductResource extends Resource
                                             $formData = $get();
 
                                             foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
 
-                                            // Рассчитываем объем только для числовых характеристик
-                                            if (! empty($attributes)) {
-                                                $numericAttributes = [];
-                                                foreach ($attributes as $key => $value) {
-                                                    if (is_numeric($value)) {
-                                                        $numericAttributes[$key] = $value;
-                                                    }
-                                                }
-
-                                                if (! empty($numericAttributes) && $template->formula) {
-                                                    $testResult = $template->testFormula($numericAttributes);
-                                                    if ($testResult['success']) {
-                                                        $result = $testResult['result'];
-                                                        $set('calculated_volume', $result);
-
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    }
+                                            // Рассчитываем объем для заполненных числовых характеристик
+                                            $numericAttributes = [];
+                                            foreach ($attributes as $key => $value) {
+                                                if (is_numeric($value) && $value > 0) {
+                                                    $numericAttributes[$key] = $value;
                                                 }
                                             }
 
-                                            // Формируем наименование
-                                            if (! empty($attributes)) {
-                                                $nameParts = [];
-                                                foreach ($template->attributes as $templateAttribute) {
-                                                    $attributeKey = $templateAttribute->variable;
-                                                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                                                        $nameParts[] = $attributes[$attributeKey];
-                                                    }
-                                                }
+                                            // Добавляем количество в атрибуты для формулы
+                                            $quantity = $get('quantity') ?? 1;
+                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                $numericAttributes['quantity'] = $quantity;
+                                            }
 
-                                                if (! empty($nameParts)) {
-                                                    $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                    $set('name', $generatedName);
+                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                            if (! empty($numericAttributes) && $template->formula) {
+                                                $testResult = $template->testFormula($numericAttributes);
+                                                if ($testResult['success']) {
+                                                    $result = $testResult['result'];
+                                                    $set('calculated_volume', $result);
+
+                                                    // Логируем для отладки
+                                                    Log::info('Volume calculated', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'result' => $result,
+                                                    ]);
+                                                } else {
+                                                    // Если расчет не удался, показываем ошибку
+                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    Log::warning('Volume calculation failed', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'error' => $testResult['error'],
+                                                    ]);
                                                 }
+                                            } else {
+                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                if (empty($numericAttributes)) {
+                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                } else {
+                                                    $set('calculated_volume', 'Формула не задана');
+                                                }
+                                            }
+
+                                            // Формируем наименование из заполненных характеристик
+                                            $nameParts = [];
+                                            foreach ($template->attributes as $templateAttribute) {
+                                                $attributeKey = $templateAttribute->variable;
+                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                    $nameParts[] = $attributes[$attributeKey];
+                                                }
+                                            }
+
+                                            if (! empty($nameParts)) {
+                                                $templateName = $template->name ?? 'Товар';
+                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                $set('name', $generatedName);
                                             }
                                         });
                                     break;
@@ -320,63 +428,70 @@ class ProductResource extends Resource
                                             $formData = $get();
 
                                             foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null) {
+                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
                                                     $attributes[$attributeName] = $value;
                                                 }
                                             }
 
-                                            // Рассчитываем объем только для числовых характеристик
-                                            if (! empty($attributes)) {
-                                                $numericAttributes = [];
-                                                foreach ($attributes as $key => $value) {
-                                                    if (is_numeric($value)) {
-                                                        $numericAttributes[$key] = $value;
-                                                    }
-                                                }
-
-                                                if (! empty($numericAttributes) && $template->formula) {
-                                                    $testResult = $template->testFormula($numericAttributes);
-                                                    if ($testResult['success']) {
-                                                        $result = $testResult['result'];
-                                                        $set('calculated_volume', $result);
-
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    } else {
-                                                        // Если расчет не удался, очищаем поле
-                                                        $set('calculated_volume', null);
-                                                        Log::warning('Volume calculation failed', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'error' => $testResult['error'],
-                                                        ]);
-                                                    }
-                                                } else {
-                                                    // Если нет числовых характеристик, очищаем поле
-                                                    $set('calculated_volume', null);
+                                            // Рассчитываем объем для заполненных числовых характеристик
+                                            $numericAttributes = [];
+                                            foreach ($attributes as $key => $value) {
+                                                if (is_numeric($value) && $value > 0) {
+                                                    $numericAttributes[$key] = $value;
                                                 }
                                             }
 
-                                            // Формируем наименование
-                                            if (! empty($attributes)) {
-                                                $nameParts = [];
-                                                foreach ($template->attributes as $templateAttribute) {
-                                                    $attributeKey = $templateAttribute->variable;
-                                                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                                                        $nameParts[] = $attributes[$attributeKey];
-                                                    }
-                                                }
+                                            // Добавляем количество в атрибуты для формулы
+                                            $quantity = $get('quantity') ?? 1;
+                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                $numericAttributes['quantity'] = $quantity;
+                                            }
 
-                                                if (! empty($nameParts)) {
-                                                    $templateName = $template->name ?? 'Товар';
-                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                    $set('name', $generatedName);
+                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                            if (! empty($numericAttributes) && $template->formula) {
+                                                $testResult = $template->testFormula($numericAttributes);
+                                                if ($testResult['success']) {
+                                                    $result = $testResult['result'];
+                                                    $set('calculated_volume', $result);
+
+                                                    // Логируем для отладки
+                                                    Log::info('Volume calculated', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'result' => $result,
+                                                    ]);
+                                                } else {
+                                                    // Если расчет не удался, показываем ошибку
+                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    Log::warning('Volume calculation failed', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'error' => $testResult['error'],
+                                                    ]);
                                                 }
+                                            } else {
+                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                if (empty($numericAttributes)) {
+                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                } else {
+                                                    $set('calculated_volume', 'Формула не задана');
+                                                }
+                                            }
+
+                                            // Формируем наименование из заполненных характеристик
+                                            $nameParts = [];
+                                            foreach ($template->attributes as $templateAttribute) {
+                                                $attributeKey = $templateAttribute->variable;
+                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                    $nameParts[] = $attributes[$attributeKey];
+                                                }
+                                            }
+
+                                            if (! empty($nameParts)) {
+                                                $templateName = $template->name ?? 'Товар';
+                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                $set('name', $generatedName);
                                             }
                                         })
                                         ->dehydrateStateUsing(function ($state, $get) use ($options) {
@@ -403,7 +518,11 @@ class ProductResource extends Resource
                                     ->disabled()
                                     ->live()
                                     ->formatStateUsing(function ($state) {
-                                        return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                                        // Если это число - форматируем, если строка - показываем как есть
+                                        if (is_numeric($state)) {
+                                            return number_format($state, 3, '.', ' ');
+                                        }
+                                        return $state ?: '0.000';
                                     })
                                     ->suffix(function (Get $get) {
                                         $templateId = $get('product_template_id');
@@ -413,7 +532,7 @@ class ProductResource extends Resource
                                         }
                                         return '';
                                     })
-                                    ->helperText('Автоматический расчет по формуле'),
+                                    ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества'),
                             ]),
                     ])
                     ->visible(function (Get $get) {

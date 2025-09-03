@@ -109,10 +109,29 @@ class EditProduct extends EditRecord
         if (isset($data['product_template_id']) && isset($data['attributes']) && is_array($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula && !empty($data['attributes'])) {
-                $testResult = $template->testFormula($data['attributes']);
+                // Создаем копию атрибутов для формулы, включая quantity
+                $formulaAttributes = $data['attributes'];
+                if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
+                    $formulaAttributes['quantity'] = $data['quantity'];
+                }
+                
+                \Log::info('BeforeFill (EditProduct): Attributes for formula', [
+                    'template' => $template->name,
+                    'attributes' => $data['attributes'],
+                    'formula_attributes' => $formulaAttributes,
+                    'quantity' => $data['quantity'] ?? 'not set',
+                ]);
+                
+                $testResult = $template->testFormula($formulaAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
                     $data['calculated_volume'] = $result;
+                    \Log::info('BeforeFill (EditProduct): Volume calculated', ['result' => $result]);
+                } else {
+                    \Log::warning('BeforeFill (EditProduct): Volume calculation failed', [
+                        'error' => $testResult['error'],
+                        'attributes' => $formulaAttributes,
+                    ]);
                 }
             }
         }

@@ -170,7 +170,8 @@ class ReceiptResource extends Resource
                                             ->searchable()
                                             ->preload()
                                             ->placeholder('Выберите производителя')
-                                            ->required(),
+                                            ->required()
+                                            ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                         // Удалено поле tracking_number
                                     ]),
@@ -223,6 +224,7 @@ class ReceiptResource extends Resource
                                 // Удалено поле description
                             ])
                             ->addActionLabel('Добавить товар')
+                            ->deletable(false)
                             ->reorderable()
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'Товар')
