@@ -228,7 +228,7 @@ class ReceiptResource extends Resource
                                                         ]);
                                                     } else {
                                                         // Если расчет не удался, показываем ошибку
-                                                        $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                        $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                         \Log::warning('Volume calculation failed from quantity change (ReceiptResource)', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
@@ -357,7 +357,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -446,7 +446,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -537,7 +537,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,

@@ -83,9 +83,20 @@ class ProductTemplate extends Model
             // Проверяем, что все переменные есть в значениях
             $missingVariables = array_diff($variables, array_keys($values));
             if (!empty($missingVariables)) {
+                // Получаем человекочитаемые названия переменных
+                $missingVariableNames = [];
+                foreach ($missingVariables as $variable) {
+                    $attribute = $this->attributes()->where('variable', $variable)->first();
+                    if ($attribute) {
+                        $missingVariableNames[] = $attribute->name;
+                    } else {
+                        $missingVariableNames[] = $variable; // fallback если не найдено
+                    }
+                }
+                
                 return [
                     'success' => false,
-                    'error' => 'Отсутствуют переменные: ' . implode(', ', $missingVariables),
+                    'error' => implode(', ', $missingVariableNames),
                     'result' => null
                 ];
             }

@@ -143,13 +143,12 @@ class ProductTemplateResource extends Resource
                                     ->visible(fn ($get) => $get('type') === 'number'),
                             ])
                             ->columns(3)
-                            ->orderColumn('sort_order')
                             ->defaultItems(0)
                             ->default([])
-                            ->reorderableWithButtons()
                             ->collapsible()
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
                             ->required()
+                            ->reorderable(false)
                             ->saveRelationshipsUsing(function ($operation, $state, ProductTemplate $record) {
                                 // Сохраняем атрибуты вручную, чтобы поддержать create/edit
                                 $record->attributes()->delete();

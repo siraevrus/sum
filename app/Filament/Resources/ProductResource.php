@@ -185,7 +185,7 @@ class ProductResource extends Resource
                                                 ]);
                                             } else {
                                                 // Если расчет не удался, показываем ошибку
-                                                $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                 Log::warning('Volume calculation failed from quantity change', [
                                                     'template' => $template->name,
                                                     'attributes' => $numericAttributes,
@@ -301,7 +301,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -381,7 +381,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -463,7 +463,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -506,38 +506,35 @@ class ProductResource extends Resource
                             }
                         }
 
-                        return $fields;
+                        // Добавляем поле рассчитанного объема в конец
+                        $fields[] = TextInput::make('calculated_volume')
+                            ->label('Рассчитанный объем')
+                            ->disabled()
+                            ->live()
+                            ->formatStateUsing(function ($state) {
+                                // Если это число - форматируем, если строка - показываем как есть
+                                if (is_numeric($state)) {
+                                    return number_format($state, 3, '.', ' ');
+                                }
+                                return $state ?: '0.000';
+                            })
+                            ->suffix(function (Get $get) {
+                                $templateId = $get('product_template_id');
+                                if ($templateId) {
+                                    $template = ProductTemplate::find($templateId);
+                                    return $template ? $template->unit : '';
+                                }
+                                return '';
+                            })
+                            ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества');
+
+                        // Обертываем поля в компактную сетку
+                        return [
+                            Grid::make(4) // 4 колонки для компактности
+                                ->schema($fields)
+                        ];
                     }),
 
-                Section::make('Расчет объема')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('calculated_volume')
-                                    ->label('Рассчитанный объем')
-                                    ->disabled()
-                                    ->live()
-                                    ->formatStateUsing(function ($state) {
-                                        // Если это число - форматируем, если строка - показываем как есть
-                                        if (is_numeric($state)) {
-                                            return number_format($state, 3, '.', ' ');
-                                        }
-                                        return $state ?: '0.000';
-                                    })
-                                    ->suffix(function (Get $get) {
-                                        $templateId = $get('product_template_id');
-                                        if ($templateId) {
-                                            $template = ProductTemplate::find($templateId);
-                                            return $template ? $template->unit : '';
-                                        }
-                                        return '';
-                                    })
-                                    ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества'),
-                            ]),
-                    ])
-                    ->visible(function (Get $get) {
-                        return $get('product_template_id') !== null;
-                    }),
             ]);
     }
 
