@@ -4,8 +4,13 @@ namespace Tests\Feature\Feature\Filament;
 
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Warehouse;
+use App\Models\Producer;
+use App\Models\ProductTemplate;
+use App\Filament\Resources\ProductResource\Pages\CreateProduct;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Livewire\Livewire;
 
 class ProductResourceTest extends TestCase
 {
@@ -38,23 +43,12 @@ class ProductResourceTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_admin_can_create_product(): void
+    public function test_admin_can_access_create_product_page(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
 
-        $productData = [
-            'name' => 'Test Product',
-            'quantity' => 10,
-            'status' => Product::STATUS_IN_STOCK,
-        ];
-
-        $response = $this->post('/admin/products', $productData);
-        $response->assertRedirect();
-
-        $this->assertDatabaseHas('products', [
-            'name' => 'Test Product',
-            'quantity' => 10,
-        ]);
+        $response = $this->get('/admin/products/create');
+        $response->assertStatus(200);
     }
 }

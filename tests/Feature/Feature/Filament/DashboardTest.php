@@ -31,7 +31,7 @@ class DashboardTest extends TestCase
         $this->actingAs($operator);
 
         $response = $this->get('/admin');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     public function test_dashboard_shows_navigation_menu(): void

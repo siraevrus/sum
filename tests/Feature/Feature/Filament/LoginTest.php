@@ -13,7 +13,8 @@ class LoginTest extends TestCase
     public function test_resource_requires_authentication(): void
     {
         $response = $this->get('/admin/login');
-        $response->assertRedirect('/admin/login');
+        // Страница логина доступна гостям
+        $response->assertStatus(200);
     }
 
     public function test_authenticated_user_can_access_resource(): void
@@ -22,6 +23,7 @@ class LoginTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->get('/admin/login');
-        $response->assertStatus(200);
+        // Аутентифицированного пользователя редиректит с логина в админку
+        $response->assertRedirect('/admin');
     }
 }

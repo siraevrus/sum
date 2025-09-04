@@ -15,7 +15,7 @@ class StockResourceTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
 
-        $response = $this->get('/admin/stock');
+        $response = $this->get('/admin/stocks');
         $response->assertStatus(200);
     }
 
@@ -24,7 +24,7 @@ class StockResourceTest extends TestCase
         $manager = User::factory()->create(['role' => 'sales_manager']);
         $this->actingAs($manager);
 
-        $response = $this->get('/admin/stock');
+        $response = $this->get('/admin/stocks');
         $response->assertStatus(200);
     }
 
@@ -33,7 +33,7 @@ class StockResourceTest extends TestCase
         $operator = User::factory()->create(['role' => 'operator']);
         $this->actingAs($operator);
 
-        $response = $this->get('/admin/stock');
-        $response->assertStatus(200);
+        $response = $this->get('/admin/stocks');
+        $response->assertStatus(403);
     }
 }

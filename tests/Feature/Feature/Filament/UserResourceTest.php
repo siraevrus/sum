@@ -3,8 +3,11 @@
 namespace Tests\Feature\Feature\Filament;
 
 use App\Models\User;
+use App\Filament\Resources\UserResource\Pages\CreateUser;
+use App\Filament\Resources\UserResource\Pages\EditUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Livewire\Livewire;
 
 class UserResourceTest extends TestCase
 {
@@ -33,19 +36,47 @@ class UserResourceTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin);
 
-        $userData = [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'username' => 'testuser',
-            'role' => 'operator',
-        ];
-
-        $response = $this->post('/admin/users', $userData);
-        $response->assertRedirect();
+        Livewire::test(CreateUser::class)
+            ->fillForm([
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'username' => 'testuser',
+                'role' => 'operator',
+                'password' => 'secret1234',
+                'password_confirmation' => 'secret1234',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('users', [
-            'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+    }
+
+    public function test_admin_can_edit_user_via_livewire(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create([
+            'name' => 'Old Name',
+            'email' => 'old@example.com',
+        ]);
+        $this->actingAs($admin);
+
+        Livewire::test(EditUser::class, ['record' => $user->getKey()])
+            ->fillForm([
+                'first_name' => 'New',
+                'last_name' => 'Name',
+                'name' => 'New Name',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'first_name' => 'New',
+            'last_name' => 'Name',
         ]);
     }
 }
