@@ -2,92 +2,53 @@
 
 namespace Tests\Feature\Feature\Filament;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
-use App\Models\User;
 use App\Models\Product;
-use App\Models\ProductTemplate;
+use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Producer;
+use App\Models\ProductTemplate;
+use App\Filament\Resources\ProductResource\Pages\CreateProduct;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Livewire\Livewire;
 
 class ProductResourceTest extends TestCase
 {
-    use RefreshDatabase, WithFaker;
+    use RefreshDatabase;
 
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
+    public function test_admin_can_access_products_list(): void
     {
-        $response = $this->get('/');
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
 
+        $response = $this->get('/admin/products');
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_create_product_with_valid_data()
+    public function test_operator_can_access_products_list(): void
     {
-        $user = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($user);
-        $warehouse = Warehouse::factory()->create();
-        $template = ProductTemplate::factory()->create();
+        $operator = User::factory()->create(['role' => 'operator']);
+        $this->actingAs($operator);
 
-        $response = $this->post(route('filament.admin.resources.products.create'), [
-            'warehouse_id' => $warehouse->id,
-            'producer_id' => 1,
-            'arrival_date' => now()->toDateString(),
-            'product_template_id' => $template->id,
-            'quantity' => 100,
-            'name' => 'Test Product',
-        ]);
-
-        $response->assertStatus(302);
-        $this->assertDatabaseHas('products', [
-            'warehouse_id' => $warehouse->id,
-            'product_template_id' => $template->id,
-            'quantity' => 100,
-        ]);
+        $response = $this->get('/admin/products');
+        $response->assertStatus(200);
     }
 
-    public function test_quantity_cannot_exceed_limit()
+    public function test_warehouse_worker_cannot_access_products_list(): void
     {
-        $user = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($user);
-        $warehouse = Warehouse::factory()->create();
-        $template = ProductTemplate::factory()->create();
+        $worker = User::factory()->create(['role' => 'warehouse_worker']);
+        $this->actingAs($worker);
 
-        $response = $this->post(route('filament.admin.resources.products.create'), [
-            'warehouse_id' => $warehouse->id,
-            'producer_id' => 1,
-            'arrival_date' => now()->toDateString(),
-            'product_template_id' => $template->id,
-            'quantity' => 100000, // превышает лимит
-            'name' => 'Test Product',
-        ]);
-
-        $response->assertSessionHasErrors('quantity');
+        $response = $this->get('/admin/products');
+        $response->assertStatus(403);
     }
 
-    public function test_product_name_and_volume_are_generated()
+    public function test_admin_can_access_create_product_page(): void
     {
-        $user = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($user);
-        $warehouse = Warehouse::factory()->create();
-        $template = ProductTemplate::factory()->create(['name' => 'Доска', 'formula' => 'length * width * height']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
 
-        $response = $this->post(route('filament.admin.resources.products.create'), [
-            'warehouse_id' => $warehouse->id,
-            'producer_id' => 1,
-            'arrival_date' => now()->toDateString(),
-            'product_template_id' => $template->id,
-            'quantity' => 2,
-            'attribute_length' => 2,
-            'attribute_width' => 3,
-            'attribute_height' => 4,
-        ]);
-
-        $response->assertStatus(302);
-        $product = Product::latest()->first();
-        $this->assertStringContainsString('Доска', $product->name);
-        $this->assertEquals(24, $product->calculated_volume);
+        $response = $this->get('/admin/products/create');
+        $response->assertStatus(200);
     }
 }

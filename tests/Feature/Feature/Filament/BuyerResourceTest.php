@@ -6,13 +6,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class SaleResourceTest extends TestCase
+class BuyerResourceTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_resource_requires_authentication(): void
     {
-        $response = $this->get('/admin/sales');
+        $response = $this->get('/admin/buyers');
         $response->assertRedirect('/admin/login');
     }
 
@@ -21,7 +21,7 @@ class SaleResourceTest extends TestCase
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
 
-        $response = $this->get('/admin/sales');
+        $response = $this->get('/admin/buyers');
         $response->assertStatus(200);
     }
 }
