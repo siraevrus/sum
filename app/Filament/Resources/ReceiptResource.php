@@ -17,16 +17,15 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\KeyValueEntry;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Filament\Infolists\Components\Section as InfoSection;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\GridEntry;
-use Filament\Infolists\Components\KeyValueEntry;
 
 class ReceiptResource extends Resource
 {
@@ -50,6 +49,20 @@ class ReceiptResource extends Resource
         }
 
         // Приемка доступна только админу и работнику склада
+        return in_array($user->role->value, [
+            'admin',
+            'warehouse_worker',
+        ]);
+    }
+
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        // Редактирование доступно только админу и работнику склада
         return in_array($user->role->value, [
             'admin',
             'warehouse_worker',
@@ -85,35 +98,35 @@ class ReceiptResource extends Resource
 
                                         return $user->isAdmin();
                                     })
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                     ->searchable(),
 
                                 TextInput::make('shipping_location')
                                     ->label('Место отгрузки')
                                     ->maxLength(255)
                                     ->required()
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 DatePicker::make('shipping_date')
                                     ->label('Дата отгрузки')
                                     ->required()
                                     ->default(now())
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
                                     ->maxLength(255)
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 DatePicker::make('expected_arrival_date')
                                     ->label('Ожидаемая дата прибытия')
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 Textarea::make('notes')
                                     ->label('Заметки')
                                     ->rows(3)
                                     ->maxLength(1000)
-                                    ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                 // Удалено поле actual_arrival_date
                             ]),
@@ -138,14 +151,14 @@ class ReceiptResource extends Resource
                                                 $set('name', '');
                                                 $set('calculated_volume', null);
                                             })
-                                            ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                            ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                         TextInput::make('name')
                                             ->label('Наименование')
                                             ->maxLength(255)
                                             ->required()
                                             ->disabled()
-                                            ->hidden(fn() => true),
+                                            ->hidden(fn () => true),
 
                                         TextInput::make('quantity')
                                             ->label('Количество')
@@ -158,10 +171,14 @@ class ReceiptResource extends Resource
                                             ->afterStateUpdated(function (Set $set, Get $get) {
                                                 // Пересчитываем объем при изменении количества
                                                 $templateId = $get('product_template_id');
-                                                if (!$templateId) return;
-                                                
+                                                if (! $templateId) {
+                                                    return;
+                                                }
+
                                                 $template = ProductTemplate::with('attributes')->find($templateId);
-                                                if (!$template) return;
+                                                if (! $template) {
+                                                    return;
+                                                }
 
                                                 $attributes = [];
                                                 $formData = $get();
@@ -211,7 +228,7 @@ class ReceiptResource extends Resource
                                                         ]);
                                                     } else {
                                                         // Если расчет не удался, показываем ошибку
-                                                        $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                        $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                         \Log::warning('Volume calculation failed from quantity change (ReceiptResource)', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
@@ -238,14 +255,17 @@ class ReceiptResource extends Resource
                                                 if (is_numeric($state)) {
                                                     return number_format($state, 3, '.', ' ');
                                                 }
+
                                                 return $state ?: '0.000';
                                             })
                                             ->suffix(function (Get $get) {
                                                 $templateId = $get('product_template_id');
                                                 if ($templateId) {
                                                     $template = ProductTemplate::find($templateId);
+
                                                     return $template ? $template->unit : '';
                                                 }
+
                                                 return '';
                                             })
                                             ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества'),
@@ -257,7 +277,7 @@ class ReceiptResource extends Resource
                                             ->preload()
                                             ->placeholder('Выберите производителя')
                                             ->required()
-                                            ->disabled(fn() => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                            ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
 
                                         // Удалено поле tracking_number
                                     ]),
@@ -337,7 +357,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -426,7 +446,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -517,7 +537,7 @@ class ReceiptResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Ошибка расчета: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Ошибка расчета: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ReceiptResource)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -585,26 +605,27 @@ class ReceiptResource extends Resource
             ]);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist
-            ->schema([
-                InfoSection::make('Детальная информация о товаре')
-                    ->schema([
-                        TextEntry::make('name')->label('Наименование'),
-                        TextEntry::make('producer.name')->label('Производитель'),
-                        TextEntry::make('quantity')->label('Количество'),
-                        TextEntry::make('calculated_volume')->label('Объем'),
-                        TextEntry::make('transport_number')->label('Номер транспорта'),
-                        TextEntry::make('shipping_location')->label('Место отгрузки'),
-                        TextEntry::make('shipping_date')->label('Дата отгрузки'),
-                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата прибытия'),
-                        TextEntry::make('arrival_date')->label('Дата поступления'),
-                        TextEntry::make('document_path')->label('Документы')->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state),
-                        KeyValueEntry::make('attributes')->label('Характеристики')->visible(fn($state) => is_array($state) && count($state) > 0),
-                    ])
-            ]);
-    }
+    // Убран функционал превью карточки
+    // public static function infolist(Infolist $infolist): Infolist
+    // {
+    //     return $infolist
+    //         ->schema([
+    //             InfoSection::make('Детальная информация о товаре')
+    //                 ->schema([
+    //                     TextEntry::make('name')->label('Наименование'),
+    //                     TextEntry::make('producer.name')->label('Производитель'),
+    //                     TextEntry::make('quantity')->label('Количество'),
+    //                     TextEntry::make('calculated_volume')->label('Объем'),
+    //                     TextEntry::make('transport_number')->label('Номер транспорта'),
+    //                     TextEntry::make('shipping_location')->label('Место отгрузки'),
+    //                     TextEntry::make('shipping_date')->label('Дата отгрузки'),
+    //                     TextEntry::make('expected_arrival_date')->label('Ожидаемая дата прибытия'),
+    //                     TextEntry::make('arrival_date')->label('Дата поступления'),
+    //                     TextEntry::make('document_path')->label('Документы')->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state),
+    //                     KeyValueEntry::make('attributes')->label('Характеристики')->visible(fn($state) => is_array($state) && count($state) > 0),
+    //                 ])
+    //         ]);
+    // }
 
     public static function table(Table $table): Table
     {
@@ -675,6 +696,7 @@ class ReceiptResource extends Resource
                             ->sort()
                             ->values()
                             ->toArray();
+
                         return array_combine($locations, $locations);
                     })
                     ->searchable(),
@@ -745,7 +767,7 @@ class ReceiptResource extends Resource
     {
         return [
             'index' => Pages\ListReceipts::route('/'),
-            'view' => Pages\ViewReceipt::route('/{record}'),
+            // 'view' => Pages\ViewReceipt::route('/{record}'), // Убрана страница просмотра
             'edit' => Pages\EditReceipt::route('/{record}/edit'),
         ];
     }
@@ -851,11 +873,11 @@ class ReceiptResource extends Resource
     {
         // Логируем данные для отладки
         \Log::info('ReceiptResource: Data before save', $data);
-        
+
         // Обрабатываем характеристики из repeater, если они есть
-        if (isset($data['products']) && is_array($data['products']) && !empty($data['products'])) {
+        if (isset($data['products']) && is_array($data['products']) && ! empty($data['products'])) {
             $firstProduct = $data['products'][0];
-            
+
             // Собираем характеристики
             $attributes = [];
             foreach ($firstProduct as $key => $value) {
@@ -864,7 +886,7 @@ class ReceiptResource extends Resource
                     $attributes[$attributeName] = $value;
                 }
             }
-            
+
             // Обновляем основные поля
             $data['attributes'] = $attributes;
             $data['product_template_id'] = $firstProduct['product_template_id'] ?? null;
@@ -872,9 +894,9 @@ class ReceiptResource extends Resource
             $data['name'] = $firstProduct['name'] ?? null;
             $data['quantity'] = $firstProduct['quantity'] ?? 1;
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
-            
+
             // Рассчитываем объем, если есть шаблон и характеристики
-            if (!empty($data['product_template_id']) && !empty($attributes)) {
+            if (! empty($data['product_template_id']) && ! empty($attributes)) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);
                 if ($template && $template->formula) {
                     // Создаем копию атрибутов для формулы, включая quantity
@@ -882,7 +904,7 @@ class ReceiptResource extends Resource
                     if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                         $formulaAttributes['quantity'] = $data['quantity'];
                     }
-                    
+
                     // Логируем атрибуты для отладки
                     \Log::info('ReceiptResource: Attributes for formula', [
                         'template' => $template->name,
@@ -891,10 +913,10 @@ class ReceiptResource extends Resource
                         'quantity' => $data['quantity'] ?? 'not set',
                         'formula' => $template->formula,
                     ]);
-                    
+
                     $testResult = $template->testFormula($formulaAttributes);
                     \Log::info('ReceiptResource: Formula result', $testResult);
-                    
+
                     if ($testResult['success']) {
                         $result = $testResult['result'];
                         $data['calculated_volume'] = $result;
@@ -908,9 +930,9 @@ class ReceiptResource extends Resource
                         ]);
                     }
                 }
-                
+
                 // Формируем наименование из характеристик
-                if (!empty($attributes)) {
+                if (! empty($attributes)) {
                     $nameParts = [];
                     foreach ($template->attributes as $templateAttribute) {
                         $attributeKey = $templateAttribute->variable;
@@ -918,10 +940,10 @@ class ReceiptResource extends Resource
                             $nameParts[] = $attributes[$attributeKey];
                         }
                     }
-                    
-                    if (!empty($nameParts)) {
+
+                    if (! empty($nameParts)) {
                         $templateName = $template->name ?? 'Товар';
-                        $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                        $data['name'] = $templateName.': '.implode(', ', $nameParts);
                         \Log::info('ReceiptResource: Name generated', ['name' => $data['name']]);
                     } else {
                         // Если не удалось сформировать имя из характеристик, используем название шаблона
@@ -930,12 +952,13 @@ class ReceiptResource extends Resource
                     }
                 }
             }
-            
+
             // Удаляем поле products, так как оно не нужно в основной модели
             unset($data['products']);
         }
-        
+
         \Log::info('ReceiptResource: Data after processing', $data);
+
         return $data;
     }
 }

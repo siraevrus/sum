@@ -18,7 +18,3 @@ class EditClient extends EditRecord
     }
 }
 
-
-
-
-

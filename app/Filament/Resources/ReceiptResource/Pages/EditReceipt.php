@@ -4,13 +4,26 @@ namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
 use App\Models\Product;
-use App\Models\ProductTemplate;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditReceipt extends EditRecord
 {
     protected static string $resource = ReceiptResource::class;
+
+    public static function canEdit($record): bool
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        // Редактирование доступно только админу и работнику склада
+        return in_array($user->role->value, [
+            'admin',
+            'warehouse_worker',
+        ]);
+    }
 
     protected function getHeaderActions(): array
     {
@@ -41,7 +54,7 @@ class EditReceipt extends EditRecord
                     } catch (\Exception $e) {
                         \Filament\Notifications\Notification::make()
                             ->title('Ошибка при принятии товара')
-                            ->body('Произошла ошибка: ' . $e->getMessage())
+                            ->body('Произошла ошибка: '.$e->getMessage())
                             ->danger()
                             ->send();
                     }
@@ -74,6 +87,7 @@ class EditReceipt extends EditRecord
             }
         }
         $data['products'] = [$item];
+
         return $data;
     }
 
@@ -81,9 +95,9 @@ class EditReceipt extends EditRecord
     {
         // Обрабатываем характеристики из repeater
         $products = $data['products'] ?? [];
-        if (!empty($products)) {
+        if (! empty($products)) {
             $firstProduct = $products[0];
-            
+
             // Собираем характеристики
             $attributes = [];
             foreach ($firstProduct as $key => $value) {
@@ -92,14 +106,14 @@ class EditReceipt extends EditRecord
                     $attributes[$attributeName] = $value;
                 }
             }
-            
+
             // Удаляем временные поля характеристик
             foreach ($firstProduct as $key => $value) {
                 if (str_starts_with($key, 'attribute_')) {
                     unset($firstProduct[$key]);
                 }
             }
-            
+
             // Обновляем основные поля
             $data['attributes'] = $attributes;
             $data['product_template_id'] = $firstProduct['product_template_id'] ?? null;
@@ -107,9 +121,9 @@ class EditReceipt extends EditRecord
             $data['name'] = $firstProduct['name'] ?? null;
             $data['quantity'] = $firstProduct['quantity'] ?? 1;
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
-            
+
             // Рассчитываем объем, если есть шаблон и характеристики
-            if (!empty($data['product_template_id']) && !empty($attributes)) {
+            if (! empty($data['product_template_id']) && ! empty($attributes)) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);
                 if ($template && $template->formula) {
                     // Создаем копию атрибутов для формулы, включая quantity
@@ -117,7 +131,7 @@ class EditReceipt extends EditRecord
                     if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                         $formulaAttributes['quantity'] = $data['quantity'];
                     }
-                    
+
                     // Логируем атрибуты для отладки
                     \Log::info('EditReceipt: Attributes for formula', [
                         'template' => $template->name,
@@ -126,10 +140,10 @@ class EditReceipt extends EditRecord
                         'quantity' => $data['quantity'] ?? 'not set',
                         'formula' => $template->formula,
                     ]);
-                    
+
                     $testResult = $template->testFormula($formulaAttributes);
                     \Log::info('EditReceipt: Formula result', $testResult);
-                    
+
                     if ($testResult['success']) {
                         $result = $testResult['result'];
                         $data['calculated_volume'] = $result;
@@ -143,9 +157,9 @@ class EditReceipt extends EditRecord
                         ]);
                     }
                 }
-                
+
                 // Формируем наименование из характеристик
-                if (!empty($attributes)) {
+                if (! empty($attributes)) {
                     $nameParts = [];
                     foreach ($template->attributes as $templateAttribute) {
                         $attributeKey = $templateAttribute->variable;
@@ -153,10 +167,10 @@ class EditReceipt extends EditRecord
                             $nameParts[] = $attributes[$attributeKey];
                         }
                     }
-                    
-                    if (!empty($nameParts)) {
+
+                    if (! empty($nameParts)) {
                         $templateName = $template->name ?? 'Товар';
-                        $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                        $data['name'] = $templateName.': '.implode(', ', $nameParts);
                         \Log::info('EditReceipt: Name generated', ['name' => $data['name']]);
                     } else {
                         // Если не удалось сформировать имя из характеристик, используем название шаблона
@@ -165,11 +179,11 @@ class EditReceipt extends EditRecord
                     }
                 }
             }
-            
+
             // Удаляем поле products, так как оно не нужно в основной модели
             unset($data['products']);
         }
-        
+
         return $data;
     }
 }
