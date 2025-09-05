@@ -26,7 +26,20 @@ class ProductAttribute extends Model
         'is_required' => 'boolean',
         'is_in_formula' => 'boolean',
         'options' => 'array',
+        'sort_order' => 'integer',
     ];
+
+    /**
+     * Fill the model with an array of attributes.
+     * Переопределяем для защиты от UUID в sort_order
+     */
+    public function fill(array $attributes)
+    {
+        // Удаляем sort_order из атрибутов, если он есть
+        unset($attributes['sort_order']);
+        
+        return parent::fill($attributes);
+    }
 
     /**
      * Get the template that owns the attribute.

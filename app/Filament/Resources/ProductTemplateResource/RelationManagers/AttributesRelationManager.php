@@ -74,10 +74,7 @@ class AttributesRelationManager extends RelationManager
                     ->label('В формуле')
                     ->visible(fn ($get) => $get('type') === 'number'),
 
-                Forms\Components\TextInput::make('sort_order')
-                    ->label('Порядок')
-                    ->numeric()
-                    ->default(0),
+                // Поле sort_order полностью убрано из формы
             ])->columns(3);
     }
 
@@ -94,10 +91,57 @@ class AttributesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('sort_order')->label('Порядок')->sortable(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()->label('Добавить'),
+                Tables\Actions\CreateAction::make()
+                    ->label('Добавить')
+                    ->mutateFormDataUsing(function (array $data): array {
+                        // Полностью исключаем sort_order из данных формы
+                        unset($data['sort_order']);
+                        return $data;
+                    })
+                    ->using(function (array $data): \App\Models\ProductAttribute {
+                        // Создаем атрибут вручную, чтобы контролировать sort_order
+                        $template = $this->getOwnerRecord();
+                        $maxSortOrder = $template->attributes()->max('sort_order') ?? -1;
+                        
+                        $attribute = new \App\Models\ProductAttribute;
+                        $attribute->product_template_id = $template->id;
+                        $attribute->name = $data['name'];
+                        $attribute->variable = $data['variable'];
+                        $attribute->type = $data['type'];
+                        $attribute->options = $data['options'] ?? null;
+                        $attribute->unit = $data['unit'] ?? null;
+                        $attribute->is_required = $data['is_required'] ?? false;
+                        $attribute->is_in_formula = $data['is_in_formula'] ?? false;
+                        $attribute->sort_order = $maxSortOrder + 1; // Принудительно устанавливаем целое число
+                        
+                        $attribute->save();
+                        
+                        return $attribute;
+                    }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->label(''),
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->mutateFormDataUsing(function (array $data): array {
+                        // Полностью исключаем sort_order из данных формы
+                        unset($data['sort_order']);
+                        return $data;
+                    })
+                    ->using(function (\App\Models\ProductAttribute $record, array $data): \App\Models\ProductAttribute {
+                        // Обновляем атрибут вручную, чтобы контролировать sort_order
+                        $record->name = $data['name'];
+                        $record->variable = $data['variable'];
+                        $record->type = $data['type'];
+                        $record->options = $data['options'] ?? null;
+                        $record->unit = $data['unit'] ?? null;
+                        $record->is_required = $data['is_required'] ?? false;
+                        $record->is_in_formula = $data['is_in_formula'] ?? false;
+                        // sort_order не изменяем при редактировании
+                        
+                        $record->save();
+                        
+                        return $record;
+                    }),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->defaultSort('sort_order');
