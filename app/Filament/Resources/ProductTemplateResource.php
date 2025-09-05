@@ -149,15 +149,18 @@ class ProductTemplateResource extends Resource
                             ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
                             ->required()
                             ->reorderable(false)
+                            ->addActionLabel('Добавить характеристику')
                             ->saveRelationshipsUsing(function ($operation, $state, ProductTemplate $record) {
                                 // Сохраняем атрибуты вручную, чтобы поддержать create/edit
                                 $record->attributes()->delete();
-                                $sort = 0;
-                                foreach ($state as $row) {
+
+                                // Сохраняем атрибуты в правильном порядке
+                                foreach ($state as $index => $row) {
                                     $options = $row['options'] ?? null;
                                     if (is_string($options)) {
                                         $options = array_values(array_filter(array_map('trim', explode(',', $options))));
                                     }
+
                                     $record->attributes()->create([
                                         'name' => $row['name'] ?? '',
                                         'variable' => $row['variable'] ?? '',
@@ -166,9 +169,28 @@ class ProductTemplateResource extends Resource
                                         'unit' => $row['unit'] ?? null,
                                         'is_required' => (bool) ($row['is_required'] ?? false),
                                         'is_in_formula' => (bool) ($row['is_in_formula'] ?? false),
-                                        'sort_order' => $sort++,
+                                        'sort_order' => $index, // Порядок в форме = sort_order
                                     ]);
                                 }
+                            })
+                            ->loadStateFromRelationshipsUsing(function (ProductTemplate $record): array {
+                                // Загружаем атрибуты в правильном порядке (по sort_order)
+                                return $record->attributes()
+                                    ->orderBy('sort_order')
+                                    ->orderBy('id')
+                                    ->get()
+                                    ->map(function ($attribute) {
+                                        return [
+                                            'name' => $attribute->name,
+                                            'variable' => $attribute->variable,
+                                            'type' => $attribute->type,
+                                            'options' => $attribute->options,
+                                            'unit' => $attribute->unit,
+                                            'is_required' => $attribute->is_required,
+                                            'is_in_formula' => $attribute->is_in_formula,
+                                        ];
+                                    })
+                                    ->toArray();
                             }),
                     ]),
 

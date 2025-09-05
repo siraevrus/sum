@@ -206,7 +206,6 @@ class ProductResource extends Resource
                                     ->label('Наименование')
                                     ->maxLength(255)
                                     ->disabled()
-                                    ->hidden(fn() => true)
                                     ->helperText('Автоматически формируется из характеристик товара'),
 
                                 Toggle::make('is_active')
