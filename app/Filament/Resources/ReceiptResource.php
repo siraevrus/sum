@@ -879,7 +879,9 @@ class ReceiptResource extends Resource
 
                         return;
                     }
-                    $expression = str_replace($var, $attributes[$var], $expression);
+                    // Используем регулярное выражение для точной замены переменных
+                    $pattern = '/\b' . preg_quote($var, '/') . '\b/';
+                    $expression = preg_replace($pattern, $attributes[$var], $expression);
                 }
 
                 $result = eval("return $expression;");

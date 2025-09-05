@@ -180,14 +180,14 @@ class StockResource extends Resource
         return $baseQuery
             ->select([
                 // Создаем уникальный ID для группированной записи на основе не-текстовых характеристик
-                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", MD5(CONCAT(
+                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", HEX(SUBSTR(QUOTE(CONCAT(
                     COALESCE(JSON_EXTRACT(attributes, "$.g"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.s"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.v"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.type"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.number"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.select"), "")
-                ))) as id'),
+                )), 2, 8))) as id'),
                 // Используем первое наименование из группы
                 DB::raw('MIN(name) as name'),
                 'product_template_id',

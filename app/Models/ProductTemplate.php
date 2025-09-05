@@ -106,7 +106,10 @@ class ProductTemplate extends Model
             foreach ($values as $variable => $value) {
                 // Проверяем, что значение числовое для числовых переменных
                 if (is_numeric($value)) {
-                    $expression = str_replace($variable, $value, $expression);
+                    // Используем регулярное выражение для точной замены переменных
+                    // \b означает границу слова, чтобы не заменять части других слов
+                    $pattern = '/\b' . preg_quote($variable, '/') . '\b/';
+                    $expression = preg_replace($pattern, $value, $expression);
                 } else {
                     // Если значение не числовое, пропускаем эту переменную
                     continue;
