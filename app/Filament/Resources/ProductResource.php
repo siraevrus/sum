@@ -72,6 +72,7 @@ class ProductResource extends Resource
                                         if (! $user) {
                                             return null;
                                         }
+
                                         return $user->isAdmin() ? null : $user->warehouse_id;
                                     })
                                     ->visible(function () {
@@ -79,6 +80,7 @@ class ProductResource extends Resource
                                         if (! $user) {
                                             return false;
                                         }
+
                                         return $user->isAdmin();
                                     })
                                     ->searchable(),
@@ -105,7 +107,7 @@ class ProductResource extends Resource
                                     ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $set('calculated_volume', null);
-                                        $set('name', null);
+                                        $set('name', '');
                                         $template = ProductTemplate::find($get('product_template_id'));
                                         if ($template) {
                                             foreach ($template->attributes as $attribute) {
@@ -132,10 +134,14 @@ class ProductResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Пересчитываем объем при изменении количества
                                         $templateId = $get('product_template_id');
-                                        if (!$templateId) return;
-                                        
+                                        if (! $templateId) {
+                                            return;
+                                        }
+
                                         $template = ProductTemplate::with('attributes')->find($templateId);
-                                        if (!$template) return;
+                                        if (! $template) {
+                                            return;
+                                        }
 
                                         $attributes = [];
                                         $formData = $get();
@@ -185,7 +191,7 @@ class ProductResource extends Resource
                                                 ]);
                                             } else {
                                                 // Если расчет не удался, показываем ошибку
-                                                $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                 Log::warning('Volume calculation failed from quantity change', [
                                                     'template' => $template->name,
                                                     'attributes' => $numericAttributes,
@@ -300,7 +306,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -382,7 +388,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -396,23 +402,6 @@ class ProductResource extends Resource
                                                 } else {
                                                     $set('calculated_volume', 'Формула не задана');
                                                 }
-                                            }
-
-                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
-                                            $nameParts = [];
-                                            foreach ($template->attributes as $templateAttribute) {
-                                                $attributeKey = $templateAttribute->variable;
-                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
-                                                    $nameParts[] = $attributes[$attributeKey];
-                                                }
-                                            }
-
-                                            if (! empty($nameParts)) {
-                                                $templateName = $template->name ?? 'Товар';
-                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                $set('name', $generatedName);
-                                            } else {
-                                                $set('name', $template->name ?? 'Товар');
                                             }
                                         });
                                     break;
@@ -466,7 +455,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -482,11 +471,11 @@ class ProductResource extends Resource
                                                 }
                                             }
 
-                                            // Формируем наименование из заполненных характеристик
+                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                             $nameParts = [];
                                             foreach ($template->attributes as $templateAttribute) {
                                                 $attributeKey = $templateAttribute->variable;
-                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                     $nameParts[] = $attributes[$attributeKey];
                                                 }
                                             }
@@ -495,6 +484,8 @@ class ProductResource extends Resource
                                                 $templateName = $template->name ?? 'Товар';
                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                 $set('name', $generatedName);
+                                            } else {
+                                                $set('name', $template->name ?? 'Товар');
                                             }
                                         })
                                         ->dehydrateStateUsing(function ($state, $get) use ($options) {
@@ -519,14 +510,17 @@ class ProductResource extends Resource
                                 if (is_numeric($state)) {
                                     return number_format($state, 3, '.', ' ');
                                 }
+
                                 return $state ?: '0.000';
                             })
                             ->suffix(function (Get $get) {
                                 $templateId = $get('product_template_id');
                                 if ($templateId) {
                                     $template = ProductTemplate::find($templateId);
+
                                     return $template ? $template->unit : '';
                                 }
+
                                 return '';
                             })
                             ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества');
@@ -534,7 +528,7 @@ class ProductResource extends Resource
                         // Обертываем поля в компактную сетку
                         return [
                             Grid::make(4) // 4 колонки для компактности
-                                ->schema($fields)
+                                ->schema($fields),
                         ];
                     }),
 
@@ -587,13 +581,13 @@ class ProductResource extends Resource
                 }
             }
 
-                            if (! empty($numericAttributes)) {
-                    $testResult = $template->testFormula($numericAttributes);
-                    if ($testResult['success']) {
-                        $result = $testResult['result'];
-                        $set('calculated_volume', $result);
-                    }
+            if (! empty($numericAttributes)) {
+                $testResult = $template->testFormula($numericAttributes);
+                if ($testResult['success']) {
+                    $result = $testResult['result'];
+                    $set('calculated_volume', $result);
                 }
+            }
         }
     }
 
@@ -701,6 +695,7 @@ class ProductResource extends Resource
                     ->label('Производитель')
                     ->options(function () {
                         $producers = Product::getProducers();
+
                         return array_combine($producers, $producers);
                     })
                     ->searchable(),

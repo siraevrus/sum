@@ -13,13 +13,13 @@ class CreateProduct extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['created_by'] = Auth::id();
-        
+
         // Ensure warehouse_id is set for non-admin users
         $user = Auth::user();
-        if (!isset($data['warehouse_id']) && $user && !$user->isAdmin()) {
+        if (! isset($data['warehouse_id']) && $user && ! $user->isAdmin()) {
             $data['warehouse_id'] = $user->warehouse_id;
         }
-        
+
         // Обрабатываем характеристики
         $attributes = [];
         foreach ($data as $key => $value) {
@@ -29,26 +29,26 @@ class CreateProduct extends CreateRecord
             }
         }
         $data['attributes'] = $attributes;
-        
+
         // Удаляем временные поля характеристик
         foreach ($data as $key => $value) {
             if (str_starts_with($key, 'attribute_')) {
                 unset($data[$key]);
             }
         }
-        
+
         // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
+        if (! isset($data['attributes'])) {
             $data['attributes'] = [];
         }
-        
+
         // Добавляем quantity в характеристики для формулы, если есть
         if (isset($data['quantity'])) {
             $attributes['quantity'] = $data['quantity'];
         }
-        
+
         // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 // Создаем копию атрибутов для формулы, включая quantity
@@ -56,7 +56,7 @@ class CreateProduct extends CreateRecord
                 if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                     $formulaAttributes['quantity'] = $data['quantity'];
                 }
-                
+
                 // Формируем наименование из характеристик
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
@@ -65,13 +65,16 @@ class CreateProduct extends CreateRecord
                         $nameParts[] = $data['attributes'][$attributeKey];
                     }
                 }
-                
-                if (!empty($nameParts)) {
+
+                if (! empty($nameParts)) {
                     // Добавляем название шаблона в начало
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                    $data['name'] = $templateName.': '.implode(', ', $nameParts);
+                } else {
+                    // Если нет характеристик, используем только название шаблона
+                    $data['name'] = $template->name ?? 'Товар';
                 }
-                
+
                 \Log::info('Attributes for formula (including quantity)', [
                     'template' => $template->name,
                     'attributes' => $data['attributes'],
@@ -79,10 +82,10 @@ class CreateProduct extends CreateRecord
                     'quantity' => $data['quantity'] ?? 'not set',
                     'formula' => $template->formula,
                 ]);
-                
+
                 $testResult = $template->testFormula($formulaAttributes);
                 \Log::info('Formula result', $testResult);
-                
+
                 if ($testResult['success']) {
                     $result = $testResult['result'];
                     $data['calculated_volume'] = $result;
@@ -98,7 +101,7 @@ class CreateProduct extends CreateRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -109,20 +112,20 @@ class CreateProduct extends CreateRecord
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 // Если есть характеристики, рассчитываем объем
-                if (isset($data['attributes']) && is_array($data['attributes']) && !empty($data['attributes'])) {
+                if (isset($data['attributes']) && is_array($data['attributes']) && ! empty($data['attributes'])) {
                     // Создаем копию атрибутов для формулы, включая quantity
                     $formulaAttributes = $data['attributes'];
                     if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                         $formulaAttributes['quantity'] = $data['quantity'];
                     }
-                    
+
                     \Log::info('BeforeFill: Attributes for formula', [
                         'template' => $template->name,
                         'attributes' => $data['attributes'],
                         'formula_attributes' => $formulaAttributes,
                         'quantity' => $data['quantity'] ?? 'not set',
                     ]);
-                    
+
                     $testResult = $template->testFormula($formulaAttributes);
                     if ($testResult['success']) {
                         $result = $testResult['result'];
@@ -137,7 +140,7 @@ class CreateProduct extends CreateRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -145,4 +148,4 @@ class CreateProduct extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}
