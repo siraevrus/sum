@@ -36,6 +36,7 @@ class Sale extends Model
         'invoice_number',
         'sale_date',
         'is_active',
+        'reason_cancellation',
     ];
 
     protected $casts = [
@@ -161,7 +162,7 @@ class Sale extends Model
     /**
      * Отменить продажу (вернуть товар на склад)
      */
-    public function cancelSale(): bool
+    public function cancelSale(?string $reason = null): bool
     {
         if ($this->payment_status === self::PAYMENT_STATUS_CANCELLED) {
             return false; // Уже отменена
@@ -171,6 +172,7 @@ class Sale extends Model
         $this->product->increaseQuantity($this->quantity);
 
         $this->payment_status = self::PAYMENT_STATUS_CANCELLED;
+        $this->reason_cancellation = $reason;
         $this->save();
 
         return true;

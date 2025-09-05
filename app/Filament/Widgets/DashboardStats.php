@@ -49,8 +49,27 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info'),
 
-            Stat::make('Продажи', number_format(Sale::paid()->sum('total_price'), 0, ',', ' ').' ₽')
-                ->description('Общая выручка')
+            Stat::make('Продажи USD', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
+                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                ->where('currency', 'USD')
+                ->sum('total_price'), 0, ',', ' ').' $')
+                ->description('Выручка за сегодня (USD)')
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('success'),
+
+            Stat::make('Продажи RUB', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
+                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                ->where('currency', 'RUB')
+                ->sum('total_price'), 0, ',', ' ').' ₽')
+                ->description('Выручка за сегодня (RUB)')
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('success'),
+
+            Stat::make('Продажи KGS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
+                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
+                ->where('currency', 'KGS')
+                ->sum('total_price'), 0, ',', ' ').' сом')
+                ->description('Выручка за сегодня (KGS)')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
         ];

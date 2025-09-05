@@ -316,6 +316,11 @@ class SaleResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('sale_date')
+                    ->label('Дата продажи')
+                    ->date()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('sale_number')
                     ->label('Номер продажи')
                     ->sortable(),
@@ -344,11 +349,6 @@ class SaleResource extends Resource
                 //     ->label('Курс валюты')
                 //     ->formatStateUsing(fn ($state) => $state ? number_format($state, 2, '.', ' ') : '1.00')
                 //     ->sortable(),
-
-                Tables\Columns\TextColumn::make('sale_date')
-                    ->label('Дата продажи')
-                    ->date()
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Продавец')
@@ -423,8 +423,14 @@ class SaleResource extends Resource
                     ->visible(function (Sale $record): bool {
                         return $record->payment_status !== Sale::PAYMENT_STATUS_CANCELLED;
                     })
-                    ->action(function (Sale $record): void {
-                        $record->cancelSale();
+                    ->form([
+                        Forms\Components\Textarea::make('reason_cancellation')
+                            ->label('Причины отмены')
+                            ->required()
+                            ->maxLength(500),
+                    ])
+                    ->action(function (Sale $record, array $data): void {
+                        $record->cancelSale($data['reason_cancellation']);
                     })
                     ->requiresConfirmation()
                     ->modalHeading('Отменить продажу')
