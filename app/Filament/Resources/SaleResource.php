@@ -159,7 +159,7 @@ class SaleResource extends Resource
                                                     $producerLabel = " ({$producer->name})";
                                                 }
                                             }
-                                            
+
                                             $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
 
                                             // Используем ID первого товара из группы как ключ
@@ -409,11 +409,11 @@ class SaleResource extends Resource
             ->emptyStateDescription('Создайте первую продажу, чтобы начать работу.')
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->visible(function (Sale $record) {
-                        return $record->payment_status !== Sale::PAYMENT_STATUS_CANCELLED;
-                    }),
+                // Tables\Actions\EditAction::make()
+                //    ->label('')
+                //    ->visible(function (Sale $record) {
+                //        return $record->payment_status !== Sale::PAYMENT_STATUS_CANCELLED;
+                //    }),
                 // Списывание теперь происходит автоматически при создании, кнопка не нужна
 
                 Tables\Actions\Action::make('cancel_sale')
