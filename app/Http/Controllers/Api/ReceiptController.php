@@ -105,7 +105,7 @@ class ReceiptController extends Controller
                         $nameParts = [];
                         foreach ($template->attributes as $templateAttribute) {
                             $key = $templateAttribute->variable;
-                            if (isset($productData['attributes'][$key]) && $productData['attributes'][$key] !== null) {
+                            if ($templateAttribute->type !== 'text' && isset($productData['attributes'][$key]) && $productData['attributes'][$key] !== null) {
                                 $nameParts[] = $productData['attributes'][$key];
                             }
                         }

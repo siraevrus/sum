@@ -166,14 +166,16 @@ class ProductInTransit extends Model
     /**
      * Получить полное название товара с производителем
      */
-    public function getFullName(): string
+    public function getFullNameAttribute(): string
     {
         $name = $this->name;
-        
-        if ($this->producer) {
-            $name .= ' (' . $this->producer->name . ')';
+        if ($this->producer_id) { // Используем producer_id
+            $producer = \App\Models\Producer::find($this->producer_id);
+            if ($producer) {
+                $name .= ' (' . $producer->name . ')';
+            }
         }
-        
+
         return $name;
     }
 
@@ -208,7 +210,7 @@ class ProductInTransit extends Model
                 'attributes' => $this->attributes,
                 'calculated_volume' => $this->calculated_volume,
                 'quantity' => $this->quantity,
-                'producer' => $this->producer->id, // Сохраняем ID производителя
+                'producer_id' => $this->producer_id, // Используем ID производителя
                 'arrival_date' => $this->actual_arrival_date ?? now(),
                 'is_active' => true,
             ]);

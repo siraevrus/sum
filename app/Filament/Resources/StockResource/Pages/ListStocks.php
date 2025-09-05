@@ -16,4 +16,23 @@ class ListStocks extends ListRecords
             // Убрана кнопка "Создать" для страницы остатков
         ];
     }
+
+    /**
+     * Получить ключ записи для таблицы
+     */
+    public function getTableRecordKey($record): string
+    {
+        // Используем сгенерированный ID из запроса
+        if (is_object($record) && isset($record->id)) {
+            return (string) $record->id;
+        }
+
+        if (is_array($record) && isset($record['id'])) {
+            return (string) $record['id'];
+        }
+
+        // Fallback - всегда возвращаем строку
+        return md5(serialize($record) ?: 'empty_record');
+    }
+
 } 

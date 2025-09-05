@@ -167,10 +167,14 @@ class ProductInTransitResource extends Resource
                                             ->afterStateUpdated(function (Set $set, Get $get) {
                                                 // Пересчитываем объем при изменении количества
                                                 $templateId = $get('product_template_id');
-                                                if (!$templateId) return;
-                                                
+                                                if (! $templateId) {
+                                                    return;
+                                                }
+
                                                 $template = ProductTemplate::with('attributes')->find($templateId);
-                                                if (!$template) return;
+                                                if (! $template) {
+                                                    return;
+                                                }
 
                                                 $attributes = [];
                                                 $formData = $get();
@@ -234,6 +238,22 @@ class ProductInTransitResource extends Resource
                                                     } else {
                                                         $set('calculated_volume', 'Формула не задана');
                                                     }
+                                                }
+                                                // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
+                                                $nameParts = [];
+                                                foreach ($template->attributes as $templateAttribute) {
+                                                    $attributeKey = $templateAttribute->variable;
+                                                    if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                        $nameParts[] = $attributes[$attributeKey];
+                                                    }
+                                                }
+
+                                                if (! empty($nameParts)) {
+                                                    $templateName = $template->name ?? 'Товар';
+                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                    $set('name', $generatedName);
+                                                } else {
+                                                    $set('name', $template->name ?? 'Товар');
                                                 }
                                             })
                                             ->helperText('Объем рассчитывается автоматически при изменении характеристик или количества.'),
@@ -333,11 +353,11 @@ class ProductInTransitResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -423,11 +443,11 @@ class ProductInTransitResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -514,11 +534,11 @@ class ProductInTransitResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -736,11 +756,11 @@ class ProductInTransitResource extends Resource
         $attributes['quantity'] = $quantity;
 
         if (! empty($attributes)) {
-            // Формируем наименование из характеристик
+            // Формируем наименование из характеристик, исключая текстовые атрибуты
             $nameParts = [];
             foreach ($template->attributes as $templateAttribute) {
                 $attributeKey = $templateAttribute->variable;
-                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
                     $nameParts[] = $attributes[$attributeKey];
                 }
             }
@@ -750,6 +770,8 @@ class ProductInTransitResource extends Resource
                 $templateName = $template->name ?? 'Товар';
                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                 $set('name', $generatedName);
+            } else {
+                $set('name', $template->name ?? 'Товар');
             }
 
             // Рассчитываем объем

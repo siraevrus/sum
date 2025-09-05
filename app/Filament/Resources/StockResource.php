@@ -176,28 +176,48 @@ class StockResource extends Resource
             $baseQuery->where('warehouse_id', $user->warehouse_id);
         }
 
-        // Используем простой подход без сложных GROUP BY для совместимости
+        // Группируем товары по одинаковым характеристикам (исключая текстовые поля)
         return $baseQuery
             ->select([
-                'id',
+                // Создаем уникальный ID для группированной записи на основе не-текстовых характеристик
+                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", MD5(CONCAT(
+                    COALESCE(JSON_EXTRACT(attributes, "$.g"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.s"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.v"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.type"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.number"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.select"), "")
+                ))) as id'),
+                // Используем первое наименование из группы
+                DB::raw('MIN(name) as name'),
                 'product_template_id',
                 'warehouse_id',
                 'producer_id',
-                'name',
-                'description',
-                'arrival_date',
-                'quantity',
-                'sold_quantity',
+                // Создаем агрегированные атрибуты (берем первое значение из группы)
+                DB::raw('MIN(attributes) as attributes'),
                 'calculated_volume',
-                'is_active',
-                'status',
-                // Добавляем вычисляемые столбцы для совместимости с таблицей
-                DB::raw('(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
-                DB::raw('(calculated_volume * quantity) as total_volume'),
-                DB::raw('1 as product_count'),
-                DB::raw('arrival_date as last_arrival_date'),
+                // Агрегированные данные
+                DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
+                DB::raw('SUM(calculated_volume * (quantity - COALESCE(sold_quantity, 0))) as total_volume'),
+                DB::raw('COUNT(*) as product_count'),
+                DB::raw('MAX(arrival_date) as last_arrival_date'),
+                DB::raw('MIN(created_at) as first_created_at'),
+                DB::raw('MAX(created_at) as last_created_at'),
             ])
-            ->with('producer')
+            ->with(['producer', 'productTemplate', 'warehouse'])
+            ->groupBy([
+                'product_template_id',
+                'warehouse_id', 
+                'producer_id',
+                'calculated_volume',
+                // Группируем только по не-текстовым характеристикам
+                DB::raw('JSON_EXTRACT(attributes, "$.g")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.s")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.v")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.type")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.number")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.select")')
+            ])
             ->orderBy('name')
             ->orderBy('producer_id');
     }
@@ -221,6 +241,7 @@ class StockResource extends Resource
      */
     public static function getTableRecordKey($record): string
     {
+        // Используем сгенерированный ID из запроса
         if (is_object($record) && isset($record->id)) {
             return (string) $record->id;
         }
@@ -229,16 +250,7 @@ class StockResource extends Resource
             return (string) $record['id'];
         }
 
-        // Fallback - создаем ключ из характеристик
-        if (is_object($record)) {
-            $templateId = $record->product_template_id ?? '';
-            $warehouseId = $record->warehouse_id ?? '';
-            $producerId = $record->producer_id ?? '';
-            $attributes = is_array($record->attributes) ? json_encode($record->attributes) : '';
-
-            return md5($templateId.'_'.$warehouseId.'_'.$producerId.'_'.$attributes);
-        }
-
-        return md5(serialize($record));
+        // Fallback - всегда возвращаем строку
+        return md5(serialize($record) ?: 'empty_record');
     }
 }

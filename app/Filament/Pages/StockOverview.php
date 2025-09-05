@@ -49,7 +49,7 @@ class StockOverview extends Page implements HasTable
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('quantity')
+                Tables\Columns\TextColumn::make('total_quantity')
                     ->label('Количество')
                     ->numeric()
                     ->sortable()
@@ -57,6 +57,11 @@ class StockOverview extends Page implements HasTable
                         Tables\Columns\Summarizers\Sum::make()
                             ->label('Итого')
                     ),
+                Tables\Columns\TextColumn::make('product_count')
+                    ->label('Записей')
+                    ->numeric()
+                    ->sortable()
+                    ->tooltip('Количество отдельных записей товара'),
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем (м³)')
                     ->numeric(
@@ -90,12 +95,12 @@ class StockOverview extends Page implements HasTable
                     ->options(fn () => \App\Models\Producer::pluck('name', 'name')),
                 Tables\Filters\Filter::make('in_stock')
                     ->label('В наличии')
-                    ->query(fn (Builder $query): Builder => $query->where('quantity', '>', 0)),
+                    ->query(fn (Builder $query): Builder => $query->having('total_quantity', '>', 0)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('first_created_at', 'desc');
     }
 
     protected function getTableQuery(): Builder
@@ -105,7 +110,31 @@ class StockOverview extends Page implements HasTable
             return Product::query()->whereRaw('1 = 0');
         }
         
-        $query = Product::query()->with('producer');
+        // Группируем товары по одинаковым характеристикам
+        $query = Product::query()
+            ->select([
+                'name',
+                'product_template_id',
+                'producer_id',
+                'warehouse_id',
+                'attributes',
+                'calculated_volume',
+                \DB::raw('SUM(quantity) as total_quantity'),
+                \DB::raw('COUNT(*) as product_count'),
+                \DB::raw('MIN(created_at) as first_created_at'),
+                \DB::raw('MAX(created_at) as last_created_at')
+            ])
+            ->with(['producer', 'productTemplate', 'warehouse'])
+            ->where('status', 'in_stock')
+            ->where('is_active', true)
+            ->groupBy([
+                'name',
+                'product_template_id', 
+                'producer_id',
+                'warehouse_id',
+                'attributes',
+                'calculated_volume'
+            ]);
 
         // Фильтрация по компании пользователя
         if ($user->company_id) {
@@ -137,7 +166,7 @@ class StockOverview extends Page implements HasTable
         // Применяем фильтр "В наличии", если он активен
         $inStockFilter = request()->get('tableFilters.in_stock.isActive');
         if ($inStockFilter === 'true') {
-            $query->where('quantity', '>', 0);
+            $query->having('total_quantity', '>', 0);
         }
 
         return $query;
@@ -146,26 +175,20 @@ class StockOverview extends Page implements HasTable
     public function getProducers(): array
     {
         $user = Auth::user();
-        $query = Product::query();
+        $query = \App\Models\Producer::query();
 
-        // Фильтрация по компании пользователя
+        // Фильтрация по компании пользователя, если она есть
         if ($user->company_id) {
-            $query->whereHas('warehouse', function ($q) use ($user) {
-                $q->where('company_id', $user->company_id);
-            });
+            // Получаем ID складов, связанных с компанией пользователя
+            $warehouseIds = \App\Models\Warehouse::where('company_id', $user->company_id)->pluck('id');
+
+            // Получаем ID производителей, у которых есть товары на этих складах
+            $producerIds = Product::whereIn('warehouse_id', $warehouseIds)->pluck('producer_id')->unique();
+
+            $query->whereIn('id', $producerIds);
         }
 
-        // Группируем по производителю через связь
-        return $query->whereHas('producer')
-            ->with('producer')
-            ->get()
-            ->groupBy('producer.id')
-            ->map(function ($products) {
-                $producer = $products->first()->producer;
-                return $producer ? $producer->name : null;
-            })
-            ->filter() // Убираем null значения
-            ->toArray();
+        return $query->pluck('name', 'id')->toArray();
     }
 
     public function getWarehouses(): \Illuminate\Database\Eloquent\Collection

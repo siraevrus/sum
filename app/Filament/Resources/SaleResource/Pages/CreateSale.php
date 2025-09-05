@@ -85,35 +85,61 @@ class CreateSale extends CreateRecord
 
             $templateId = $product->product_template_id;
             $warehouseId = $product->warehouse_id;
-            $producer = $product->producer;
+            $producerId = $product->producer_id; // Используем producer_id
             $name = $product->name;
 
             $remaining = (int) $sale->quantity;
 
-            // Ищем все подходящие записи товара и списываем по очереди
+            // Ищем все подходящие записи товара
             $candidates = \App\Models\Product::query()
                 ->where('product_template_id', $templateId)
                 ->where('warehouse_id', $warehouseId)
-                ->where('producer', $producer)
+                ->where('producer_id', $producerId) // Используем producer_id
                 ->where('name', $name)
-                ->where('quantity', '>', 0)
-                ->orderByDesc('quantity')
+                ->orderBy('id') // Сортируем по ID для предсказуемости
                 ->lockForUpdate()
                 ->get();
 
+            // Проверяем общее доступное количество (quantity - sold_quantity)
+            $totalAvailable = $candidates->sum(function ($product) {
+                return $product->quantity - ($product->sold_quantity ?? 0);
+            });
+            if ($totalAvailable < $remaining) {
+                throw new \Exception("Недостаточно остатка для списания. Доступно: {$totalAvailable}, требуется: {$remaining}");
+            }
+
+            // Распределяем продажу равномерно между всеми позициями
             foreach ($candidates as $candidate) {
                 if ($remaining <= 0) {
                     break;
                 }
 
-                $decrement = min($remaining, (int) $candidate->quantity);
+                // Получаем доступное количество в этой позиции
+                $availableInPosition = $candidate->quantity - ($candidate->sold_quantity ?? 0);
+                
+                if ($availableInPosition <= 0) {
+                    continue; // Пропускаем позиции без доступного товара
+                }
+
+                // Списываем с позиции (либо все доступное, либо оставшееся количество)
+                $decrement = min($remaining, $availableInPosition);
+                
                 if ($decrement <= 0) {
                     continue;
                 }
 
-                // используем decreaseQuantity для единообразия
+                // Списываем с позиции
                 $candidate->decreaseQuantity($decrement);
                 $remaining -= $decrement;
+
+                Log::info('Списание с позиции', [
+                    'product_id' => $candidate->id,
+                    'quantity' => $candidate->quantity,
+                    'sold_quantity_before' => $candidate->sold_quantity ?? 0,
+                    'available_before' => $availableInPosition,
+                    'decrement' => $decrement,
+                    'remaining' => $remaining
+                ]);
             }
 
             if ($remaining > 0) {

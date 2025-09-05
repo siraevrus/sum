@@ -163,7 +163,7 @@ class EditReceipt extends EditRecord
                     $nameParts = [];
                     foreach ($template->attributes as $templateAttribute) {
                         $attributeKey = $templateAttribute->variable;
-                        if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                        if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                             $nameParts[] = $attributes[$attributeKey];
                         }
                     }

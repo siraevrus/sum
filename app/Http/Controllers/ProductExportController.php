@@ -31,8 +31,8 @@ class ProductExportController extends Controller
             $query->where('product_template_id', $request->product_template_id);
         }
         
-        if ($request->has('producer')) {
-            $query->where('producer', $request->producer);
+        if ($request->has('producer_id')) { // Используем producer_id
+            $query->where('producer_id', $request->producer_id);
         }
         
         if ($request->has('in_stock')) {
@@ -74,7 +74,7 @@ class ProductExportController extends Controller
                     $product->description,
                     $product->template?->name ?? 'Не указан',
                     $product->warehouse?->name ?? 'Не указан',
-                    $product->producer ?? 'Не указан',
+                    $product->producer ? $product->producer->name : 'Не указан', // Используем связь
                     $product->quantity,
                     $product->calculated_volume,
                     $product->arrival_date?->format('Y-m-d') ?? 'Не указана',

@@ -243,6 +243,23 @@ class ReceiptResource extends Resource
                                                         $set('calculated_volume', 'Формула не задана');
                                                     }
                                                 }
+
+                                                // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
+                                                $nameParts = [];
+                                                foreach ($template->attributes as $templateAttribute) {
+                                                    $attributeKey = $templateAttribute->variable;
+                                                    if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                        $nameParts[] = $attributes[$attributeKey];
+                                                    }
+                                                }
+
+                                                if (! empty($nameParts)) {
+                                                    $templateName = $template->name ?? 'Товар';
+                                                    $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                    $set('name', $generatedName);
+                                                } else {
+                                                    $set('name', $template->name ?? 'Товар');
+                                                }
                                             }),
 
                                         TextInput::make('calculated_volume')
@@ -250,6 +267,7 @@ class ReceiptResource extends Resource
                                             ->numeric()
                                             ->disabled()
                                             ->live()
+                                            ->hidden(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                             ->formatStateUsing(function ($state) {
                                                 // Если это число - форматируем, если строка - показываем как есть
                                                 if (is_numeric($state)) {
@@ -373,11 +391,11 @@ class ReceiptResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -386,6 +404,8 @@ class ReceiptResource extends Resource
                                                                 $templateName = $template->name ?? 'Товар';
                                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                                 $set('name', $generatedName);
+                                                            } else {
+                                                                $set('name', $template->name ?? 'Товар');
                                                             }
                                                         });
                                                     break;
@@ -462,11 +482,11 @@ class ReceiptResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -475,6 +495,8 @@ class ReceiptResource extends Resource
                                                                 $templateName = $template->name ?? 'Товар';
                                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                                 $set('name', $generatedName);
+                                                            } else {
+                                                                $set('name', $template->name ?? 'Товар');
                                                             }
                                                         });
                                                     break;
@@ -553,11 +575,11 @@ class ReceiptResource extends Resource
                                                                 }
                                                             }
 
-                                                            // Формируем наименование из заполненных характеристик
+                                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                                             $nameParts = [];
                                                             foreach ($template->attributes as $templateAttribute) {
                                                                 $attributeKey = $templateAttribute->variable;
-                                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                                     $nameParts[] = $attributes[$attributeKey];
                                                                 }
                                                             }
@@ -566,6 +588,8 @@ class ReceiptResource extends Resource
                                                                 $templateName = $template->name ?? 'Товар';
                                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                                 $set('name', $generatedName);
+                                                            } else {
+                                                                $set('name', $template->name ?? 'Товар');
                                                             }
                                                         });
                                                     break;
@@ -936,7 +960,7 @@ class ReceiptResource extends Resource
                     $nameParts = [];
                     foreach ($template->attributes as $templateAttribute) {
                         $attributeKey = $templateAttribute->variable;
-                        if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                        if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                             $nameParts[] = $attributes[$attributeKey];
                         }
                     }

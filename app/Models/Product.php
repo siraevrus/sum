@@ -128,7 +128,7 @@ class Product extends Model
         return $this->hasOne(\App\Models\ProductInTransit::class, 'product_template_id', 'product_template_id')
             ->where('warehouse_id', $this->warehouse_id)
             ->where('name', $this->name)
-            ->where('producer', $this->producer)
+            ->where('producer_id', $this->producer_id) // Используем producer_id
             ->where('status', \App\Models\ProductInTransit::STATUS_IN_TRANSIT);
     }
 
@@ -243,11 +243,12 @@ class Product extends Model
     public function getFullName(): string
     {
         $name = $this->name;
-
-        if ($this->producer) {
-            $name .= ' ('.$this->producer.')';
+        if ($this->producer_id) {
+            $producer = \App\Models\Producer::find($this->producer_id);
+            if ($producer) {
+                $name .= ' ('.$producer->name.')';
+            }
         }
-
         return $name;
     }
 
@@ -272,9 +273,10 @@ class Product extends Model
      */
     public function decreaseQuantity(int $amount): bool
     {
-        if ($this->quantity >= $amount) {
-            // Увеличиваем проданное количество вместо уменьшения исходного
-            $this->sold_quantity += $amount;
+        $availableQuantity = $this->quantity - ($this->sold_quantity ?? 0);
+        if ($availableQuantity >= $amount) {
+            // Только увеличиваем проданное количество, quantity остается неизменным
+            $this->sold_quantity = ($this->sold_quantity ?? 0) + $amount;
             $this->save();
 
             return true;
@@ -288,7 +290,7 @@ class Product extends Model
      */
     public function increaseQuantity(int $amount): void
     {
-        // Уменьшаем проданное количество при отмене продажи
+        // Только уменьшаем проданное количество при отмене продажи, quantity остается неизменным
         if ($this->sold_quantity >= $amount) {
             $this->sold_quantity -= $amount;
             $this->save();
@@ -401,7 +403,7 @@ class Product extends Model
         return md5(
             $this->product_template_id.'|'.
             $this->warehouse_id.'|'.
-            $this->producer.'|'.
+            ($this->producer_id ?? '').'|'. // Используем producer_id
             json_encode($attributes)
         );
     }
@@ -441,7 +443,7 @@ class Product extends Model
                 'product_template_id' => $this->product_template_id,
                 'warehouse_id' => $this->warehouse_id,
                 'name' => $this->name,
-                'producer' => $this->producer,
+                'producer_id' => $this->producer_id,
                 'status' => \App\Models\ProductInTransit::STATUS_IN_TRANSIT,
             ])->delete();
         } catch (\Exception $e) {
@@ -479,7 +481,7 @@ class Product extends Model
                 'product_template_id' => $this->product_template_id,
                 'warehouse_id' => $this->warehouse_id,
                 'name' => $this->name,
-                'producer' => $this->producer,
+                'producer_id' => $this->producer_id,
                 'status' => \App\Models\ProductInTransit::STATUS_IN_TRANSIT,
             ])->first();
 
@@ -506,7 +508,7 @@ class Product extends Model
                 'attributes' => $this->attributes,
                 'calculated_volume' => $this->calculated_volume,
                 'quantity' => $this->quantity,
-                'producer' => $this->producer,
+                'producer_id' => $this->producer_id, // Используем producer_id
                 'shipping_location' => $this->shipping_location ?? 'Склад',
                 'shipping_date' => $this->shipping_date ?? now(),
                 'transport_number' => $this->transport_number,

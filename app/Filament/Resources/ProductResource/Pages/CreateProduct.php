@@ -61,7 +61,7 @@ class CreateProduct extends CreateRecord
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
-                    if (isset($data['attributes'][$attributeKey]) && $data['attributes'][$attributeKey] !== null) {
+                    if ($templateAttribute->type !== 'text' && isset($data['attributes'][$attributeKey]) && $data['attributes'][$attributeKey] !== null) {
                         $nameParts[] = $data['attributes'][$attributeKey];
                     }
                 }

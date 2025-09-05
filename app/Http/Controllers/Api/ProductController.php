@@ -31,8 +31,8 @@ class ProductController extends Controller
             ->when($request->template_id, function ($query, $templateId) {
                 $query->where('product_template_id', $templateId);
             })
-            ->when($request->producer, function ($query, $producer) {
-                $query->where('producer', $producer);
+            ->when($request->producer_id, function ($query, $producerId) {
+                $query->where('producer_id', $producerId);
             })
             ->when($request->in_stock, function ($query) {
                 $query->where('quantity', '>', 0);
@@ -121,7 +121,14 @@ class ProductController extends Controller
         if (! $name && $request->has('attributes')) {
             $template = ProductTemplate::find($request->product_template_id);
             if ($template) {
-                $name = $template->name.': '.implode(', ', array_values($request->get('attributes', [])));
+                $nameParts = [];
+                foreach ($template->attributes as $templateAttribute) {
+                    $attributeKey = $templateAttribute->variable;
+                    if ($templateAttribute->type !== 'text' && isset($request->attributes[$attributeKey]) && $request->attributes[$attributeKey] !== null) {
+                        $nameParts[] = $request->attributes[$attributeKey];
+                    }
+                }
+                $name = $template->name.': '.implode(', ', $nameParts);
             }
         }
 
@@ -134,7 +141,7 @@ class ProductController extends Controller
             'attributes' => $request->get('attributes', []),
             'quantity' => $request->quantity,
             'transport_number' => $request->get('transport_number'), // Номер транспортного средства
-            'producer' => $request->producer,
+            'producer_id' => $request->producer_id, // Используем producer_id
             'arrival_date' => $request->get('arrival_date', now()->toDateString()),
             'is_active' => $request->get('is_active', true),
         ]);
@@ -303,8 +310,8 @@ class ProductController extends Controller
             ->when($request->template_id, function ($query, $templateId) {
                 $query->where('product_template_id', $templateId);
             })
-            ->when($request->producer, function ($query, $producer) {
-                $query->where('producer', $producer);
+            ->when($request->producer_id, function ($query, $producerId) {
+                $query->where('producer_id', $producerId);
             })
             ->when($request->in_stock, function ($query) {
                 $query->where('quantity', '>', 0);
@@ -333,7 +340,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'description' => $product->description,
-                'producer' => $product->producer,
+                'producer_id' => $product->producer_id, // Используем producer_id
                 'quantity' => $product->quantity,
                 'calculated_volume' => $product->calculated_volume,
                 'warehouse' => $product->warehouse->name ?? '',

@@ -98,7 +98,7 @@ class CreateProductInTransit extends CreateRecord
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
-                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                    if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
                         $nameParts[] = $attributes[$attributeKey];
                     }
                 }
@@ -204,7 +204,7 @@ class CreateProductInTransit extends CreateRecord
                         $nameParts = [];
                         foreach ($template->attributes as $templateAttribute) {
                             $attributeKey = $templateAttribute->variable;
-                            if (isset($productAttributes[$attributeKey]) && $productAttributes[$attributeKey] !== null) {
+                            if ($templateAttribute->type !== 'text' && isset($productAttributes[$attributeKey]) && $productAttributes[$attributeKey] !== null) {
                                 $nameParts[] = $productAttributes[$attributeKey];
                             }
                         }
@@ -281,7 +281,7 @@ class CreateProductInTransit extends CreateRecord
         $nameParts = [];
         foreach ($template->attributes as $templateAttribute) {
             $attributeKey = $templateAttribute->variable;
-            if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+            if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
                 $nameParts[] = $attributes[$attributeKey];
             }
         }

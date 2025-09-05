@@ -77,15 +77,16 @@ class SaleResource extends Resource
             return 0;
         }
 
-        // Доступное количество = сумма количеств по products с теми же характеристиками
+        // Доступное количество = сумма количеств минус сумма проданных по products с теми же характеристиками
         $availableQuantity = \App\Models\Product::where('product_template_id', $product->product_template_id)
             ->where('warehouse_id', $product->warehouse_id)
-            ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
+            ->where('producer_id', $product->producer_id) // Используем producer_id
             ->where('status', \App\Models\Product::STATUS_IN_STOCK)
             ->where('is_active', true)
-            ->sum('quantity');
+            ->selectRaw('SUM(quantity - COALESCE(sold_quantity, 0)) as available_quantity')
+            ->value('available_quantity');
 
-        return max(0, $availableQuantity);
+        return max(0, $availableQuantity ?? 0);
     }
 
     public static function form(Form $form): Form
@@ -138,26 +139,33 @@ class SaleResource extends Resource
                                             ->select([
                                                 'product_template_id',
                                                 'warehouse_id',
-                                                'producer',
+                                                'producer_id', // Используем producer_id
                                                 'name',
-                                                DB::raw('SUM(quantity) as available_quantity'),
+                                                DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as available_quantity'),
                                             ])
                                             ->where('warehouse_id', $warehouseId)
                                             ->where('status', Product::STATUS_IN_STOCK)
                                             ->where('is_active', true)
-                                            ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'name'])
+                                            ->groupBy(['product_template_id', 'warehouse_id', 'producer_id', 'name']) // Группируем по producer_id
                                             ->having('available_quantity', '>', 0)
                                             ->get();
 
                                         $options = [];
                                         foreach ($availableProducts as $product) {
-                                            $producerLabel = $product->producer ? " ({$product->producer})" : '';
+                                            $producerLabel = '';
+                                            if ($product->producer_id) {
+                                                $producer = \App\Models\Producer::find($product->producer_id);
+                                                if ($producer) {
+                                                    $producerLabel = " ({$producer->name})";
+                                                }
+                                            }
+                                            
                                             $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
 
                                             // Используем ID первого товара из группы как ключ
                                             $firstProduct = Product::where('product_template_id', $product->product_template_id)
                                                 ->where('warehouse_id', $product->warehouse_id)
-                                                ->whereRaw('COALESCE(producer, "null") = ?', [$product->producer ?? 'null'])
+                                                ->where('producer_id', $product->producer_id) // Используем producer_id
                                                 ->where('status', Product::STATUS_IN_STOCK)
                                                 ->where('is_active', true)
                                                 ->first();
@@ -281,6 +289,15 @@ class SaleResource extends Resource
                                     ->tel()
                                     ->maxLength(255),
 
+                                TextInput::make('customer_email')
+                                    ->label('Email')
+                                    ->email()
+                                    ->maxLength(255),
+
+                                TextInput::make('customer_address')
+                                    ->label('Адрес')
+                                    ->maxLength(500)
+                                    ->columnSpan(1),
                             ]),
                     ]),
 

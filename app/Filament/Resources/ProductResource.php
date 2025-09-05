@@ -317,11 +317,11 @@ class ProductResource extends Resource
                                                 }
                                             }
 
-                                            // Формируем наименование из заполненных характеристик
+                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                             $nameParts = [];
                                             foreach ($template->attributes as $templateAttribute) {
                                                 $attributeKey = $templateAttribute->variable;
-                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                     $nameParts[] = $attributes[$attributeKey];
                                                 }
                                             }
@@ -330,6 +330,8 @@ class ProductResource extends Resource
                                                 $templateName = $template->name ?? 'Товар';
                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                 $set('name', $generatedName);
+                                            } else {
+                                                $set('name', $template->name ?? 'Товар');
                                             }
                                         });
                                     break;
@@ -397,11 +399,11 @@ class ProductResource extends Resource
                                                 }
                                             }
 
-                                            // Формируем наименование из заполненных характеристик
+                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
                                             $nameParts = [];
                                             foreach ($template->attributes as $templateAttribute) {
                                                 $attributeKey = $templateAttribute->variable;
-                                                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
                                                     $nameParts[] = $attributes[$attributeKey];
                                                 }
                                             }
@@ -410,6 +412,8 @@ class ProductResource extends Resource
                                                 $templateName = $template->name ?? 'Товар';
                                                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                                                 $set('name', $generatedName);
+                                            } else {
+                                                $set('name', $template->name ?? 'Товар');
                                             }
                                         });
                                     break;
@@ -557,12 +561,12 @@ class ProductResource extends Resource
         // Добавляем количество (но не в формулу, только для отображения)
         $quantity = $get('quantity') ?? 1;
 
-        // Формируем наименование из характеристик
+        // Формируем наименование из характеристик, исключая текстовые атрибуты
         if (! empty($attributes)) {
             $nameParts = [];
             foreach ($template->attributes as $templateAttribute) {
                 $attributeKey = $templateAttribute->variable;
-                if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
                     $nameParts[] = $attributes[$attributeKey];
                 }
             }
@@ -572,6 +576,8 @@ class ProductResource extends Resource
                 $templateName = $template->name ?? 'Товар';
                 $generatedName = $templateName.': '.implode(', ', $nameParts);
                 $set('name', $generatedName);
+            } else {
+                $set('name', $template->name ?? 'Товар');
             }
 
             // Рассчитываем объем только для числовых характеристик

@@ -56,7 +56,7 @@ class EditProduct extends EditRecord
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
-                    if (isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
+                    if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
                         $nameParts[] = $attributes[$attributeKey];
                     }
                 }
