@@ -20,6 +20,26 @@ class ViewSale extends ViewRecord
         return [
             // Actions\EditAction::make()
             //    ->label('Изменить'),
+            Actions\Action::make('correction')
+                ->label('Корректировка')
+                ->icon('heroicon-o-pencil-square')
+                ->color('warning')
+                ->visible(function (Sale $record): bool {
+                    return $record->payment_status === Sale::PAYMENT_STATUS_PAID;
+                })
+                ->form([
+                    Forms\Components\Textarea::make('reason_cancellation')
+                        ->label('Причина отмены')
+                        ->required()
+                        ->maxLength(500),
+                ])
+                ->action(function (Sale $record, array $data): void {
+                    $record->cancelSale($data['reason_cancellation']);
+                })
+                ->requiresConfirmation()
+                ->modalHeading('Корректировка продажи')
+                ->modalDescription('Вы отменяете продажу, товары вернутся на склад. Укажите причину отмены.')
+                ->modalSubmitActionLabel('Отменить продажу'),
             Actions\Action::make('cancel_sale')
                 ->label('Отменить продажу')
                 ->icon('heroicon-o-x-mark')
