@@ -114,6 +114,17 @@ class StockResource extends Resource
                             ->label('Итого')
                     ),
 
+                Tables\Columns\TextColumn::make('total_sold_quantity')
+                    ->label('Проданное количество')
+                    ->numeric()
+                    ->sortable()
+                    ->badge()
+                    ->color('danger')
+                    ->summarize(
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->label('Итого')
+                    ),
+
                 Tables\Columns\TextColumn::make('total_volume')
                     ->label('Доступный объем (м³)')
                     ->formatStateUsing(function ($state) {
@@ -198,6 +209,7 @@ class StockResource extends Resource
                 'calculated_volume',
                 // Агрегированные данные
                 DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
+                DB::raw('SUM(COALESCE(sold_quantity, 0)) as total_sold_quantity'),
                 DB::raw('SUM((quantity - COALESCE(sold_quantity, 0)) * calculated_volume) as total_volume'),
                 DB::raw('COUNT(*) as product_count'),
                 DB::raw('MAX(arrival_date) as last_arrival_date'),
