@@ -256,7 +256,7 @@ class SaleResource extends Resource
                                     ->options([
                                         'RUB' => 'Руб',
                                         'USD' => 'USD',
-                                        'KGS' => 'Сомы',
+                                        'UZS' => 'Сумы',
                                     ])
                                     ->default('RUB')
                                     ->required(),
