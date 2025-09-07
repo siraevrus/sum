@@ -210,7 +210,7 @@ class StockResource extends Resource
                 // Агрегированные данные
                 DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
                 DB::raw('SUM(COALESCE(sold_quantity, 0)) as total_sold_quantity'),
-                DB::raw('SUM((quantity - COALESCE(sold_quantity, 0)) * calculated_volume) as total_volume'),
+                DB::raw('SUM((quantity - COALESCE(sold_quantity, 0)) * calculated_volume / quantity) as total_volume'),
                 DB::raw('COUNT(*) as product_count'),
                 DB::raw('MAX(arrival_date) as last_arrival_date'),
                 DB::raw('MIN(created_at) as first_created_at'),
