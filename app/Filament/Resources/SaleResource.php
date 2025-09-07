@@ -162,17 +162,9 @@ class SaleResource extends Resource
 
                                             $displayName = "{$product->name}{$producerLabel} - Доступно: {$product->available_quantity}";
 
-                                            // Используем ID первого товара из группы как ключ
-                                            $firstProduct = Product::where('product_template_id', $product->product_template_id)
-                                                ->where('warehouse_id', $product->warehouse_id)
-                                                ->where('producer_id', $product->producer_id) // Используем producer_id
-                                                ->where('status', Product::STATUS_IN_STOCK)
-                                                ->where('is_active', true)
-                                                ->first();
-
-                                            if ($firstProduct) {
-                                                $options[$firstProduct->id] = $displayName;
-                                            }
+                                            // Используем составной ключ для уникальности
+                                            $compositeKey = "{$product->product_template_id}|{$product->warehouse_id}|{$product->producer_id}|{$product->name}";
+                                            $options[$compositeKey] = $displayName;
                                         }
 
                                         return $options;
@@ -435,7 +427,7 @@ class SaleResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Отменить продажу')
                     ->modalDescription('Товар будет возвращен на склад и продажа будет отменена.')
-                    ->modalSubmitActionLabel('Отменить'),
+                    ->modalSubmitActionLabel('ОК'),
             ])
             ->defaultSort('created_at', 'desc');
     }

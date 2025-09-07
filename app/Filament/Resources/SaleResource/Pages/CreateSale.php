@@ -29,15 +29,17 @@ class CreateSale extends CreateRecord
             if (count($parts) >= 4) {
                 $productTemplateId = $parts[0];
                 $warehouseId = $parts[1];
-                $producer = $parts[2];
-                $name = base64_decode($parts[3]);
+                $producerId = $parts[2];
+                $name = $parts[3]; // Название уже в правильном формате
 
                 // Находим конкретный товар для списания
                 $product = \App\Models\Product::where('product_template_id', $productTemplateId)
                     ->where('warehouse_id', $warehouseId)
-                    ->where('producer', $producer)
+                    ->where('producer_id', $producerId)
                     ->where('name', $name)
-                    ->where('quantity', '>', 0)
+                    ->where('status', \App\Models\Product::STATUS_IN_STOCK)
+                    ->where('is_active', true)
+                    ->whereRaw('(quantity - COALESCE(sold_quantity, 0)) > 0')
                     ->first();
 
                 if ($product) {

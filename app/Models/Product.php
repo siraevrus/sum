@@ -101,7 +101,7 @@ class Product extends Model
      */
     public function producer(): BelongsTo
     {
-        return $this->belongsTo(Producer::class);
+        return $this->belongsTo(Producer::class, 'producer_id');
     }
 
     /**
@@ -342,10 +342,10 @@ class Product extends Model
      */
     public static function getProducers(): array
     {
-        return static::distinct()
-            ->whereNotNull('producer')
-            ->pluck('producer')
-            ->filter()
+        return static::join('producers', 'products.producer_id', '=', 'producers.id')
+            ->select('producers.name')
+            ->distinct()
+            ->pluck('producers.name')
             ->sort()
             ->values()
             ->toArray();

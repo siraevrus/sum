@@ -187,27 +187,36 @@ class StockResource extends Resource
             $baseQuery->where('warehouse_id', $user->warehouse_id);
         }
 
-        // Группируем товары по одинаковым характеристикам (исключая текстовые поля)
+        // Получаем переменные характеристик для группировки (только number и select типы)
+        $groupingVariables = \App\Models\ProductAttribute::query()
+            ->whereIn('type', ['number', 'select'])
+            ->distinct()
+            ->pluck('variable')
+            ->toArray();
+
+        // Создаем GROUP BY условия для группировки по характеристикам
+        $groupByAttributes = [];
+        $jsonExtracts = [];
+        
+        foreach ($groupingVariables as $variable) {
+            $groupByAttributes[] = DB::raw("JSON_EXTRACT(attributes, \"$.{$variable}\")");
+            $jsonExtracts[] = "COALESCE(JSON_EXTRACT(attributes, \"$.{$variable}\"), \"\")";
+        }
+
+        // Создаем уникальный ID для группированной записи
+        $uniqueIdSQL = !empty($jsonExtracts) 
+            ? "CONCAT(product_template_id, \"_\", warehouse_id, \"_\", producer_id, \"_\", HEX(SUBSTR(QUOTE(CONCAT(" . implode(', ', $jsonExtracts) . ")), 2, 8)))"
+            : "CONCAT(product_template_id, \"_\", warehouse_id, \"_\", producer_id)";
+
+        // Возвращаем запрос с группировкой
         return $baseQuery
             ->select([
-                // Создаем уникальный ID для группированной записи на основе не-текстовых характеристик
-                DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", HEX(SUBSTR(QUOTE(CONCAT(
-                    COALESCE(JSON_EXTRACT(attributes, "$.d"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.s"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.t"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.v"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.number"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.select"), "")
-                )), 2, 8))) as id'),
-                // Используем первое наименование из группы
+                DB::raw("{$uniqueIdSQL} as id"),
                 DB::raw('MIN(name) as name'),
                 'product_template_id',
                 'warehouse_id',
                 'producer_id',
-                // Создаем агрегированные атрибуты (берем первое значение из группы)
                 DB::raw('MIN(attributes) as attributes'),
-                'calculated_volume',
-                // Агрегированные данные
                 DB::raw('SUM(quantity - COALESCE(sold_quantity, 0)) as total_quantity'),
                 DB::raw('SUM(COALESCE(sold_quantity, 0)) as total_sold_quantity'),
                 DB::raw('SUM((quantity - COALESCE(sold_quantity, 0)) * calculated_volume / quantity) as total_volume'),
@@ -217,19 +226,11 @@ class StockResource extends Resource
                 DB::raw('MAX(created_at) as last_created_at'),
             ])
             ->with(['producer', 'productTemplate', 'warehouse'])
-            ->groupBy([
+            ->groupBy(array_merge([
                 'product_template_id',
                 'warehouse_id', 
                 'producer_id',
-                'calculated_volume',
-                // Группируем только по не-текстовым характеристикам
-                DB::raw('JSON_EXTRACT(attributes, "$.d")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.s")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.t")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.v")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.number")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.select")')
-            ])
+            ], $groupByAttributes))
             ->orderBy('name')
             ->orderBy('producer_id');
     }

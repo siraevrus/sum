@@ -505,6 +505,7 @@ class ProductResource extends Resource
                             ->label('Рассчитанный объем')
                             ->disabled()
                             ->live()
+                            ->columnSpanFull()
                             ->formatStateUsing(function ($state) {
                                 // Если это число - форматируем, если строка - показываем как есть
                                 if (is_numeric($state)) {
@@ -691,12 +692,16 @@ class ProductResource extends Resource
                     ->options(fn () => Warehouse::optionsForCurrentUser())
                     ->searchable(),
 
-                SelectFilter::make('producer')
+                SelectFilter::make('producer_id')
                     ->label('Производитель')
                     ->options(function () {
-                        $producers = Product::getProducers();
-
-                        return array_combine($producers, $producers);
+                        $producers = \App\Models\Producer::whereHas('products')->get();
+                        $options = [];
+                        foreach ($producers as $producer) {
+                            $productCount = $producer->products()->count();
+                            $options[$producer->id] = "{$producer->name} ({$productCount})";
+                        }
+                        return $options;
                     })
                     ->searchable(),
 

@@ -59,7 +59,7 @@ class ViewSale extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Отменить продажу')
                 ->modalDescription('Товар будет возвращен на склад и продажа будет отменена.')
-                ->modalSubmitActionLabel('Отменить'),
+                ->modalSubmitActionLabel('ОК'),
         ];
     }
 
