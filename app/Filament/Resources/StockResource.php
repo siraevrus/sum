@@ -192,10 +192,10 @@ class StockResource extends Resource
             ->select([
                 // Создаем уникальный ID для группированной записи на основе не-текстовых характеристик
                 DB::raw('CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", HEX(SUBSTR(QUOTE(CONCAT(
-                    COALESCE(JSON_EXTRACT(attributes, "$.g"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.d"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.s"), ""),
+                    COALESCE(JSON_EXTRACT(attributes, "$.t"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.v"), ""),
-                    COALESCE(JSON_EXTRACT(attributes, "$.type"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.number"), ""),
                     COALESCE(JSON_EXTRACT(attributes, "$.select"), "")
                 )), 2, 8))) as id'),
@@ -223,10 +223,10 @@ class StockResource extends Resource
                 'producer_id',
                 'calculated_volume',
                 // Группируем только по не-текстовым характеристикам
-                DB::raw('JSON_EXTRACT(attributes, "$.g")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.d")'),
                 DB::raw('JSON_EXTRACT(attributes, "$.s")'),
+                DB::raw('JSON_EXTRACT(attributes, "$.t")'),
                 DB::raw('JSON_EXTRACT(attributes, "$.v")'),
-                DB::raw('JSON_EXTRACT(attributes, "$.type")'),
                 DB::raw('JSON_EXTRACT(attributes, "$.number")'),
                 DB::raw('JSON_EXTRACT(attributes, "$.select")')
             ])
