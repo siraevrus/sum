@@ -3,27 +3,20 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RequestResource\Pages;
-use App\Models\Request;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
-use App\Models\User;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\Section;
+use App\Models\Request;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Actions\Action;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,12 +37,14 @@ class RequestResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        if (!$user) return false;
-        
+        if (! $user) {
+            return false;
+        }
+
         return in_array($user->role->value, [
             'admin',
             'warehouse_worker',
-            'sales_manager'
+            'sales_manager',
         ]);
     }
 
@@ -81,7 +76,7 @@ class RequestResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Очищаем старые характеристики при смене шаблона
                                         $set('calculated_volume', null);
-                                        
+
                                         // Добавляем динамические поля характеристик
                                         $templateId = $get('product_template_id');
                                         if ($templateId) {
@@ -100,7 +95,65 @@ class RequestResource extends Resource
                                     ->numeric()
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->live()
+                                    ->debounce(300)
+                                    ->afterStateUpdated(function (Set $set, Get $get) {
+                                        // Пересчитываем объем при изменении количества
+                                        $templateId = $get('product_template_id');
+                                        if (! $templateId) {
+                                            return;
+                                        }
+
+                                        $template = ProductTemplate::with('attributes')->find($templateId);
+                                        if (! $template) {
+                                            return;
+                                        }
+
+                                        // Собираем все значения характеристик
+                                        $attributes = [];
+                                        $formData = $get();
+
+                                        foreach ($formData as $key => $value) {
+                                            if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                $attributeName = str_replace('attribute_', '', $key);
+                                                $attributes[$attributeName] = $value;
+                                            }
+                                        }
+
+                                        // Рассчитываем объем для заполненных числовых характеристик
+                                        $numericAttributes = [];
+                                        foreach ($attributes as $key => $value) {
+                                            if (is_numeric($value) && $value > 0) {
+                                                $numericAttributes[$key] = $value;
+                                            }
+                                        }
+
+                                        // Добавляем количество в атрибуты для формулы
+                                        $quantity = $get('quantity') ?? 1;
+                                        if (is_numeric($quantity) && $quantity > 0) {
+                                            $numericAttributes['quantity'] = $quantity;
+                                        }
+
+                                        // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                        if (! empty($numericAttributes) && $template->formula) {
+                                            $testResult = $template->testFormula($numericAttributes);
+                                            if ($testResult['success']) {
+                                                $result = $testResult['result'];
+                                                $set('calculated_volume', $result);
+                                            } else {
+                                                // Если расчет не удался, показываем ошибку
+                                                $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                            }
+                                        } else {
+                                            // Если недостаточно данных для расчета, показываем подсказку
+                                            if (empty($numericAttributes)) {
+                                                $set('calculated_volume', 'Заполните числовые характеристики');
+                                            } else {
+                                                $set('calculated_volume', 'Формула не задана');
+                                            }
+                                        }
+                                    }),
 
                                 Select::make('status')
                                     ->label('Статус')
@@ -144,65 +197,189 @@ class RequestResource extends Resource
                     ->afterStateUpdated(function (Set $set, Get $get, $state) {
                         // Автоматически рассчитываем объем при изменении характеристик
                         $templateId = $get('product_template_id');
-                        if ($templateId) {
-                            $template = ProductTemplate::find($templateId);
-                            if ($template && $template->formula) {
-                                // Собираем все значения характеристик
-                                $attributes = [];
-                                foreach ($state as $key => $value) {
-                                    if (str_starts_with($key, 'attribute_')) {
-                                        $attributeName = str_replace('attribute_', '', $key);
-                                        $attributes[$attributeName] = $value;
-                                    }
-                                }
-                                
-                                if (!empty($attributes)) {
-                                    $testResult = $template->testFormula($attributes);
-                                    if ($testResult['success']) {
-                                        $set('calculated_volume', $testResult['result']);
-                                    }
-                                }
+                        if (! $templateId) {
+                            return;
+                        }
+
+                        $template = ProductTemplate::with('attributes')->find($templateId);
+                        if (! $template) {
+                            return;
+                        }
+
+                        // Собираем все значения характеристик
+                        $attributes = [];
+                        $formData = $get();
+
+                        foreach ($formData as $key => $value) {
+                            if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                $attributeName = str_replace('attribute_', '', $key);
+                                $attributes[$attributeName] = $value;
+                            }
+                        }
+
+                        // Рассчитываем объем для заполненных числовых характеристик
+                        $numericAttributes = [];
+                        foreach ($attributes as $key => $value) {
+                            if (is_numeric($value) && $value > 0) {
+                                $numericAttributes[$key] = $value;
+                            }
+                        }
+
+                        // Добавляем количество в атрибуты для формулы
+                        $quantity = $get('quantity') ?? 1;
+                        if (is_numeric($quantity) && $quantity > 0) {
+                            $numericAttributes['quantity'] = $quantity;
+                        }
+
+                        // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                        if (! empty($numericAttributes) && $template->formula) {
+                            $testResult = $template->testFormula($numericAttributes);
+                            if ($testResult['success']) {
+                                $result = $testResult['result'];
+                                $set('calculated_volume', $result);
+                            } else {
+                                // Если расчет не удался, показываем ошибку
+                                $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                            }
+                        } else {
+                            // Если недостаточно данных для расчета, показываем подсказку
+                            if (empty($numericAttributes)) {
+                                $set('calculated_volume', 'Заполните числовые характеристики');
+                            } else {
+                                $set('calculated_volume', 'Формула не задана');
                             }
                         }
                     })
                     ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
-                        if (!$templateId) {
+                        if (! $templateId) {
                             return [];
                         }
 
                         $template = ProductTemplate::with('attributes')->find($templateId);
-                        if (!$template) {
+                        if (! $template) {
                             return [];
                         }
 
                         $fields = [];
                         foreach ($template->attributes as $attribute) {
                             $fieldName = "attribute_{$attribute->variable}";
-                            
+
                             switch ($attribute->type) {
                                 case 'number':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->numeric()
                                         ->required($attribute->is_required)
-                                        ->live();
+                                        ->live()
+                                        ->debounce(300)
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            // Рассчитываем объем при изменении характеристики
+                                            $attributes = [];
+                                            $formData = $get();
+
+                                            foreach ($formData as $key => $value) {
+                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                    $attributeName = str_replace('attribute_', '', $key);
+                                                    $attributes[$attributeName] = $value;
+                                                }
+                                            }
+
+                                            // Рассчитываем объем для заполненных числовых характеристик
+                                            $numericAttributes = [];
+                                            foreach ($attributes as $key => $value) {
+                                                if (is_numeric($value) && $value > 0) {
+                                                    $numericAttributes[$key] = $value;
+                                                }
+                                            }
+
+                                            // Добавляем количество в атрибуты для формулы
+                                            $quantity = $get('quantity') ?? 1;
+                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                $numericAttributes['quantity'] = $quantity;
+                                            }
+
+                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                            if (! empty($numericAttributes) && $template->formula) {
+                                                $testResult = $template->testFormula($numericAttributes);
+                                                if ($testResult['success']) {
+                                                    $result = $testResult['result'];
+                                                    $set('calculated_volume', $result);
+                                                } else {
+                                                    // Если расчет не удался, показываем ошибку
+                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                }
+                                            } else {
+                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                if (empty($numericAttributes)) {
+                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                } else {
+                                                    $set('calculated_volume', 'Формула не задана');
+                                                }
+                                            }
+                                        });
                                     break;
-                                    
+
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->required($attribute->is_required)
                                         ->live();
                                     break;
-                                    
+
                                 case 'select':
                                     $options = $attribute->options_array;
                                     $fields[] = Select::make($fieldName)
                                         ->label($attribute->full_name)
                                         ->options($options)
                                         ->required($attribute->is_required)
-                                        ->live();
+                                        ->live()
+                                        ->debounce(300)
+                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                            // Рассчитываем объем при изменении характеристики
+                                            $attributes = [];
+                                            $formData = $get();
+
+                                            foreach ($formData as $key => $value) {
+                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                    $attributeName = str_replace('attribute_', '', $key);
+                                                    $attributes[$attributeName] = $value;
+                                                }
+                                            }
+
+                                            // Рассчитываем объем для заполненных числовых характеристик
+                                            $numericAttributes = [];
+                                            foreach ($attributes as $key => $value) {
+                                                if (is_numeric($value) && $value > 0) {
+                                                    $numericAttributes[$key] = $value;
+                                                }
+                                            }
+
+                                            // Добавляем количество в атрибуты для формулы
+                                            $quantity = $get('quantity') ?? 1;
+                                            if (is_numeric($quantity) && $quantity > 0) {
+                                                $numericAttributes['quantity'] = $quantity;
+                                            }
+
+                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                            if (! empty($numericAttributes) && $template->formula) {
+                                                $testResult = $template->testFormula($numericAttributes);
+                                                if ($testResult['success']) {
+                                                    $result = $testResult['result'];
+                                                    $set('calculated_volume', $result);
+                                                } else {
+                                                    // Если расчет не удался, показываем ошибку
+                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                }
+                                            } else {
+                                                // Если недостаточно данных для расчета, показываем подсказку
+                                                if (empty($numericAttributes)) {
+                                                    $set('calculated_volume', 'Заполните числовые характеристики');
+                                                } else {
+                                                    $set('calculated_volume', 'Формула не задана');
+                                                }
+                                            }
+                                        });
                                     break;
                             }
                         }
@@ -319,14 +496,14 @@ class RequestResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        
+
         // Администратор видит все запросы
         if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
             return parent::getEloquentQuery();
         }
-        
+
         // Остальные пользователи видят только свои запросы
         return parent::getEloquentQuery()
             ->where('user_id', $user?->id);
     }
-} 
+}
