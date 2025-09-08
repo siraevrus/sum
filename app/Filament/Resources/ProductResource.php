@@ -600,8 +600,8 @@ class ProductResource extends Resource
                     ->label('Наименование')
                     ->searchable()
                     ->sortable()
-                    ->color(function (Product $record): string {
-                        return $record->hasCorrection() ? 'danger' : 'gray';
+                    ->color(function (Product $record): ?string {
+                        return $record->hasCorrection() ? 'danger' : null;
                     }),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
