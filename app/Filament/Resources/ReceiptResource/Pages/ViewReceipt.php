@@ -22,6 +22,33 @@ class ViewReceipt extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('Изменить'),
+            Action::make('correction')
+                ->label(fn (Product $record): string => $record->hasCorrection() ? 'Изменить уточнение' : 'Уточнение')
+                ->icon(fn (Product $record): string => $record->hasCorrection() ? 'heroicon-o-pencil-square' : 'heroicon-o-chat-bubble-left-right')
+                ->color(fn (Product $record): string => $record->hasCorrection() ? 'gray' : 'warning')
+                ->form([
+                    \Filament\Forms\Components\Textarea::make('correction')
+                        ->label('Уточнение')
+                        ->placeholder('Введите уточнение...')
+                        ->required()
+                        ->minLength(10)
+                        ->maxLength(1000)
+                        ->rows(4)
+                        ->default(fn (Product $record): ?string => $record->correction),
+                ])
+                ->action(function (Product $record, array $data): void {
+                    $record->addCorrection($data['correction']);
+
+                    Notification::make()
+                        ->title('Уточнение сохранено')
+                        ->body('Уточнение успешно добавлено к товару.')
+                        ->success()
+                        ->send();
+                })
+                ->modalHeading('Внести уточнение')
+                ->modalDescription('Укажите дополнительную информацию или уточнения по данному товару')
+                ->modalSubmitActionLabel('Сохранить уточнение')
+                ->modalCancelActionLabel('Отмена'),
             Action::make('receive')
                 ->label('Принять товар')
                 ->icon('heroicon-o-check')
@@ -138,6 +165,34 @@ class ViewReceipt extends ViewRecord
                             })
                             ->columnSpanFull(),
                     ])
+                    ->columns(2),
+
+                InfoSection::make('Уточнения')
+                    ->schema([
+                        TextEntry::make('correction')
+                            ->label('Текст уточнения')
+                            ->formatStateUsing(function ($state, Product $record) {
+                                if (! $record->hasCorrection()) {
+                                    return 'Уточнения не внесены';
+                                }
+
+                                return $state;
+                            })
+                            ->badge()
+                            ->color(fn (Product $record) => $record->hasCorrection() ? 'warning' : 'gray')
+                            ->columnSpanFull(),
+                        TextEntry::make('updated_at')
+                            ->label('Дата последнего изменения')
+                            ->formatStateUsing(function ($state, Product $record) {
+                                if (! $record->hasCorrection()) {
+                                    return '—';
+                                }
+
+                                return $record->updated_at?->format('d.m.Y H:i');
+                            })
+                            ->visible(fn (Product $record) => $record->hasCorrection()),
+                    ])
+                    ->visible(fn (Product $record) => $record->hasCorrection())
                     ->columns(2),
             ]);
     }

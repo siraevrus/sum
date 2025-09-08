@@ -44,6 +44,8 @@ class Product extends Model
         'actual_arrival_date',
         'document_path',
         'notes',
+        'correction',
+        'correction_status',
     ];
 
     protected $casts = [
@@ -58,6 +60,7 @@ class Product extends Model
         'expected_arrival_date' => 'date',
         'actual_arrival_date' => 'date',
         'document_path' => 'array',
+        'correction_status' => 'string',
     ];
 
     protected $attributes = [
@@ -178,6 +181,7 @@ class Product extends Model
 
             if ($testResult['success']) {
                 $result = (float) $testResult['result'];
+
                 return $result;
             }
 
@@ -249,6 +253,7 @@ class Product extends Model
                 $name .= ' ('.$producer->name.')';
             }
         }
+
         return $name;
     }
 
@@ -526,5 +531,35 @@ class Product extends Model
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Проверить, есть ли уточнение у товара
+     */
+    public function hasCorrection(): bool
+    {
+        return $this->correction_status === 'correction' && ! empty($this->correction);
+    }
+
+    /**
+     * Добавить уточнение к товару
+     */
+    public function addCorrection(string $correctionText): bool
+    {
+        return $this->update([
+            'correction' => $correctionText,
+            'correction_status' => 'correction',
+        ]);
+    }
+
+    /**
+     * Удалить уточнение
+     */
+    public function removeCorrection(): bool
+    {
+        return $this->update([
+            'correction' => null,
+            'correction_status' => null,
+        ]);
     }
 }
