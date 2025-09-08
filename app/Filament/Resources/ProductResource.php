@@ -726,6 +726,19 @@ class ProductResource extends Resource
                                 fn (Builder $query, $date): Builder => $query->where('arrival_date', '<=', $date),
                             );
                     }),
+
+                Filter::make('has_correction')
+                    ->label('Корректировка')
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            $data['has_correction'],
+                            fn (Builder $query): Builder => $query->where('correction_status', 'correction')
+                        );
+                    })
+                    ->form([
+                        Forms\Components\Checkbox::make('has_correction')
+                            ->label('Показать только товары с уточнениями'),
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label(''),
