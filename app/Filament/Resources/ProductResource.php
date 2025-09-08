@@ -571,7 +571,9 @@ class ProductResource extends Resource
 
                                 $documentsList = [];
                                 foreach ($documents as $index => $document) {
-                                    $documentsList[] = ($index + 1).'. '.basename($document);
+                                    $fileName = basename($document);
+                                    $fileUrl = asset('storage/'.$document);
+                                    $documentsList[] = ($index + 1).'. ['.$fileName.']('.$fileUrl.')';
                                 }
 
                                 return "📄 **Прикрепленные документы:**\n\n".
