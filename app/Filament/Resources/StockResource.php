@@ -9,7 +9,6 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Enums\RecordCheckboxPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -80,7 +79,7 @@ class StockResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->recordCheckboxPosition(RecordCheckboxPosition::Hidden)
+            ->recordCheckboxPosition(null)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
