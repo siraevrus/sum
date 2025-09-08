@@ -554,8 +554,7 @@ class ProductResource extends Resource
                     ])
                     ->visible(fn (Product $record): bool => $record->hasCorrection())
                     ->collapsible(false)
-                    ->icon('heroicon-o-exclamation-triangle')
-                    ->color('warning'),
+                    ->icon('heroicon-o-exclamation-triangle'),
 
             ]);
     }
