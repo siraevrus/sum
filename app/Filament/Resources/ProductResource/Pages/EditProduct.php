@@ -24,13 +24,14 @@ class EditProduct extends EditRecord
 
     public function form(Form $form): Form
     {
-        $parentForm = parent::form($form);
-        $parentSchema = $parentForm->getSchema();
+        $record = $this->getRecord();
+
+        // Получаем схему из родительского ресурса
+        $schema = ProductResource::form($form)->getSchema();
 
         // Добавляем секцию коррекции только если есть уточнение
-        $record = $this->getRecord();
         if ($record && $record->hasCorrection()) {
-            $parentSchema[] = Section::make('Коррекция')
+            $schema[] = Section::make('Коррекция')
                 ->schema([
                     Placeholder::make('correction_info')
                         ->label('')
@@ -43,7 +44,7 @@ class EditProduct extends EditRecord
                 ->collapsed(false);
         }
 
-        return $form->schema($parentSchema);
+        return $form->schema($schema);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
