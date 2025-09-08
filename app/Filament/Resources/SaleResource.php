@@ -25,6 +25,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SaleResource extends Resource
 {
@@ -64,6 +65,12 @@ class SaleResource extends Resource
         $totalPrice = $cashAmount + $nocashAmount;
 
         $set('total_price', $totalPrice);
+
+        Log::info('Sale form: calculateTotalPrice', [
+            'cash_amount' => $cashAmount,
+            'nocash_amount' => $nocashAmount,
+            'total_price' => $totalPrice,
+        ]);
     }
 
     /**
@@ -71,22 +78,40 @@ class SaleResource extends Resource
      */
     private static function getMaxAvailableQuantity(string $productId): int
     {
-        // Получаем товар по ID
-        $product = \App\Models\Product::find($productId);
-        if (! $product) {
+        // Ожидаем составной ключ: template|warehouse|producer|name
+        $parts = explode('|', $productId, 4);
+        if (count($parts) !== 4) {
+            Log::warning('Sale form: getMaxAvailableQuantity - invalid composite product key', [
+                'product_id' => $productId,
+            ]);
+
             return 0;
         }
 
-        // Доступное количество = сумма количеств минус сумма проданных по products с теми же характеристиками
-        $availableQuantity = \App\Models\Product::where('product_template_id', $product->product_template_id)
-            ->where('warehouse_id', $product->warehouse_id)
-            ->where('producer_id', $product->producer_id) // Используем producer_id
+        [$templateId, $warehouseId, $producerId, $name] = $parts;
+
+        $availableQuantity = \App\Models\Product::query()
+            ->where('product_template_id', $templateId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('producer_id', $producerId)
+            ->where('name', $name)
             ->where('status', \App\Models\Product::STATUS_IN_STOCK)
             ->where('is_active', true)
             ->selectRaw('SUM(quantity - COALESCE(sold_quantity, 0)) as available_quantity')
             ->value('available_quantity');
 
-        return max(0, $availableQuantity ?? 0);
+        $result = max(0, $availableQuantity ?? 0);
+
+        Log::info('Sale form: getMaxAvailableQuantity (composite)', [
+            'product_template_id' => $templateId,
+            'warehouse_id' => $warehouseId,
+            'producer_id' => $producerId,
+            'name' => $name,
+            'calculated_available' => $availableQuantity,
+            'result' => $result,
+        ]);
+
+        return $result;
     }
 
     public static function form(Form $form): Form
@@ -115,6 +140,12 @@ class SaleResource extends Resource
                                         $set('quantity', 1);
                                         // Обновляем общую сумму
                                         static::calculateTotalPrice($set, $get);
+
+                                        Log::info('Sale form: warehouse changed', [
+                                            'warehouse_id' => $get('warehouse_id'),
+                                            'product_reset_to' => null,
+                                            'quantity_reset_to' => 1,
+                                        ]);
                                     }),
 
                                 DatePicker::make('sale_date')
@@ -150,6 +181,11 @@ class SaleResource extends Resource
                                             ->having('available_quantity', '>', 0)
                                             ->get();
 
+                                        Log::info('Sale form: product options built', [
+                                            'warehouse_id' => $warehouseId,
+                                            'options_count' => $availableProducts->count(),
+                                        ]);
+
                                         $options = [];
                                         foreach ($availableProducts as $product) {
                                             $producerLabel = '';
@@ -177,6 +213,11 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $set('quantity', 1);
                                         static::calculateTotalPrice($set, $get);
+
+                                        Log::info('Sale form: product changed', [
+                                            'product_id' => $get('product_id'),
+                                            'quantity_reset_to' => 1,
+                                        ]);
                                     })
                                     ->visible(fn ($get) => ! ($get('record') && $get('record')->exists)),
 
@@ -187,7 +228,22 @@ class SaleResource extends Resource
                                         if ($record && $record->exists) {
                                             $product = Product::find($record->product_id);
 
-                                            return $product ? "{$product->id} — {$product->name}" : '—';
+                                            // Пытаемся извлечь наименование из composite_product_key (template|warehouse|producer|name)
+                                            $nameFromComposite = null;
+                                            if (! empty($record->composite_product_key) && str_contains($record->composite_product_key, '|')) {
+                                                $parts = explode('|', $record->composite_product_key, 4);
+                                                if (count($parts) === 4) {
+                                                    $nameFromComposite = $parts[3];
+                                                }
+                                            }
+
+                                            if ($product) {
+                                                $displayName = $nameFromComposite ?: $product->name;
+
+                                                return "{$product->id} — {$displayName}";
+                                            }
+
+                                            return $nameFromComposite ?: '—';
                                         }
 
                                         return null;
@@ -204,11 +260,78 @@ class SaleResource extends Resource
                                     ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
+
+                                        Log::info('Sale form: quantity updated', [
+                                            'product_id' => $get('product_id'),
+                                            'quantity' => $get('quantity'),
+                                        ]);
                                     })
                                     ->maxValue(function (Get $get) {
                                         $productId = $get('product_id');
+
+                                        // Существующая запись: считаем по фактическому товару (числовой ID)
+                                        $record = $get('record');
+                                        if ($record && $record->exists) {
+                                            $product = \App\Models\Product::find($record->product_id);
+                                            if (! $product) {
+                                                Log::warning('Sale form: maxValue - product not found for existing record', [
+                                                    'record_product_id' => $record->product_id,
+                                                ]);
+                                                return 0;
+                                            }
+
+                                            $availableQuantity = \App\Models\Product::query()
+                                                ->where('product_template_id', $product->product_template_id)
+                                                ->where('warehouse_id', $product->warehouse_id)
+                                                ->where('producer_id', $product->producer_id)
+                                                ->where('name', $product->name)
+                                                ->where('status', \App\Models\Product::STATUS_IN_STOCK)
+                                                ->where('is_active', true)
+                                                ->selectRaw('SUM(quantity - COALESCE(sold_quantity, 0)) as available_quantity')
+                                                ->value('available_quantity');
+
+                                            $max = max(0, $availableQuantity ?? 0);
+                                            Log::info('Sale form: quantity maxValue (existing record)', [
+                                                'record_id' => $record->id ?? null,
+                                                'product_id' => $record->product_id,
+                                                'max_value' => $max,
+                                            ]);
+
+                                            return $max;
+                                        }
+
+                                        // Новый рекорд: product_id может быть составным ключом, либо числовым ID — подстрахуемся
+                                        if ($productId && ! str_contains((string) $productId, '|') && ctype_digit((string) $productId)) {
+                                            $product = \App\Models\Product::find((int) $productId);
+                                            if ($product) {
+                                                $availableQuantity = \App\Models\Product::query()
+                                                    ->where('product_template_id', $product->product_template_id)
+                                                    ->where('warehouse_id', $product->warehouse_id)
+                                                    ->where('producer_id', $product->producer_id)
+                                                    ->where('name', $product->name)
+                                                    ->where('status', \App\Models\Product::STATUS_IN_STOCK)
+                                                    ->where('is_active', true)
+                                                    ->selectRaw('SUM(quantity - COALESCE(sold_quantity, 0)) as available_quantity')
+                                                    ->value('available_quantity');
+
+                                                $max = max(0, $availableQuantity ?? 0);
+                                                Log::info('Sale form: quantity maxValue (create numeric id fallback)', [
+                                                    'product_id' => (int) $productId,
+                                                    'max_value' => $max,
+                                                ]);
+
+                                                return $max;
+                                            }
+                                        }
+
                                         if ($productId) {
-                                            return static::getMaxAvailableQuantity($productId);
+                                            $max = static::getMaxAvailableQuantity($productId);
+                                            Log::info('Sale form: quantity maxValue calculated', [
+                                                'product_id' => $productId,
+                                                'max_value' => $max,
+                                            ]);
+
+                                            return $max;
                                         }
 
                                         return 999999;
