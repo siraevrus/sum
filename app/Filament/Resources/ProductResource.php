@@ -533,6 +533,30 @@ class ProductResource extends Resource
                         ];
                     }),
 
+                Section::make('Информация о корректировке')
+                    ->schema([
+                        Forms\Components\Placeholder::make('correction_info')
+                            ->label('')
+                            ->content(function (Product $record): string {
+                                if (! $record->hasCorrection()) {
+                                    return '';
+                                }
+
+                                $correctionText = $record->correction ?? 'Нет текста уточнения';
+                                $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
+
+                                return "⚠️ **У товара есть уточнение:**\n\n".
+                                       "**Текст уточнения:** {$correctionText}\n\n".
+                                       "**Дата внесения:** {$updatedAt}";
+                            })
+                            ->visible(fn (Product $record): bool => $record->hasCorrection())
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (Product $record): bool => $record->hasCorrection())
+                    ->collapsible(false)
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->color('warning'),
+
             ]);
     }
 
