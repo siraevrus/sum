@@ -67,6 +67,72 @@ class ViewSale extends ViewRecord
     {
         return $infolist
             ->schema([
+                Section::make('Основная информация')
+                    ->schema([
+                        TextEntry::make('sale_number')
+                            ->label('Номер продажи'),
+                        TextEntry::make('sale_date')
+                            ->label('Дата продажи')
+                            ->date(),
+                        TextEntry::make('product.name')
+                            ->label('Товар'),
+                        TextEntry::make('quantity')
+                            ->label('Количество')
+                            ->badge(),
+                        TextEntry::make('total_price')
+                            ->label('Общая сумма')
+                            ->formatStateUsing(fn ($state, $record) => number_format($state, 2, '.', ' ').' '.($record->currency ?? '')),
+                        TextEntry::make('cash_amount')
+                            ->label('Сумма (нал)')
+                            ->formatStateUsing(fn ($state) => number_format($state, 2, '.', ' ')),
+                        TextEntry::make('nocash_amount')
+                            ->label('Сумма (безнал)')
+                            ->formatStateUsing(fn ($state) => number_format($state, 2, '.', ' ')),
+                        TextEntry::make('currency')
+                            ->label('Валюта'),
+                        TextEntry::make('exchange_rate')
+                            ->label('Курс валюты')
+                            ->formatStateUsing(fn ($state) => number_format($state, 4, '.', ' ')),
+                        TextEntry::make('payment_status')
+                            ->label('Статус оплаты')
+                            ->formatStateUsing(fn ($state, $record) => $record->getPaymentStatusLabel())
+                            ->badge()
+                            ->color(fn ($record) => $record->getPaymentStatusColor()),
+                        TextEntry::make('user.name')
+                            ->label('Продавец'),
+                        TextEntry::make('warehouse.name')
+                            ->label('Склад'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Информация о клиенте')
+                    ->schema([
+                        TextEntry::make('customer_name')
+                            ->label('Имя клиента')
+                            ->placeholder('Не указано'),
+                        TextEntry::make('customer_phone')
+                            ->label('Телефон клиента')
+                            ->placeholder('Не указан'),
+                        TextEntry::make('customer_email')
+                            ->label('Email')
+                            ->placeholder('Не указан'),
+                        TextEntry::make('customer_address')
+                            ->label('Адрес')
+                            ->placeholder('Не указан')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                Section::make('Дополнительная информация')
+                    ->schema([
+                        TextEntry::make('notes')
+                            ->label('Заметки')
+                            ->placeholder('Нет заметок')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
+
                 Section::make('Причина отмены')
                     ->schema([
                         TextEntry::make('reason_cancellation')

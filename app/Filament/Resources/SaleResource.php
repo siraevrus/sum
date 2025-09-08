@@ -228,7 +228,7 @@ class SaleResource extends Resource
                                         if ($record && $record->exists) {
                                             $product = Product::find($record->product_id);
 
-                                            return $product ? "{$product->id} — {$product->name}" : '—';
+                                            return $product ? $product->name : '—';
                                         }
 
                                         return null;

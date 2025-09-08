@@ -174,11 +174,6 @@ class RequestResource extends Resource
                             ->required()
                             ->maxLength(2000),
 
-                        Textarea::make('notes')
-                            ->label('Заметки')
-                            ->rows(3)
-                            ->maxLength(1000),
-
                         Textarea::make('admin_notes')
                             ->label('Заметки администратора')
                             ->rows(3)
@@ -392,8 +387,20 @@ class RequestResource extends Resource
                         TextInput::make('calculated_volume')
                             ->label('Рассчитанный объем')
                             ->disabled()
+                            ->dehydrated(true)
                             ->formatStateUsing(function ($state) {
-                                return $state ? number_format($state, 3, '.', ' ') : '0.000';
+                                return is_numeric($state) ? number_format($state, 3, '.', ' ') : '0.000';
+                            })
+                            ->dehydrateStateUsing(function ($state) {
+                                // Преобразуем отформатированную строку обратно в число перед сохранением
+                                if (is_string($state)) {
+                                    $normalized = str_replace([' ', '\u{00A0}'], '', $state);
+                                    $normalized = str_replace(',', '.', $normalized);
+
+                                    return (float) $normalized;
+                                }
+
+                                return $state;
                             })
                             ->suffix(function (Get $get) {
                                 $templateId = $get('product_template_id');
@@ -450,6 +457,7 @@ class RequestResource extends Resource
             ])
             ->emptyStateHeading('Нет запросов')
             ->emptyStateDescription('Создайте первый запрос, чтобы начать работу.')
+            ->recordUrl(fn (\App\Models\Request $record) => self::getUrl('view', ['record' => $record]))
             ->filters([
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
@@ -465,6 +473,7 @@ class RequestResource extends Resource
 
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
