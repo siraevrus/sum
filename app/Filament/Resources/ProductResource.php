@@ -600,13 +600,8 @@ class ProductResource extends Resource
                     ->label('Наименование')
                     ->searchable()
                     ->sortable()
-                    ->html()
-                    ->formatStateUsing(function (string $state, Product $record): string {
-                        if ($record->hasCorrection()) {
-                            return '<span style="color: red; font-weight: bold;">'.e($state).'</span>';
-                        }
-
-                        return e($state);
+                    ->color(function (Product $record): string {
+                        return $record->hasCorrection() ? 'danger' : 'gray';
                     }),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
