@@ -557,33 +557,35 @@ class ProductResource extends Resource
 
                 Section::make('Документы')
                     ->schema([
-                        Forms\Components\Placeholder::make('documents_info')
-                            ->label('')
-                            ->content(function (Product $record): string {
+                        Forms\Components\View::make('documents-list')
+                            ->view('filament.forms.components.documents-list')
+                            ->viewData(function (Product $record): array {
                                 if (! $record->document_path || empty($record->document_path)) {
-                                    return '';
+                                    return ['documents' => []];
                                 }
 
                                 $documents = is_array($record->document_path) ? $record->document_path : [];
                                 if (empty($documents)) {
-                                    return '';
+                                    return ['documents' => []];
                                 }
 
                                 $documentsList = [];
                                 foreach ($documents as $index => $document) {
                                     $fileName = basename($document);
                                     $fileUrl = asset('storage/'.$document);
-                                    $documentsList[] = ($index + 1).'. <a href="'.$fileUrl.'" target="_blank" class="text-primary-600 hover:text-primary-500 underline">'.$fileName.'</a>';
+                                    $documentsList[] = [
+                                        'index' => $index + 1,
+                                        'name' => $fileName,
+                                        'url' => $fileUrl,
+                                    ];
                                 }
 
-                                return "📄 **Прикрепленные документы:**\n\n".
-                                       implode("\n", $documentsList);
+                                return ['documents' => $documentsList];
                             })
                             ->visible(fn (Product $record): bool => $record->document_path &&
                                 is_array($record->document_path) &&
                                 ! empty($record->document_path)
                             )
-                            ->html()
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (Product $record): bool => $record->document_path &&
