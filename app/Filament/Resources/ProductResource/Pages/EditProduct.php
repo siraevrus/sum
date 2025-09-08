@@ -3,7 +3,11 @@
 namespace App\Filament\Resources\ProductResource\Pages;
 
 use App\Filament\Resources\ProductResource;
+use App\Models\Product;
 use Filament\Actions;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Form;
 use Filament\Resources\Pages\EditRecord;
 
 class EditProduct extends EditRecord
@@ -18,6 +22,30 @@ class EditProduct extends EditRecord
         ];
     }
 
+    public function form(Form $form): Form
+    {
+        $parentForm = parent::form($form);
+        $parentSchema = $parentForm->getSchema();
+
+        // Добавляем секцию коррекции только если есть уточнение
+        $record = $this->getRecord();
+        if ($record && $record->hasCorrection()) {
+            $parentSchema[] = Section::make('Коррекция')
+                ->schema([
+                    Placeholder::make('correction_info')
+                        ->label('')
+                        ->content(function (Product $record): string {
+                            return $record->correction ?? '';
+                        })
+                        ->columnSpanFull(),
+                ])
+                ->collapsible()
+                ->collapsed(false);
+        }
+
+        return $form->schema($parentSchema);
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // Обрабатываем характеристики
@@ -29,21 +57,21 @@ class EditProduct extends EditRecord
             }
         }
         $data['attributes'] = $attributes;
-        
+
         // Удаляем временные поля характеристик
         foreach ($data as $key => $value) {
             if (str_starts_with($key, 'attribute_')) {
                 unset($data[$key]);
             }
         }
-        
+
         // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
+        if (! isset($data['attributes'])) {
             $data['attributes'] = [];
         }
-        
+
         // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 // Используем характеристики для формулы и добавляем количество
@@ -51,7 +79,7 @@ class EditProduct extends EditRecord
                 if (isset($data['quantity'])) {
                     $attributes['quantity'] = $data['quantity'];
                 }
-                
+
                 // Формируем наименование из характеристик
                 $nameParts = [];
                 foreach ($template->attributes as $templateAttribute) {
@@ -60,13 +88,13 @@ class EditProduct extends EditRecord
                         $nameParts[] = $attributes[$attributeKey];
                     }
                 }
-                
-                if (!empty($nameParts)) {
+
+                if (! empty($nameParts)) {
                     // Добавляем название шаблона в начало
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName . ': ' . implode(', ', $nameParts);
+                    $data['name'] = $templateName.': '.implode(', ', $nameParts);
                 }
-                
+
                 \Log::info('Quantity for formula', ['quantity' => $data['quantity'] ?? null]);
                 \Log::info('Attributes for formula (EditProduct)', $attributes);
                 $testResult = $template->testFormula($attributes);
@@ -77,7 +105,7 @@ class EditProduct extends EditRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -86,7 +114,7 @@ class EditProduct extends EditRecord
         // Загружаем характеристики в отдельные поля для формы
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            
+
             foreach ($data['attributes'] as $key => $value) {
                 if ($template) {
                     // Находим атрибут шаблона
@@ -104,24 +132,24 @@ class EditProduct extends EditRecord
                 }
             }
         }
-        
+
         // Рассчитываем объем при загрузке данных
         if (isset($data['product_template_id']) && isset($data['attributes']) && is_array($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            if ($template && $template->formula && !empty($data['attributes'])) {
+            if ($template && $template->formula && ! empty($data['attributes'])) {
                 // Создаем копию атрибутов для формулы, включая quantity
                 $formulaAttributes = $data['attributes'];
                 if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                     $formulaAttributes['quantity'] = $data['quantity'];
                 }
-                
+
                 \Log::info('BeforeFill (EditProduct): Attributes for formula', [
                     'template' => $template->name,
                     'attributes' => $data['attributes'],
                     'formula_attributes' => $formulaAttributes,
                     'quantity' => $data['quantity'] ?? 'not set',
                 ]);
-                
+
                 $testResult = $template->testFormula($formulaAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
@@ -135,7 +163,7 @@ class EditProduct extends EditRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -143,4 +171,4 @@ class EditProduct extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}
