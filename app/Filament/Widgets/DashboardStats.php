@@ -68,7 +68,7 @@ class DashboardStats extends BaseWidget
             Stat::make('Продажи UZS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
                 ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
                 ->where('currency', 'UZS')
-                ->sum('total_price'), 0, ',', ' ').' сом')
+                ->sum('total_price'), 0, ',', ' ').' Сум')
                 ->description('Выручка за сегодня (UZS)')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
