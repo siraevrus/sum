@@ -555,6 +555,41 @@ class ProductResource extends Resource
                     ->collapsible(false)
                     ->icon('heroicon-o-exclamation-triangle'),
 
+                Section::make('Документы')
+                    ->schema([
+                        Forms\Components\Placeholder::make('documents_info')
+                            ->label('')
+                            ->content(function (Product $record): string {
+                                if (! $record->document_path || empty($record->document_path)) {
+                                    return '';
+                                }
+
+                                $documents = is_array($record->document_path) ? $record->document_path : [];
+                                if (empty($documents)) {
+                                    return '';
+                                }
+
+                                $documentsList = [];
+                                foreach ($documents as $index => $document) {
+                                    $documentsList[] = ($index + 1).'. '.basename($document);
+                                }
+
+                                return "📄 **Прикрепленные документы:**\n\n".
+                                       implode("\n", $documentsList);
+                            })
+                            ->visible(fn (Product $record): bool => $record->document_path &&
+                                is_array($record->document_path) &&
+                                ! empty($record->document_path)
+                            )
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (Product $record): bool => $record->document_path &&
+                        is_array($record->document_path) &&
+                        ! empty($record->document_path)
+                    )
+                    ->collapsible(false)
+                    ->icon('heroicon-o-document'),
+
             ]);
     }
 
