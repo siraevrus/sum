@@ -3,15 +3,14 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProducerResource\Pages;
-use App\Filament\Resources\ProducerResource\RelationManagers;
 use App\Models\Producer;
+use App\UserRole;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class ProducerResource extends Resource
 {
@@ -28,6 +27,16 @@ class ProducerResource extends Resource
     protected static ?string $navigationGroup = 'Управление товарами';
 
     protected static ?int $navigationSort = 2;
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        return ! in_array($user->role, [UserRole::OPERATOR, UserRole::WAREHOUSE_WORKER, UserRole::SALES_MANAGER], true);
+    }
 
     public static function form(Form $form): Form
     {

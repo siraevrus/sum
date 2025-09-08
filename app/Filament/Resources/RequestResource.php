@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\RequestResource\Pages;
 use App\Models\ProductTemplate;
 use App\Models\Request;
+use App\UserRole;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -473,7 +474,26 @@ class RequestResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
-                Tables\Actions\EditAction::make()->label(''),
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->visible(function (\App\Models\Request $record): bool {
+                        $user = Auth::user();
+                        if (! $user) {
+                            return false;
+                        }
+
+                        // Hide edit button for sales managers on approved requests
+                        if ($user->role === UserRole::SALES_MANAGER && $record->status === Request::STATUS_APPROVED) {
+                            return false;
+                        }
+
+                        // Hide edit button for warehouse workers on approved requests
+                        if ($user->role === UserRole::WAREHOUSE_WORKER && $record->status === Request::STATUS_APPROVED) {
+                            return false;
+                        }
+
+                        return true;
+                    }),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
             ->bulkActions([

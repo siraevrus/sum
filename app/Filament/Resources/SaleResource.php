@@ -51,7 +51,6 @@ class SaleResource extends Resource
         return in_array($user->role->value, [
             'admin',
             'warehouse_worker',
-            'sales_manager',
         ]);
     }
 

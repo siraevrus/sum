@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\RequestResource\Pages;
 
 use App\Filament\Resources\RequestResource;
+use App\UserRole;
 use Filament\Actions;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Auth;
 
 class ViewRequest extends ViewRecord
 {
@@ -18,12 +20,53 @@ class ViewRequest extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->label('Изменить'),
+                ->label('Изменить')
+                ->visible(function ($livewire): bool {
+                    $user = Auth::user();
+                    if (! $user) {
+                        return false;
+                    }
+
+                    // Скрыть для менеджера, если статус одобрен
+                    if ($user->role === UserRole::SALES_MANAGER) {
+                        $record = $livewire->getRecord();
+                        if (method_exists($record, 'getStatusLabel') && $record->getStatusLabel() === 'Одобрен') {
+                            return false;
+                        }
+                        if (property_exists($record, 'status') && in_array($record->status, ['approved', 'Одобрен'], true)) {
+                            return false;
+                        }
+                    }
+
+                    // Скрыть для работника склада, если статус одобрен
+                    if ($user->role === UserRole::WAREHOUSE_WORKER) {
+                        $record = $livewire->getRecord();
+                        if (method_exists($record, 'getStatusLabel') && $record->getStatusLabel() === 'Одобрен') {
+                            return false;
+                        }
+                        if (property_exists($record, 'status') && in_array($record->status, ['approved', 'Одобрен'], true)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }),
             Actions\Action::make('approve')
                 ->label('Одобрен')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn (\App\Models\Request $record): bool => method_exists($record, 'canBeApproved') ? $record->canBeApproved() : false)
+                ->visible(function (\App\Models\Request $record): bool {
+                    $user = Auth::user();
+                    if (! $user) {
+                        return false;
+                    }
+
+                    if ($user->role === UserRole::SALES_MANAGER) {
+                        return false;
+                    }
+
+                    return method_exists($record, 'canBeApproved') ? $record->canBeApproved() : false;
+                })
                 ->requiresConfirmation()
                 ->action(function (\App\Models\Request $record): void {
                     $record->approve();

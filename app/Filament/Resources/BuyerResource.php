@@ -5,11 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\BuyerResource\Pages;
 use App\Models\Buyer;
 use App\Models\Sale;
+use App\UserRole;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class BuyerResource extends Resource
 {
@@ -26,6 +28,16 @@ class BuyerResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?int $navigationSort = 5;
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        return ! in_array($user->role, [UserRole::OPERATOR, UserRole::WAREHOUSE_WORKER, UserRole::SALES_MANAGER], true);
+    }
 
     public static function form(Form $form): Form
     {
