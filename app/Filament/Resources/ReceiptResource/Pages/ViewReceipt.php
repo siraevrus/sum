@@ -4,12 +4,14 @@ namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
 use App\Models\Product;
+use Filament\Actions;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewReceipt extends ViewRecord
 {
@@ -18,6 +20,8 @@ class ViewReceipt extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\EditAction::make()
+                ->label('Редактировать'),
             Action::make('receive')
                 ->label('Принять товар')
                 ->icon('heroicon-o-check')
@@ -44,5 +48,97 @@ class ViewReceipt extends ViewRecord
                 ->modalDescription('Товар будет перемещен в остатки на складе.')
                 ->modalSubmitActionLabel('Принять'),
         ];
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Основная информация')
+                    ->schema([
+                        TextEntry::make('warehouse.name')->label('Склад'),
+                        TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
+                        TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
+                        TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
+                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата')->date()->placeholder('—'),
+                    ])
+                    ->columns(2),
+
+                InfoSection::make('Информация о товаре')
+                    ->schema([
+                        TextEntry::make('name')->label('Наименование'),
+                        TextEntry::make('quantity')->label('Количество'),
+                        TextEntry::make('calculated_volume')
+                            ->label('Объем')
+                            ->formatStateUsing(fn ($state) => is_numeric($state) ? number_format($state, 3, '.', ' ') : '0.000'),
+                        TextEntry::make('template.name')->label('Шаблон товара')->placeholder('—'),
+                        TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
+                        TextEntry::make('status')
+                            ->label('Статус')
+                            ->formatStateUsing(fn (Product $record): string => $record->isForReceipt() ? 'Для приемки' : 'На складе')
+                            ->badge()
+                            ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
+                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
+                    ])
+                    ->columns(2),
+
+                InfoSection::make('Документы')
+                    ->schema([
+                        TextEntry::make('document_path')
+                            ->label('Файлы')
+                            ->formatStateUsing(function ($state) {
+                                if (is_array($state)) {
+                                    return implode("\n", $state);
+                                }
+
+                                return $state ?: '—';
+                            })
+                            ->extraAttributes(['class' => 'whitespace-pre-line'])
+                            ->columnSpanFull(),
+                    ]),
+
+                InfoSection::make('Характеристики товара')
+                    ->schema([
+                        KeyValueEntry::make('attributes')
+                            ->label('Характеристики')
+                            ->keyLabel('')
+                            ->valueLabel('')
+                            ->state(function (Product $record) {
+                                $state = $record->getAttribute('attributes');
+                                if (is_string($state)) {
+                                    $decoded = json_decode($state, true);
+                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                        $state = $decoded;
+                                    }
+                                } elseif ($state instanceof \stdClass) {
+                                    $state = (array) $state;
+                                } elseif ($state instanceof \Illuminate\Support\Collection) {
+                                    $state = $state->toArray();
+                                }
+
+                                if (! is_array($state) || empty($state)) {
+                                    return [];
+                                }
+
+                                $templateId = $record->product_template_id ?? ($record->template->id ?? null);
+                                $labels = [];
+                                if ($templateId) {
+                                    $labels = \App\Models\ProductAttribute::where('product_template_id', $templateId)
+                                        ->pluck('name', 'variable')
+                                        ->toArray();
+                                }
+
+                                $mapped = [];
+                                foreach ($state as $key => $value) {
+                                    $label = trim((string) ($labels[$key] ?? $key));
+                                    $mapped[$label] = is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE);
+                                }
+
+                                return $mapped;
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+            ]);
     }
 }

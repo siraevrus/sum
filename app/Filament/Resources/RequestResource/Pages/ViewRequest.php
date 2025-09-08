@@ -4,6 +4,7 @@ namespace App\Filament\Resources\RequestResource\Pages;
 
 use App\Filament\Resources\RequestResource;
 use Filament\Actions;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -91,16 +92,12 @@ class ViewRequest extends ViewRecord
                             ->label('Количество')
                             ->badge(),
 
-                        TextEntry::make('attributes')
+                        KeyValueEntry::make('attributes')
                             ->label('Характеристики')
-                            ->html()
-                            ->formatStateUsing(function ($state, $record) {
-                                // Берем данные напрямую из модели с учетом кастов, если $state не пригоден
-                                if (! is_array($state) || empty($state)) {
-                                    $state = is_array($record->attributes) ? $record->attributes : (array) ($record->attributes ?? []);
-                                }
-
-                                // Приводим возможные типы к массиву
+                            ->keyLabel('')
+                            ->valueLabel('')
+                            ->state(function ($record) {
+                                $state = $record->getAttribute('attributes');
                                 if (is_string($state)) {
                                     $decoded = json_decode($state, true);
                                     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -113,7 +110,7 @@ class ViewRequest extends ViewRecord
                                 }
 
                                 if (! is_array($state) || empty($state)) {
-                                    return 'Не заданы';
+                                    return [];
                                 }
 
                                 $templateId = $record->product_template_id ?? null;
@@ -125,16 +122,14 @@ class ViewRequest extends ViewRecord
                                         ->toArray();
                                 }
 
-                                $lines = [];
+                                $mapped = [];
                                 foreach ($state as $key => $value) {
                                     $label = trim((string) ($labels[$key] ?? $key));
-                                    $val = is_scalar($value) ? trim((string) $value) : json_encode($value, JSON_UNESCAPED_UNICODE);
-                                    $lines[] = $label.': '.$val;
+                                    $mapped[$label] = is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE);
                                 }
 
-                                return implode('<br>', $lines);
+                                return $mapped;
                             })
-                            ->extraAttributes([])
                             ->columnSpanFull(),
                     ])
                     ->columns(2),

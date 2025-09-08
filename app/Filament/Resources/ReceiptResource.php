@@ -727,8 +727,10 @@ class ReceiptResource extends Resource
                 // Убраны фильтры 'ready_for_receipt' и 'status'
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->url(fn (Product $record) => Pages\ViewReceipt::getUrl(['record' => $record])),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\Action::make('confirm_receipt')
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')
@@ -791,7 +793,7 @@ class ReceiptResource extends Resource
     {
         return [
             'index' => Pages\ListReceipts::route('/'),
-            // 'view' => Pages\ViewReceipt::route('/{record}'), // Убрана страница просмотра
+            'view' => Pages\ViewReceipt::route('/{record}'),
             'edit' => Pages\EditReceipt::route('/{record}/edit'),
         ];
     }
@@ -880,7 +882,7 @@ class ReceiptResource extends Resource
                         return;
                     }
                     // Используем регулярное выражение для точной замены переменных
-                    $pattern = '/\b' . preg_quote($var, '/') . '\b/';
+                    $pattern = '/\b'.preg_quote($var, '/').'\b/';
                     $expression = preg_replace($pattern, $attributes[$var], $expression);
                 }
 
