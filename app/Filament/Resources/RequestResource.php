@@ -171,7 +171,6 @@ class RequestResource extends Resource
                         Textarea::make('description')
                             ->label('Описание')
                             ->rows(4)
-                            ->required()
                             ->maxLength(2000),
 
                         Textarea::make('admin_notes')

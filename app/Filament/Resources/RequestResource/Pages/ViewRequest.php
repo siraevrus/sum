@@ -4,7 +4,6 @@ namespace App\Filament\Resources\RequestResource\Pages;
 
 use App\Filament\Resources\RequestResource;
 use Filament\Actions;
-use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -92,9 +91,50 @@ class ViewRequest extends ViewRecord
                             ->label('Количество')
                             ->badge(),
 
-                        KeyValueEntry::make('attributes')
+                        TextEntry::make('attributes')
                             ->label('Характеристики')
-                            ->placeholder('Не заданы')
+                            ->html()
+                            ->formatStateUsing(function ($state, $record) {
+                                // Берем данные напрямую из модели с учетом кастов, если $state не пригоден
+                                if (! is_array($state) || empty($state)) {
+                                    $state = is_array($record->attributes) ? $record->attributes : (array) ($record->attributes ?? []);
+                                }
+
+                                // Приводим возможные типы к массиву
+                                if (is_string($state)) {
+                                    $decoded = json_decode($state, true);
+                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                        $state = $decoded;
+                                    }
+                                } elseif ($state instanceof \stdClass) {
+                                    $state = (array) $state;
+                                } elseif ($state instanceof \Illuminate\Support\Collection) {
+                                    $state = $state->toArray();
+                                }
+
+                                if (! is_array($state) || empty($state)) {
+                                    return 'Не заданы';
+                                }
+
+                                $templateId = $record->product_template_id ?? null;
+                                $labels = [];
+                                if ($templateId) {
+                                    $labels = \App\Models\ProductAttribute::query()
+                                        ->where('product_template_id', $templateId)
+                                        ->pluck('name', 'variable')
+                                        ->toArray();
+                                }
+
+                                $lines = [];
+                                foreach ($state as $key => $value) {
+                                    $label = trim((string) ($labels[$key] ?? $key));
+                                    $val = is_scalar($value) ? trim((string) $value) : json_encode($value, JSON_UNESCAPED_UNICODE);
+                                    $lines[] = $label.': '.$val;
+                                }
+
+                                return implode('<br>', $lines);
+                            })
+                            ->extraAttributes([])
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
