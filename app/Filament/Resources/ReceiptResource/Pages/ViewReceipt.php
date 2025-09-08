@@ -21,7 +21,7 @@ class ViewReceipt extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->label(false),
+                ->label('Изменить'),
             Action::make('receive')
                 ->label('Принять товар')
                 ->icon('heroicon-o-check')
