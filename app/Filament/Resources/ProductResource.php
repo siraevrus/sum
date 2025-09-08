@@ -545,7 +545,7 @@ class ProductResource extends Resource
                                 $correctionText = $record->correction ?? 'Нет текста уточнения';
                                 $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
 
-                                return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n".
+                                return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
                                        "*Дата внесения:* {$updatedAt}";
                             })
                             ->visible(fn (Product $record): bool => $record->hasCorrection())
