@@ -54,7 +54,6 @@ class DashboardStats extends BaseWidget
                 ->where('currency', 'USD')
                 ->sum('total_price'), 0, ',', ' ').' $')
                 ->description('Выручка за сегодня (USD)')
-                ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
 
             Stat::make('Продажи RUB', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
@@ -62,7 +61,6 @@ class DashboardStats extends BaseWidget
                 ->where('currency', 'RUB')
                 ->sum('total_price'), 0, ',', ' ').' ₽')
                 ->description('Выручка за сегодня (RUB)')
-                ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
 
             Stat::make('Продажи UZS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
@@ -70,7 +68,6 @@ class DashboardStats extends BaseWidget
                 ->where('currency', 'UZS')
                 ->sum('total_price'), 0, ',', ' ').' Сум')
                 ->description('Выручка за сегодня (UZS)')
-                ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
         ];
     }
