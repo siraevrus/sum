@@ -573,7 +573,7 @@ class ProductResource extends Resource
                                 foreach ($documents as $index => $document) {
                                     $fileName = basename($document);
                                     $fileUrl = asset('storage/'.$document);
-                                    $documentsList[] = ($index + 1).'. ['.$fileName.']('.$fileUrl.')';
+                                    $documentsList[] = ($index + 1).'. <a href="'.$fileUrl.'" target="_blank" class="text-primary-600 hover:text-primary-500 underline">'.$fileName.'</a>';
                                 }
 
                                 return "📄 **Прикрепленные документы:**\n\n".
@@ -583,6 +583,7 @@ class ProductResource extends Resource
                                 is_array($record->document_path) &&
                                 ! empty($record->document_path)
                             )
+                            ->html()
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (Product $record): bool => $record->document_path &&
