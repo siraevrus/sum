@@ -228,22 +228,7 @@ class SaleResource extends Resource
                                         if ($record && $record->exists) {
                                             $product = Product::find($record->product_id);
 
-                                            // Пытаемся извлечь наименование из composite_product_key (template|warehouse|producer|name)
-                                            $nameFromComposite = null;
-                                            if (! empty($record->composite_product_key) && str_contains($record->composite_product_key, '|')) {
-                                                $parts = explode('|', $record->composite_product_key, 4);
-                                                if (count($parts) === 4) {
-                                                    $nameFromComposite = $parts[3];
-                                                }
-                                            }
-
-                                            if ($product) {
-                                                $displayName = $nameFromComposite ?: $product->name;
-
-                                                return "{$product->id} — {$displayName}";
-                                            }
-
-                                            return $nameFromComposite ?: '—';
+                                            return $product ? "{$product->id} — {$product->name}" : '—';
                                         }
 
                                         return null;
@@ -277,6 +262,7 @@ class SaleResource extends Resource
                                                 Log::warning('Sale form: maxValue - product not found for existing record', [
                                                     'record_product_id' => $record->product_id,
                                                 ]);
+
                                                 return 0;
                                             }
 
