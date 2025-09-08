@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\RecordCheckboxPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -79,6 +80,7 @@ class StockResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordCheckboxPosition(RecordCheckboxPosition::Hidden)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
@@ -197,16 +199,16 @@ class StockResource extends Resource
         // Создаем GROUP BY условия для группировки по характеристикам
         $groupByAttributes = [];
         $jsonExtracts = [];
-        
+
         foreach ($groupingVariables as $variable) {
             $groupByAttributes[] = DB::raw("JSON_EXTRACT(attributes, \"$.{$variable}\")");
             $jsonExtracts[] = "COALESCE(JSON_EXTRACT(attributes, \"$.{$variable}\"), \"\")";
         }
 
         // Создаем уникальный ID для группированной записи
-        $uniqueIdSQL = !empty($jsonExtracts) 
-            ? "CONCAT(product_template_id, \"_\", warehouse_id, \"_\", producer_id, \"_\", HEX(SUBSTR(QUOTE(CONCAT(" . implode(', ', $jsonExtracts) . ")), 2, 8)))"
-            : "CONCAT(product_template_id, \"_\", warehouse_id, \"_\", producer_id)";
+        $uniqueIdSQL = ! empty($jsonExtracts)
+            ? 'CONCAT(product_template_id, "_", warehouse_id, "_", producer_id, "_", HEX(SUBSTR(QUOTE(CONCAT('.implode(', ', $jsonExtracts).')), 2, 8)))'
+            : 'CONCAT(product_template_id, "_", warehouse_id, "_", producer_id)';
 
         // Возвращаем запрос с группировкой
         return $baseQuery
@@ -228,7 +230,7 @@ class StockResource extends Resource
             ->with(['producer', 'productTemplate', 'warehouse'])
             ->groupBy(array_merge([
                 'product_template_id',
-                'warehouse_id', 
+                'warehouse_id',
                 'producer_id',
             ], $groupByAttributes))
             ->orderBy('name')
