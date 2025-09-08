@@ -12,6 +12,11 @@ class EditRequest extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Поле описание может быть не заполнено, в БД колонка not null
+        if (! array_key_exists('description', $data) || $data['description'] === null) {
+            $data['description'] = '';
+        }
+
         // Обрабатываем характеристики
         $attributes = [];
         foreach ($data as $key => $value) {
@@ -21,21 +26,21 @@ class EditRequest extends EditRecord
             }
         }
         $data['attributes'] = $attributes;
-        
+
         // Удаляем временные поля характеристик
         foreach ($data as $key => $value) {
             if (str_starts_with($key, 'attribute_')) {
                 unset($data[$key]);
             }
         }
-        
+
         // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
+        if (! isset($data['attributes'])) {
             $data['attributes'] = [];
         }
-        
+
         // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 $testResult = $template->testFormula($data['attributes']);
@@ -44,7 +49,7 @@ class EditRequest extends EditRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -56,18 +61,18 @@ class EditRequest extends EditRecord
                 $data["attribute_{$key}"] = $value;
             }
         }
-        
+
         // Рассчитываем объем при загрузке данных
         if (isset($data['product_template_id']) && isset($data['attributes']) && is_array($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            if ($template && $template->formula && !empty($data['attributes'])) {
+            if ($template && $template->formula && ! empty($data['attributes'])) {
                 $testResult = $template->testFormula($data['attributes']);
                 if ($testResult['success']) {
                     $data['calculated_volume'] = $testResult['result'];
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -83,4 +88,4 @@ class EditRequest extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}

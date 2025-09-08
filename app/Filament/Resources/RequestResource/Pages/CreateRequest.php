@@ -14,7 +14,11 @@ class CreateRequest extends CreateRecord
     {
         $data['user_id'] = Auth::id();
         $data['status'] = 'pending'; // Все новые запросы начинаются со статуса "ожидает рассмотрения"
-        
+        // Поле описание может быть не заполнено, БД ожидает ненулевое значение
+        if (! array_key_exists('description', $data) || $data['description'] === null) {
+            $data['description'] = '';
+        }
+
         // Обрабатываем характеристики
         $attributes = [];
         foreach ($data as $key => $value) {
@@ -24,21 +28,21 @@ class CreateRequest extends CreateRecord
             }
         }
         $data['attributes'] = $attributes;
-        
+
         // Удаляем временные поля характеристик
         foreach ($data as $key => $value) {
             if (str_starts_with($key, 'attribute_')) {
                 unset($data[$key]);
             }
         }
-        
+
         // Убеждаемся, что attributes всегда установлен
-        if (!isset($data['attributes'])) {
+        if (! isset($data['attributes'])) {
             $data['attributes'] = [];
         }
-        
+
         // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && !empty($data['attributes'])) {
+        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
             $template = \App\Models\ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 $testResult = $template->testFormula($data['attributes']);
@@ -47,7 +51,7 @@ class CreateRequest extends CreateRecord
                 }
             }
         }
-        
+
         return $data;
     }
 
@@ -55,4 +59,4 @@ class CreateRequest extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}

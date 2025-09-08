@@ -474,6 +474,14 @@ class SaleResource extends Resource
                         \App\Models\Sale::PAYMENT_STATUS_CANCELLED => 'Отменено',
                     ]),
 
+                SelectFilter::make('currency')
+                    ->label('Валюта')
+                    ->options([
+                        'RUB' => 'Руб',
+                        'USD' => 'USD',
+                        'UZS' => 'Сум',
+                    ]),
+
                 SelectFilter::make('user_id')
                     ->label('Продавец')
                     ->options(function () {
