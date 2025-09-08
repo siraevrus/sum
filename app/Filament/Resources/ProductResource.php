@@ -599,7 +599,15 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Наименование')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->html()
+                    ->formatStateUsing(function (string $state, Product $record): string {
+                        if ($record->hasCorrection()) {
+                            return '<span style="color: red; font-weight: bold;">'.e($state).'</span>';
+                        }
+
+                        return e($state);
+                    }),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Склад')
@@ -701,6 +709,7 @@ class ProductResource extends Resource
                             $productCount = $producer->products()->count();
                             $options[$producer->id] = "{$producer->name} ({$productCount})";
                         }
+
                         return $options;
                     })
                     ->searchable(),
