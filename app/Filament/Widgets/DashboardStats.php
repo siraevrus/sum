@@ -65,11 +65,11 @@ class DashboardStats extends BaseWidget
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
 
-            Stat::make('Продажи KGS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
+            Stat::make('Продажи UZS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
                 ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->where('currency', 'KGS')
+                ->where('currency', 'UZS')
                 ->sum('total_price'), 0, ',', ' ').' сом')
-                ->description('Выручка за сегодня (KGS)')
+                ->description('Выручка за сегодня (UZS)')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
         ];
