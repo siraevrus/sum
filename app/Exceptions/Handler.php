@@ -41,6 +41,11 @@ class Handler extends ExceptionHandler
             ], 422);
         }
 
+        // Обработка 404 ошибок
+        if ($e instanceof HttpException && $e->getStatusCode() === 404) {
+            return response()->view('errors.404', [], 404);
+        }
+
         $isAdmin = $request->is('admin') || $request->is('admin/*');
 
         if ($isAdmin) {
