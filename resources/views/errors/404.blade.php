@@ -20,17 +20,10 @@
                 На главную страницу
             </a>
             
-            @if(request()->is('admin') || request()->is('admin/*'))
-                <a href="{{ url('/admin') }}" 
-                   class="block text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200">
-                    Вернуться в админку
-                </a>
-            @else
-                <button onclick="history.back()" 
-                        class="block text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200">
-                    Назад
-                </button>
-            @endif
+            <button onclick="history.back()" 
+                    class="block text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200">
+                Назад
+            </button>
         </div>
     </div>
 </body>
