@@ -95,7 +95,7 @@ class DiscrepancyResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageDiscrepancies::route('/'),
+            'index' => Pages\ListDiscrepancies::route('/'),
         ];
     }
 }
