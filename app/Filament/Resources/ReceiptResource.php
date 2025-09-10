@@ -325,6 +325,7 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(300)
+                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -416,6 +417,7 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(300)
+                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -509,6 +511,7 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(300)
+                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
