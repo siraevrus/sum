@@ -662,11 +662,11 @@ class ProductResource extends Resource
                     ->label('Наименование')
                     ->searchable()
                     ->sortable()
-                    ->color(function (Product $record): ?string {
-                        return $record->hasCorrection() ? 'danger' : null;
+                    ->color(function (?Product $record): ?string {
+                        return $record && $record->hasCorrection() ? 'danger' : null;
                     })
-                    ->formatStateUsing(function (string $state, Product $record): string {
-                        if ($record->hasCorrection()) {
+                    ->formatStateUsing(function (string $state, ?Product $record): string {
+                        if ($record && $record->hasCorrection()) {
                             return '⚠️ ' . $state;
                         }
                         return $state;
