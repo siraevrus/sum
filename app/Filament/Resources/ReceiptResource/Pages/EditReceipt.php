@@ -166,8 +166,10 @@ class EditReceipt extends EditRecord
                 ]);
             }
 
-                // Формируем наименование из характеристик
-                if (! empty($attributes)) {
+            // Формируем наименование из характеристик
+            if (! empty($attributes)) {
+                $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+                if ($template) {
                     $nameParts = [];
                     foreach ($template->attributes as $templateAttribute) {
                         $attributeKey = $templateAttribute->variable;
