@@ -31,23 +31,6 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    /**
-     * Валидировать и ограничить значение calculated_volume
-     */
-    private static function validateCalculatedVolume(float $volume): ?float
-    {
-        $maxValue = 999999999.9999; // Максимум для decimal(15,4)
-        
-        if ($volume > $maxValue) {
-            \Log::warning('ProductResource: Volume exceeds maximum value', [
-                'calculated_volume' => $volume,
-                'max_value' => $maxValue,
-            ]);
-            return null; // Возвращаем null вместо превышения
-        }
-        
-        return $volume;
-    }
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
@@ -116,6 +99,31 @@ class ProductResource extends Resource
                                     ->required()
                                     ->default(now()),
 
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспорта')
+                                    ->maxLength(255),
+
+                                Toggle::make('is_active')
+                                    ->label('Активен')
+                                    ->hidden()
+                                    ->default(true),
+                            ]),
+
+                        // Компактная сетка для заметок
+                        Grid::make(1)
+                            ->schema([
+                                Textarea::make('notes')
+                                    ->label('Заметки')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->columnSpanFull(),
+                            ]),
+                    ]),
+
+                Section::make('Товары')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
                                 Select::make('product_template_id')
                                     ->label('Шаблон товара')
                                     ->options(ProductTemplate::pluck('name', 'id'))
@@ -137,16 +145,22 @@ class ProductResource extends Resource
                                         }
                                     }),
 
-                                TextInput::make('transport_number')
-                                    ->label('Номер транспорта')
-                                    ->maxLength(255),
+                                TextInput::make('name')
+                                    ->label('Наименование')
+                                    ->maxLength(255)
+                                    ->disabled()
+                                    ->helperText('Автоматически формируется из характеристик товара'),
 
                                 TextInput::make('quantity')
                                     ->label('Количество')
-                                    ->numeric()
+                                    ->inputMode('decimal')
                                     ->default(1)
-                                    ->minValue(1)
+                                    ->maxLength(10)
                                     ->required()
+                                    ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                    ->validationMessages([
+                                        'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                    ])
                                     ->live()
                                     ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -167,7 +181,9 @@ class ProductResource extends Resource
                                         foreach ($formData as $key => $value) {
                                             if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                 $attributeName = str_replace('attribute_', '', $key);
-                                                $attributes[$attributeName] = $value;
+                                                // Нормализуем числовые значения: заменяем запятую на точку
+                                                $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                $attributes[$attributeName] = $normalizedValue;
                                             }
                                         }
 
@@ -181,36 +197,41 @@ class ProductResource extends Resource
 
                                         // Добавляем количество в атрибуты для формулы
                                         $quantity = $get('quantity') ?? 1;
-                                        if (is_numeric($quantity) && $quantity > 0) {
-                                            $numericAttributes['quantity'] = $quantity;
+                                        // Нормализуем количество: заменяем запятую на точку
+                                        $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+                                        if (is_numeric($normalizedQuantity) && $normalizedQuantity > 0) {
+                                            $numericAttributes['quantity'] = $normalizedQuantity;
                                         }
-
-                                        // Логируем атрибуты для отладки
-                                        Log::info('Attributes for volume calculation (quantity)', [
-                                            'template' => $template->name,
-                                            'all_attributes' => $attributes,
-                                            'numeric_attributes' => $numericAttributes,
-                                            'quantity' => $quantity,
-                                            'formula' => $template->formula,
-                                        ]);
 
                                         // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                         if (! empty($numericAttributes) && $template->formula) {
                                             $testResult = $template->testFormula($numericAttributes);
                                             if ($testResult['success']) {
                                                 $result = $testResult['result'];
-                                                $validatedResult = self::validateCalculatedVolume($result);
-                                                $set('calculated_volume', $validatedResult);
-
-                                                // Логируем для отладки
-                                                Log::info('Volume calculated from quantity change', [
-                                                    'template' => $template->name,
-                                                    'attributes' => $numericAttributes,
-                                                    'result' => $result,
-                                                ]);
+                                                
+                                                // Проверяем на превышение лимита
+                                                $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                if ($result > $maxValue) {
+                                                    $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                    Log::warning('Volume exceeds maximum value from quantity change', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'result' => $result,
+                                                        'max_value' => $maxValue,
+                                                    ]);
+                                                } else {
+                                                    $set('calculated_volume', $result);
+                                                    
+                                                    // Логируем для отладки
+                                                    Log::info('Volume calculated from quantity change', [
+                                                        'template' => $template->name,
+                                                        'attributes' => $numericAttributes,
+                                                        'result' => $result,
+                                                    ]);
+                                                }
                                             } else {
                                                 // Если расчет не удался, показываем ошибку
-                                                $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                 Log::warning('Volume calculation failed from quantity change', [
                                                     'template' => $template->name,
                                                     'attributes' => $numericAttributes,
@@ -226,33 +247,12 @@ class ProductResource extends Resource
                                             }
                                         }
                                     }),
-
-                                TextInput::make('name')
-                                    ->label('Наименование')
-                                    ->maxLength(255)
-                                    ->disabled()
-                                    ->helperText('Автоматически формируется из характеристик товара'),
-
-                                Toggle::make('is_active')
-                                    ->label('Активен')
-                                    ->hidden()
-                                    ->default(true),
                             ]),
 
-                        // Компактная сетка для заметок
-                        Grid::make(1)
-                            ->schema([
-                                Textarea::make('notes')
-                                    ->label('Заметки')
-                                    ->rows(2)
-                                    ->maxLength(500)
-                                    ->columnSpanFull(),
-                            ]),
-                    ]),
-
-                Section::make('Характеристики товара')
-                    ->visible(fn (Get $get) => $get('product_template_id') !== null)
-                    ->schema(function (Get $get) {
+                        // Характеристики товара
+                        Grid::make(3)
+                            ->visible(fn (Get $get) => $get('product_template_id') !== null)
+                            ->schema(function (Get $get) {
                         $templateId = $get('product_template_id');
                         if (! $templateId) {
                             return [];
@@ -271,8 +271,13 @@ class ProductResource extends Resource
                                 case 'number':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
-                                        ->numeric()
+                                        ->inputMode('decimal')
+                                        ->maxLength(10)
                                         ->required($attribute->is_required)
+                                        ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                        ->validationMessages([
+                                            'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                        ])
                                         ->live()
                                         ->debounce(300)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -283,7 +288,9 @@ class ProductResource extends Resource
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                    $attributes[$attributeName] = $value;
+                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                    $attributes[$attributeName] = $normalizedValue;
                                                 }
                                             }
 
@@ -315,18 +322,29 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $validatedResult = self::validateCalculatedVolume($result);
-                                                    $set('calculated_volume', $validatedResult);
-
-                                                    // Логируем для отладки
-                                                    Log::info('Volume calculated', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'result' => $result,
-                                                    ]);
+                                                    // Проверяем на превышение лимита
+                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                    if ($result > $maxValue) {
+                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                        Log::warning('Volume exceeds maximum value', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                            'max_value' => $maxValue,
+                                                        ]);
+                                                    } else {
+                                                        $set('calculated_volume', $result);
+                                                        
+                                                        // Логируем для отладки
+                                                        Log::info('Volume calculated', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                        ]);
+                                                    }
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -364,6 +382,7 @@ class ProductResource extends Resource
                                 case 'text':
                                     $fields[] = TextInput::make($fieldName)
                                         ->label($attribute->full_name)
+                                        ->maxLength(255)
                                         ->required($attribute->is_required)
                                         ->live()
                                         ->debounce(300)
@@ -375,7 +394,9 @@ class ProductResource extends Resource
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                    $attributes[$attributeName] = $value;
+                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                    $attributes[$attributeName] = $normalizedValue;
                                                 }
                                             }
 
@@ -398,18 +419,29 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $validatedResult = self::validateCalculatedVolume($result);
-                                                    $set('calculated_volume', $validatedResult);
-
-                                                    // Логируем для отладки
-                                                    Log::info('Volume calculated', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'result' => $result,
-                                                    ]);
+                                                    // Проверяем на превышение лимита
+                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                    if ($result > $maxValue) {
+                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                        Log::warning('Volume exceeds maximum value', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                            'max_value' => $maxValue,
+                                                        ]);
+                                                    } else {
+                                                        $set('calculated_volume', $result);
+                                                        
+                                                        // Логируем для отладки
+                                                        Log::info('Volume calculated', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                        ]);
+                                                    }
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -443,7 +475,9 @@ class ProductResource extends Resource
                                             foreach ($formData as $key => $value) {
                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                    $attributes[$attributeName] = $value;
+                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                    $attributes[$attributeName] = $normalizedValue;
                                                 }
                                             }
 
@@ -466,18 +500,29 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $validatedResult = self::validateCalculatedVolume($result);
-                                                    $set('calculated_volume', $validatedResult);
-
-                                                    // Логируем для отладки
-                                                    Log::info('Volume calculated', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'result' => $result,
-                                                    ]);
+                                                    // Проверяем на превышение лимита
+                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                    if ($result > $maxValue) {
+                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                        Log::warning('Volume exceeds maximum value', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                            'max_value' => $maxValue,
+                                                        ]);
+                                                    } else {
+                                                        $set('calculated_volume', $result);
+                                                        
+                                                        // Логируем для отладки
+                                                        Log::info('Volume calculated', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                        ]);
+                                                    }
                                                 } else {
                                                     // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
                                                     Log::warning('Volume calculation failed', [
                                                         'template' => $template->name,
                                                         'attributes' => $numericAttributes,
@@ -563,6 +608,7 @@ class ProductResource extends Resource
                                 ->schema($fields),
                         ];
                     }),
+                    ]),
 
                 Section::make('Информация о корректировке')
                     ->schema([
@@ -647,6 +693,8 @@ class ProductResource extends Resource
 
         // Добавляем количество (но не в формулу, только для отображения)
         $quantity = $get('quantity') ?? 1;
+        // Нормализуем количество: заменяем запятую на точку
+        $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
 
         // Формируем наименование из характеристик, исключая текстовые атрибуты
         if (! empty($attributes)) {
@@ -679,8 +727,20 @@ class ProductResource extends Resource
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    $validatedResult = self::validateCalculatedVolume($result);
-                    $set('calculated_volume', $validatedResult);
+                    
+                    // Проверяем на превышение лимита
+                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                    if ($result > $maxValue) {
+                        $set('calculated_volume', 'Объем превышает максимальное значение');
+                        Log::warning('Volume exceeds maximum value in calculateVolumeForItem', [
+                            'template' => $template->name,
+                            'attributes' => $numericAttributes,
+                            'result' => $result,
+                            'max_value' => $maxValue,
+                        ]);
+                    } else {
+                        $set('calculated_volume', $result);
+                    }
                 }
             }
         }

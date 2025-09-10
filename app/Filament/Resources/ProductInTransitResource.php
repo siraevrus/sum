@@ -156,12 +156,14 @@ class ProductInTransitResource extends Resource
 
                                         TextInput::make('quantity')
                                             ->label('Количество')
-                                            ->numeric()
+                                            ->inputMode('decimal')
                                             ->default(1)
-                                            ->minValue(1)
-                                            ->maxValue(99999)
-                                            ->maxLength(5)
+                                            ->maxLength(10)
                                             ->required()
+                                            ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                            ->validationMessages([
+                                                'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                            ])
                                             ->live()
                                             ->debounce(300)
                                             ->afterStateUpdated(function (Set $set, Get $get) {
@@ -182,7 +184,9 @@ class ProductInTransitResource extends Resource
                                                 foreach ($formData as $key => $value) {
                                                     if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                         $attributeName = str_replace('attribute_', '', $key);
-                                                        $attributes[$attributeName] = $value;
+                                                        // Нормализуем числовые значения: заменяем запятую на точку
+                                                        $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                        $attributes[$attributeName] = $normalizedValue;
                                                     }
                                                 }
 
@@ -196,8 +200,10 @@ class ProductInTransitResource extends Resource
 
                                                 // Добавляем количество в атрибуты для формулы
                                                 $quantity = $get('quantity') ?? 1;
-                                                if (is_numeric($quantity) && $quantity > 0) {
-                                                    $numericAttributes['quantity'] = $quantity;
+                                                // Нормализуем количество: заменяем запятую на точку
+                                                $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+                                                if (is_numeric($normalizedQuantity) && $normalizedQuantity > 0) {
+                                                    $numericAttributes['quantity'] = $normalizedQuantity;
                                                 }
 
                                                 // Логируем атрибуты для отладки
@@ -281,10 +287,13 @@ class ProductInTransitResource extends Resource
                                                 case 'number':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
-                                                        ->numeric()
-                                                        ->maxValue(9999)
-                                                        ->maxLength(4)
+                                                        ->inputMode('decimal')
+                                                        ->maxLength(10)
                                                         ->required($attribute->is_required)
+                                                        ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                                        ->validationMessages([
+                                                            'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                                        ])
                                                         ->live()
                                                         ->debounce(300)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -295,7 +304,9 @@ class ProductInTransitResource extends Resource
                                                             foreach ($formData as $key => $value) {
                                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                                    $attributes[$attributeName] = $value;
+                                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                                    $attributes[$attributeName] = $normalizedValue;
                                                                 }
                                                             }
 
@@ -309,8 +320,10 @@ class ProductInTransitResource extends Resource
 
                                                             // Добавляем количество в атрибуты для формулы
                                                             $quantity = $get('quantity') ?? 1;
-                                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                                $numericAttributes['quantity'] = $quantity;
+                                                            // Нормализуем количество: заменяем запятую на точку
+                                                            $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+                                                            if (is_numeric($normalizedQuantity) && $normalizedQuantity > 0) {
+                                                                $numericAttributes['quantity'] = $normalizedQuantity;
                                                             }
 
                                                             // Логируем атрибуты для отладки
@@ -374,6 +387,7 @@ class ProductInTransitResource extends Resource
                                                 case 'text':
                                                     $fields[] = TextInput::make($fieldName)
                                                         ->label($attribute->name)
+                                                        ->maxLength(255)
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(300)
@@ -385,7 +399,9 @@ class ProductInTransitResource extends Resource
                                                             foreach ($formData as $key => $value) {
                                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                                    $attributes[$attributeName] = $value;
+                                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                                    $attributes[$attributeName] = $normalizedValue;
                                                                 }
                                                             }
 
@@ -399,8 +415,10 @@ class ProductInTransitResource extends Resource
 
                                                             // Добавляем количество в атрибуты для формулы
                                                             $quantity = $get('quantity') ?? 1;
-                                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                                $numericAttributes['quantity'] = $quantity;
+                                                            // Нормализуем количество: заменяем запятую на точку
+                                                            $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+                                                            if (is_numeric($normalizedQuantity) && $normalizedQuantity > 0) {
+                                                                $numericAttributes['quantity'] = $normalizedQuantity;
                                                             }
 
                                                             // Логируем атрибуты для отладки
@@ -476,7 +494,9 @@ class ProductInTransitResource extends Resource
                                                             foreach ($formData as $key => $value) {
                                                                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
                                                                     $attributeName = str_replace('attribute_', '', $key);
-                                                                    $attributes[$attributeName] = $value;
+                                                                    // Нормализуем числовые значения: заменяем запятую на точку
+                                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                                    $attributes[$attributeName] = $normalizedValue;
                                                                 }
                                                             }
 
@@ -490,8 +510,10 @@ class ProductInTransitResource extends Resource
 
                                                             // Добавляем количество в атрибуты для формулы
                                                             $quantity = $get('quantity') ?? 1;
-                                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                                $numericAttributes['quantity'] = $quantity;
+                                                            // Нормализуем количество: заменяем запятую на точку
+                                                            $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+                                                            if (is_numeric($normalizedQuantity) && $normalizedQuantity > 0) {
+                                                                $numericAttributes['quantity'] = $normalizedQuantity;
                                                             }
 
                                                             // Логируем атрибуты для отладки
@@ -747,13 +769,17 @@ class ProductInTransitResource extends Resource
         foreach ($formData as $key => $value) {
             if (str_starts_with($key, 'attribute_') && $value !== null) {
                 $attributeName = str_replace('attribute_', '', $key);
-                $attributes[$attributeName] = $value;
+                // Нормализуем числовые значения: заменяем запятую на точку
+                $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                $attributes[$attributeName] = $normalizedValue;
             }
         }
 
         // Добавляем количество
         $quantity = $get('quantity') ?? 1;
-        $attributes['quantity'] = $quantity;
+        // Нормализуем количество: заменяем запятую на точку
+        $normalizedQuantity = is_string($quantity) ? str_replace(',', '.', $quantity) : $quantity;
+        $attributes['quantity'] = $normalizedQuantity;
 
         if (! empty($attributes)) {
             // Формируем наименование из характеристик, исключая текстовые атрибуты
