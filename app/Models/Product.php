@@ -68,6 +68,28 @@ class Product extends Model
     ];
 
     /**
+     * Мутатор для calculated_volume - валидация на уровне модели
+     */
+    public function setCalculatedVolumeAttribute($value)
+    {
+        if ($value !== null) {
+            $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+            
+            if ($value > $maxValue) {
+                \Log::warning('Product: Volume exceeds maximum value', [
+                    'calculated_volume' => $value,
+                    'max_value' => $maxValue,
+                    'product_id' => $this->id ?? 'new',
+                ]);
+                $this->attributes['calculated_volume'] = null;
+                return;
+            }
+        }
+        
+        $this->attributes['calculated_volume'] = $value;
+    }
+
+    /**
      * Связь с шаблоном товара
      */
     public function template(): BelongsTo
