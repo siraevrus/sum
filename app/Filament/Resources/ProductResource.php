@@ -803,6 +803,7 @@ class ProductResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\Action::make('mark_in_transit')
                     ->label('')
@@ -903,6 +904,7 @@ class ProductResource extends Resource
         return [
             'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
+            'view' => Pages\ViewProduct::route('/{record}'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
