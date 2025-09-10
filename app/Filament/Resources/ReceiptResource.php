@@ -275,6 +275,15 @@ class ReceiptResource extends Resource
 
                                                 return $state ?: '0.000';
                                             })
+                                            ->dehydrateStateUsing(function ($state) {
+                                                // Преобразуем отформатированное значение обратно в число
+                                                if (is_string($state)) {
+                                                    // Убираем пробелы и преобразуем в число
+                                                    $cleanState = str_replace(' ', '', $state);
+                                                    return is_numeric($cleanState) ? (float) $cleanState : null;
+                                                }
+                                                return is_numeric($state) ? (float) $state : null;
+                                            })
                                             ->suffix(function (Get $get) {
                                                 $templateId = $get('product_template_id');
                                                 if ($templateId) {
