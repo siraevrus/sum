@@ -628,7 +628,8 @@ class ReceiptResource extends Resource
                             ->openable()
                             ->previewable()
                             ->imagePreviewHeight('250'),
-                    ]),
+                    ])
+                    ->visible(fn () => request()->route()->getName() !== 'filament.admin.resources.receipts.edit'),
             ]);
     }
 
