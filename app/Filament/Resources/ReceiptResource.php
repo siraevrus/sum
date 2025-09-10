@@ -267,7 +267,6 @@ class ReceiptResource extends Resource
                                             ->numeric()
                                             ->disabled()
                                             ->live()
-                                            ->hidden(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
                                             ->formatStateUsing(function ($state) {
                                                 // Если это число - форматируем, если строка - показываем как есть
                                                 if (is_numeric($state)) {

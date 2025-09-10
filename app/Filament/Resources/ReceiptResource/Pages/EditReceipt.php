@@ -122,7 +122,8 @@ class EditReceipt extends EditRecord
             $data['quantity'] = $firstProduct['quantity'] ?? 1;
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
 
-            // Рассчитываем объем, если есть шаблон и характеристики
+            // В режиме редактирования не пересчитываем объем, если характеристики отключены
+            // Рассчитываем объем только если есть характеристики для расчета
             if (! empty($data['product_template_id']) && ! empty($attributes)) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);
                 if ($template && $template->formula) {
@@ -157,6 +158,13 @@ class EditReceipt extends EditRecord
                         ]);
                     }
                 }
+            } else {
+                // Если нет характеристик для расчета, сохраняем существующий объем
+                \Log::info('EditReceipt: No attributes for volume calculation, keeping existing volume', [
+                    'existing_volume' => $data['calculated_volume'] ?? 'not set',
+                    'attributes_count' => count($attributes ?? []),
+                ]);
+            }
 
                 // Формируем наименование из характеристик
                 if (! empty($attributes)) {
