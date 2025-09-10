@@ -537,8 +537,8 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('correction_info')
                             ->label('')
-                            ->content(function (Product $record): string {
-                                if (! $record->hasCorrection()) {
+                            ->content(function (?Product $record): string {
+                                if (! $record || ! $record->hasCorrection()) {
                                     return '';
                                 }
 
@@ -548,10 +548,10 @@ class ProductResource extends Resource
                                 return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
                                        "*Дата внесения:* {$updatedAt}";
                             })
-                            ->visible(fn (Product $record): bool => $record->hasCorrection())
+                            ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn (Product $record): bool => $record->hasCorrection())
+                    ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
                     ->collapsible(false)
                     ->icon('heroicon-o-exclamation-triangle'),
 
@@ -559,8 +559,8 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\View::make('documents-list')
                             ->view('filament.forms.components.documents-list')
-                            ->viewData(function (Product $record): array {
-                                if (! $record->document_path || empty($record->document_path)) {
+                            ->viewData(function (?Product $record): array {
+                                if (! $record || ! $record->document_path || empty($record->document_path)) {
                                     return ['documents' => []];
                                 }
 
@@ -582,13 +582,13 @@ class ProductResource extends Resource
 
                                 return ['documents' => $documentsList];
                             })
-                            ->visible(fn (Product $record): bool => $record->document_path &&
+                            ->visible(fn (?Product $record): bool => $record && $record->document_path &&
                                 is_array($record->document_path) &&
                                 ! empty($record->document_path)
                             )
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn (Product $record): bool => $record->document_path &&
+                    ->visible(fn (?Product $record): bool => $record && $record->document_path &&
                         is_array($record->document_path) &&
                         ! empty($record->document_path)
                     )
@@ -707,8 +707,8 @@ class ProductResource extends Resource
                     ->formatStateUsing(function ($state) {
                         return $state ? number_format($state, 3, '.', ' ') : '0.000';
                     })
-                    ->suffix(function (Product $record): string {
-                        return $record->template?->unit ?? '';
+                    ->suffix(function (?Product $record): string {
+                        return $record?->template?->unit ?? '';
                     })
                     ->sortable(),
 
