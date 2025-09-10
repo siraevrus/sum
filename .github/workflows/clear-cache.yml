@@ -1,0 +1,89 @@
+name: Clear Cache Only
+
+on:
+  workflow_dispatch: # Только ручной запуск
+    inputs:
+      cache_type:
+        description: 'Type of cache to clear'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - config
+        - routes
+        - views
+        - application
+        - events
+        - queues
+
+jobs:
+  clear-cache:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Clear cache on server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script_stop: true
+        debug: true
+        script: |
+          echo "🧹 Starting cache clearing..."
+          echo "📁 Current directory: $(pwd)"
+          echo "👤 Current user: $(whoami)"
+          
+          cd /var/www/sklad
+          echo "📂 Changed to /var/www/sklad"
+          
+          case "${{ github.event.inputs.cache_type }}" in
+            "all")
+              echo "🧹 Clearing all caches..."
+              php artisan config:clear
+              php artisan route:clear
+              php artisan view:clear
+              php artisan cache:clear
+              php artisan event:clear
+              php artisan queue:clear
+              echo "✅ All caches cleared"
+              ;;
+            "config")
+              echo "⚙️ Clearing config cache..."
+              php artisan config:clear
+              echo "✅ Config cache cleared"
+              ;;
+            "routes")
+              echo "🛣️ Clearing route cache..."
+              php artisan route:clear
+              echo "✅ Route cache cleared"
+              ;;
+            "views")
+              echo "👁️ Clearing view cache..."
+              php artisan view:clear
+              echo "✅ View cache cleared"
+              ;;
+            "application")
+              echo "📱 Clearing application cache..."
+              php artisan cache:clear
+              echo "✅ Application cache cleared"
+              ;;
+            "events")
+              echo "📡 Clearing event cache..."
+              php artisan event:clear
+              echo "✅ Event cache cleared"
+              ;;
+            "queues")
+              echo "📋 Clearing queue cache..."
+              php artisan queue:clear
+              echo "✅ Queue cache cleared"
+              ;;
+          esac
+          
+          echo "🔄 Reloading services..."
+          sudo systemctl reload php8.4-fpm
+          sudo systemctl reload nginx
+          
+          echo "✅ Cache clearing completed successfully!"
