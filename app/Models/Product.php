@@ -90,6 +90,68 @@ class Product extends Model
     }
 
     /**
+     * Мутатор для quantity - валидация на уровне модели
+     */
+    public function setQuantityAttribute($value)
+    {
+        if ($value !== null) {
+            $maxValue = 2147483647; // Максимум для integer в MySQL
+            
+            if ($value > $maxValue) {
+                \Log::warning('Product: Quantity exceeds maximum value', [
+                    'quantity' => $value,
+                    'max_value' => $maxValue,
+                    'product_id' => $this->id ?? 'new',
+                ]);
+                $this->attributes['quantity'] = 1; // Устанавливаем разумное значение по умолчанию
+                return;
+            }
+            
+            if ($value < 0) {
+                \Log::warning('Product: Quantity is negative', [
+                    'quantity' => $value,
+                    'product_id' => $this->id ?? 'new',
+                ]);
+                $this->attributes['quantity'] = 0;
+                return;
+            }
+        }
+        
+        $this->attributes['quantity'] = $value;
+    }
+
+    /**
+     * Мутатор для sold_quantity - валидация на уровне модели
+     */
+    public function setSoldQuantityAttribute($value)
+    {
+        if ($value !== null) {
+            $maxValue = 2147483647; // Максимум для integer в MySQL
+            
+            if ($value > $maxValue) {
+                \Log::warning('Product: Sold quantity exceeds maximum value', [
+                    'sold_quantity' => $value,
+                    'max_value' => $maxValue,
+                    'product_id' => $this->id ?? 'new',
+                ]);
+                $this->attributes['sold_quantity'] = 0;
+                return;
+            }
+            
+            if ($value < 0) {
+                \Log::warning('Product: Sold quantity is negative', [
+                    'sold_quantity' => $value,
+                    'product_id' => $this->id ?? 'new',
+                ]);
+                $this->attributes['sold_quantity'] = 0;
+                return;
+            }
+        }
+        
+        $this->attributes['sold_quantity'] = $value;
+    }
+
+    /**
      * Связь с шаблоном товара
      */
     public function template(): BelongsTo
