@@ -743,7 +743,8 @@ class ReceiptResource extends Resource
                 Tables\Actions\ViewAction::make()
                     ->label('')
                     ->url(fn (Product $record) => Pages\ViewReceipt::getUrl(['record' => $record])),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label(''),
                 Tables\Actions\Action::make('confirm_receipt')
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')
