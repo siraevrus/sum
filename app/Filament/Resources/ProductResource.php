@@ -31,6 +31,24 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
+    /**
+     * Валидировать и ограничить значение calculated_volume
+     */
+    private static function validateCalculatedVolume(float $volume): ?float
+    {
+        $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+        
+        if ($volume > $maxValue) {
+            \Log::warning('ProductResource: Volume exceeds maximum value', [
+                'calculated_volume' => $volume,
+                'max_value' => $maxValue,
+            ]);
+            return null; // Возвращаем null вместо превышения
+        }
+        
+        return $volume;
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
     protected static ?string $navigationGroup = 'Товары';
@@ -181,7 +199,8 @@ class ProductResource extends Resource
                                             $testResult = $template->testFormula($numericAttributes);
                                             if ($testResult['success']) {
                                                 $result = $testResult['result'];
-                                                $set('calculated_volume', $result);
+                                                $validatedResult = self::validateCalculatedVolume($result);
+                                                $set('calculated_volume', $validatedResult);
 
                                                 // Логируем для отладки
                                                 Log::info('Volume calculated from quantity change', [
@@ -296,7 +315,8 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $set('calculated_volume', $result);
+                                                    $validatedResult = self::validateCalculatedVolume($result);
+                                                    $set('calculated_volume', $validatedResult);
 
                                                     // Логируем для отладки
                                                     Log::info('Volume calculated', [
@@ -378,7 +398,8 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $set('calculated_volume', $result);
+                                                    $validatedResult = self::validateCalculatedVolume($result);
+                                                    $set('calculated_volume', $validatedResult);
 
                                                     // Логируем для отладки
                                                     Log::info('Volume calculated', [
@@ -445,7 +466,8 @@ class ProductResource extends Resource
                                                 $testResult = $template->testFormula($numericAttributes);
                                                 if ($testResult['success']) {
                                                     $result = $testResult['result'];
-                                                    $set('calculated_volume', $result);
+                                                    $validatedResult = self::validateCalculatedVolume($result);
+                                                    $set('calculated_volume', $validatedResult);
 
                                                     // Логируем для отладки
                                                     Log::info('Volume calculated', [
@@ -648,7 +670,8 @@ class ProductResource extends Resource
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    $set('calculated_volume', $result);
+                    $validatedResult = self::validateCalculatedVolume($result);
+                    $set('calculated_volume', $validatedResult);
                 }
             }
         }
