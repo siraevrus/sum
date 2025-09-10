@@ -9,7 +9,6 @@
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
         <div class="mb-6">
-            <div class="text-6xl text-gray-400 mb-4">404</div>
             <h1 class="text-2xl font-bold text-gray-800 mb-2">Страница не найдена</h1>
             <p class="text-gray-600">Запрашиваемая страница не существует или была перемещена.</p>
         </div>
