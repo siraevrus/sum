@@ -606,6 +606,7 @@ class ReceiptResource extends Resource
                                 // Удалено поле description
                             ])
                             ->addActionLabel('Добавить товар')
+                            ->addable(fn () => request()->route()->getName() !== 'filament.admin.resources.receipts.edit')
                             ->deletable(false)
                             ->reorderable()
                             ->collapsible()
