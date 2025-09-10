@@ -546,7 +546,16 @@ class ProductResource extends Resource
 
                                 return '';
                             })
-                            ->helperText('Автоматически рассчитывается при заполнении характеристик или изменении количества');
+                            ->helperText(function (Get $get) {
+                                $templateId = $get('product_template_id');
+                                if ($templateId) {
+                                    $template = ProductTemplate::find($templateId);
+                                    if ($template && $template->formula) {
+                                        return 'Автоматически рассчитывается при заполнении характеристик или изменении количества. Если объем не отображается, возможно, результат превышает максимальное значение.';
+                                    }
+                                }
+                                return 'Автоматически рассчитывается при заполнении характеристик или изменении количества.';
+                            });
 
                         // Обертываем поля в компактную сетку
                         return [

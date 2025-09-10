@@ -125,7 +125,19 @@ class EditProduct extends EditRecord
                 $testResult = $template->testFormula($formulaAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    $data['calculated_volume'] = $result;
+                    
+                    // Применяем валидацию как в ProductResource
+                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                    if ($result > $maxValue) {
+                        \Log::warning('BeforeFill (EditProduct): Volume exceeds maximum value', [
+                            'calculated_volume' => $result,
+                            'max_value' => $maxValue,
+                        ]);
+                        $data['calculated_volume'] = null;
+                    } else {
+                        $data['calculated_volume'] = $result;
+                    }
+                    
                     \Log::info('BeforeFill (EditProduct): Volume calculated', ['result' => $result]);
                 } else {
                     \Log::warning('BeforeFill (EditProduct): Volume calculation failed', [
