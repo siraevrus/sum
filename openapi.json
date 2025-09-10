@@ -2,60 +2,25 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Sklad API",
-    "version": "2.0.0",
-    "description": "Машиночитаемая спецификация API для системы управления складом.\nИспользует аутентификацию Laravel Sanctum через Bearer токен.\n\n## Новые функции в версии 2.0:\n- Система уточнений/корректировок товаров\n- Управление документами товаров\n- Расширенная фильтрация и поиск\n\n## Аутентификация\nДля доступа к защищенным эндпоинтам используйте Bearer токен в заголовке Authorization.\n\n## Роли пользователей\n- `admin` - полный доступ ко всем функциям\n- `manager` - управление товарами и продажами\n- `warehouse_worker` - работа с приемкой товаров\n- `employee` - базовые операции\n"
+    "version": "1.0.0",
+    "description": "Машиночитаемая спецификация API для склада. Использует аутентификацию Laravel Sanctum через Bearer токен."
   },
   "servers": [
     {
       "url": "http://localhost:8000/api",
       "description": "Локальный сервер разработки"
-    },
-    {
-      "url": "https://sklad.example.com/api",
-      "description": "Продакшн сервер"
     }
   ],
   "tags": [
-    {
-      "name": "Auth",
-      "description": "Аутентификация и авторизация"
-    },
-    {
-      "name": "Products",
-      "description": "Управление товарами"
-    },
-    {
-      "name": "Sales",
-      "description": "Управление продажами"
-    },
-    {
-      "name": "Requests",
-      "description": "Управление заявками"
-    },
-    {
-      "name": "Users",
-      "description": "Управление пользователями"
-    },
-    {
-      "name": "Companies",
-      "description": "Управление компаниями"
-    },
-    {
-      "name": "Warehouses",
-      "description": "Управление складами"
-    },
-    {
-      "name": "Receipts",
-      "description": "Приемка товаров"
-    },
-    {
-      "name": "ProductTemplates",
-      "description": "Шаблоны товаров"
-    },
-    {
-      "name": "Stocks",
-      "description": "Остатки товаров"
-    }
+    { "name": "Auth" },
+    { "name": "Products" },
+    { "name": "Sales" },
+    { "name": "Stock" },
+    { "name": "Requests" },
+    { "name": "Users" },
+    { "name": "Companies" },
+    { "name": "Warehouses" },
+    { "name": "ProductTemplates" }
   ],
   "security": [
     {
@@ -65,340 +30,183 @@
   "paths": {
     "/auth/register": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Регистрация нового пользователя",
+        "tags": ["Auth"],
+        "summary": "Регистрация",
         "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
-              },
-              "example": {
-                "name": "Иван Иванов",
-                "email": "ivan@example.com",
-                "password": "password123",
-                "password_confirmation": "password123",
-                "company_id": 1
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "format": "password" }
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Пользователь успешно зарегистрирован",
+            "description": "Успех",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
                 }
               }
             }
           },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
-          }
+          "422": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/auth/login": {
       "post": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Вход в систему",
+        "tags": ["Auth"],
+        "summary": "Вход",
         "security": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginRequest"
-              },
-              "example": {
-                "email": "admin@example.com",
-                "password": "password123"
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "format": "password" }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Успешная аутентификация",
+            "description": "Успех",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
                 }
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          }
-        }
-      }
-    },
-    "/auth/logout": {
-      "post": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Выход из системы",
-        "responses": {
-          "200": {
-            "description": "Успешный выход",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/me": {
-      "get": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Получение информации о текущем пользователе",
-        "responses": {
-          "200": {
-            "description": "Информация о пользователе",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          }
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/products": {
       "get": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Получение списка товаров",
+        "tags": ["Products"],
+        "summary": "Список товаров",
         "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/per_page" },
           {
             "name": "search",
             "in": "query",
-            "description": "Поиск по названию, описанию или производителю",
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "warehouse_id",
             "in": "query",
-            "description": "Фильтр по складу",
-            "schema": {
-              "type": "integer"
-            }
+            "schema": { "type": "integer" }
           },
           {
-            "name": "producer_id",
+            "name": "template_id",
             "in": "query",
-            "description": "Фильтр по производителю",
-            "schema": {
-              "type": "integer"
-            }
+            "schema": { "type": "integer" }
           },
           {
-            "name": "correction_status",
+            "name": "producer",
             "in": "query",
-            "description": "Фильтр по статусу корректировки",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "none",
-                "correction"
-              ]
-            }
+            "schema": { "type": "string" }
           },
           {
             "name": "in_stock",
             "in": "query",
-            "description": "Только товары в наличии",
-            "schema": {
-              "type": "boolean"
-            }
+            "schema": { "type": "boolean" }
           },
           {
-            "name": "page",
+            "name": "low_stock",
             "in": "query",
-            "description": "Номер страницы",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
+            "schema": { "type": "boolean" }
           },
           {
-            "name": "per_page",
+            "name": "active",
             "in": "query",
-            "description": "Количество элементов на странице",
-            "schema": {
-              "type": "integer",
-              "default": 15
-            }
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "has_correction",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Показать только товары с уточнениями"
           }
         ],
         "responses": {
           "200": {
-            "description": "Список товаров",
+            "description": "OK",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProductsPaginatedResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/PaginatedProducts" }
               }
             }
           }
         }
       },
       "post": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Создание нового товара",
+        "tags": ["Products"],
+        "summary": "Создать товар",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/CreateProductRequest" }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Товар успешно создан",
+            "description": "Создано",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Product"
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Product" }
+                  }
                 }
               }
             }
           },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
-          }
-        }
-      }
-    },
-    "/products/{id}": {
-      "get": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Получение товара по ID",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Информация о товаре",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Обновление товара",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProductRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Товар успешно обновлен",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Удаление товара",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/ProductId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Товар успешно удален",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          }
+          "422": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/products/{id}/correction": {
       "post": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Добавление уточнения к товару",
+        "tags": ["Products"],
+        "summary": "Добавить уточнение к товару",
         "parameters": [
           {
-            "$ref": "#/components/parameters/ProductId"
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
           }
         ],
         "requestBody": {
@@ -406,215 +214,68 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CorrectionRequest"
-              },
-              "example": {
-                "correction": "В товаре ошибка с количеством - всего пришло 90"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Уточнение успешно добавлено",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "422": {
-            "$ref": "#/components/responses/ValidationError"
-          }
-        }
-      }
-    },
-    "/sales": {
-      "get": {
-        "tags": [
-          "Sales"
-        ],
-        "summary": "Получение списка продаж",
-        "parameters": [
-          {
-            "name": "product_id",
-            "in": "query",
-            "description": "Фильтр по товару",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "description": "Фильтр по статусу",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "completed",
-                "cancelled"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Список продаж",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SalesPaginatedResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Sales"
-        ],
-        "summary": "Создание новой продажи",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSaleRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Продажа успешно создана",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Sale"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/warehouses": {
-      "get": {
-        "tags": [
-          "Warehouses"
-        ],
-        "summary": "Получение списка складов",
-        "responses": {
-          "200": {
-            "description": "Список складов",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Warehouse"
+                "type": "object",
+                "required": ["correction"],
+                "properties": {
+                  "correction": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 1000,
+                    "description": "Текст уточнения"
                   }
                 }
               }
             }
           }
-        }
-      },
-      "post": {
-        "tags": [
-          "Warehouses"
-        ],
-        "summary": "Создание нового склада",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateWarehouseRequest"
-              }
-            }
-          }
         },
         "responses": {
-          "201": {
-            "description": "Склад успешно создан",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Warehouse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/receipts": {
-      "get": {
-        "tags": [
-          "Receipts"
-        ],
-        "summary": "Получение списка приемок",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
           "200": {
-            "description": "Список приемок",
+            "description": "Уточнение добавлено",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Receipt"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Product" }
                   }
                 }
               }
             }
-          }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
         }
       },
-      "post": {
-        "tags": [
-          "Receipts"
-        ],
-        "summary": "Создание новой приемки",
-        "security": [
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Удалить уточнение у товара",
+        "parameters": [
           {
-            "bearerAuth": []
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReceiptRequest"
+        "responses": {
+          "200": {
+            "description": "Уточнение удалено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "data": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
               }
             }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Приемка успешно создана"
-          }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
     }
@@ -628,612 +289,181 @@
       }
     },
     "parameters": {
-      "ProductId": {
-        "name": "id",
-        "in": "path",
-        "required": true,
-        "description": "ID товара",
-        "schema": {
-          "type": "integer",
-          "example": 1
-        }
+      "page": {
+        "name": "page",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1 },
+        "required": false
+      },
+      "per_page": {
+        "name": "per_page",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "required": false
       }
     },
     "responses": {
-      "ValidationError": {
-        "description": "Ошибка валидации",
+      "Unauthorized": {
+        "description": "Не авторизован",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ErrorResponse"
-            },
-            "example": {
-              "message": "The given data was invalid.",
-              "errors": {
-                "name": [
-                  "Поле название обязательно для заполнения."
-                ]
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
               }
             }
           }
         }
       },
-      "UnauthorizedError": {
-        "description": "Ошибка аутентификации",
+      "NotFound": {
+        "description": "Не найдено",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ErrorResponse"
-            },
-            "example": {
-              "message": "Неверные учетные данные"
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
             }
           }
         }
       },
-      "NotFoundError": {
-        "description": "Ресурс не найден",
+      "ValidationError": {
+        "description": "Ошибка валидации",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ErrorResponse"
-            },
-            "example": {
-              "message": "Товар не найден"
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "errors": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MessageOk": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" }
+              }
             }
           }
         }
       }
     },
     "schemas": {
-      "RegisterRequest": {
-        "type": "object",
-        "required": [
-          "name",
-          "email",
-          "password",
-          "password_confirmation"
-        ],
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Полное имя пользователя"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "Email адрес"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "description": "Пароль"
-          },
-          "password_confirmation": {
-            "type": "string",
-            "description": "Подтверждение пароля"
-          },
-          "company_id": {
-            "type": "integer",
-            "description": "ID компании"
-          }
-        }
-      },
-      "LoginRequest": {
-        "type": "object",
-        "required": [
-          "email",
-          "password"
-        ],
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "password": {
-            "type": "string"
-          }
-        }
-      },
-      "AuthResponse": {
+      "User": {
         "type": "object",
         "properties": {
-          "user": {
-            "$ref": "#/components/schemas/User"
-          },
-          "token": {
-            "type": "string",
-            "description": "Bearer токен для аутентификации"
-          },
-          "expires_at": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "username": { "type": "string", "nullable": true },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string" },
+          "company_id": { "type": "integer", "nullable": true },
+          "warehouse_id": { "type": "integer", "nullable": true },
+          "is_blocked": { "type": "boolean", "nullable": true }
         }
       },
       "Product": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "example": 1
-          },
-          "name": {
-            "type": "string",
-            "example": "Смартфон Samsung Galaxy"
-          },
-          "description": {
-            "type": "string",
-            "example": "Смартфон с экраном 6.1 дюйма"
-          },
-          "quantity": {
-            "type": "integer",
-            "example": 50
-          },
-          "sold_quantity": {
-            "type": "integer",
-            "example": 5
-          },
-          "calculated_volume": {
-            "type": "number",
-            "format": "float",
-            "example": 0.15
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "in_stock",
-              "in_transit",
-              "for_receipt"
-            ],
-            "example": "in_stock"
-          },
-          "correction": {
-            "type": "string",
-            "nullable": true,
-            "example": "В товаре ошибка с количеством - всего пришло 90"
-          },
-          "correction_status": {
-            "type": "string",
-            "enum": [
-              "none",
-              "correction"
-            ],
-            "nullable": true,
-            "example": "correction"
-          },
-          "document_path": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "example": [
-              "documents/product_1_invoice.pdf",
-              "documents/product_1_certificate.pdf"
-            ]
-          },
-          "producer_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "warehouse_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "quantity": { "type": "number" },
+          "attributes": { "type": "object", "additionalProperties": true, "nullable": true },
+          "transport_number": { "type": "string", "nullable": true },
+          "producer": { "type": "string", "nullable": true },
+          "arrival_date": { "type": "string", "format": "date", "nullable": true },
+          "is_active": { "type": "boolean" },
+          "calculated_volume": { "type": "number", "nullable": true },
+          "correction": { "type": "string", "nullable": true, "description": "Текст уточнения/коррекции" },
+          "correction_status": { "type": "string", "nullable": true, "enum": ["none", "correction"], "description": "Статус коррекции" },
+          "document_path": { "type": "array", "items": { "type": "string" }, "nullable": true, "description": "Пути к прикрепленным документам" },
           "template": {
-            "$ref": "#/components/schemas/ProductTemplate"
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" }
+            }
           },
           "warehouse": {
-            "$ref": "#/components/schemas/Warehouse"
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" }
+            }
           },
-          "producer": {
-            "$ref": "#/components/schemas/Producer"
+          "creator": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "integer" }
+            }
           }
         }
       },
       "CreateProductRequest": {
         "type": "object",
-        "required": [
-          "name",
-          "product_template_id",
-          "warehouse_id",
-          "quantity"
-        ],
+        "required": ["product_template_id", "warehouse_id", "quantity"],
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "product_template_id": {
-            "type": "integer"
-          },
-          "warehouse_id": {
-            "type": "integer"
-          },
-          "producer_id": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "attributes": {
-            "type": "object",
-            "description": "Атрибуты товара в формате JSON"
-          }
+          "product_template_id": { "type": "integer" },
+          "warehouse_id": { "type": "integer" },
+          "name": { "type": "string", "description": "Автоматически формируется из характеристик товара (необязательное)" },
+          "quantity": { "type": "number" },
+          "description": { "type": "string" },
+          "attributes": { "type": "object", "additionalProperties": true, "description": "Характеристики товара (обязательные для выбранного шаблона)" },
+          "transport_number": { "type": "string", "description": "Номер транспортного средства" },
+          "producer": { "type": "string" },
+          "arrival_date": { "type": "string", "format": "date" },
+          "is_active": { "type": "boolean" },
+          "correction": { "type": "string", "nullable": true, "description": "Текст уточнения/коррекции" },
+          "correction_status": { "type": "string", "nullable": true, "enum": ["none", "correction"], "description": "Статус коррекции" },
+          "document_path": { "type": "array", "items": { "type": "string" }, "nullable": true, "description": "Пути к прикрепленным документам" }
         }
       },
       "UpdateProductRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "attributes": {
-            "type": "object"
-          }
-        }
+        "allOf": [
+          { "$ref": "#/components/schemas/CreateProductRequest" }
+        ]
       },
-      "CorrectionRequest": {
-        "type": "object",
-        "required": [
-          "correction"
-        ],
-        "properties": {
-          "correction": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 1000,
-            "description": "Текст уточнения"
-          }
-        }
-      },
-      "ProductsPaginatedResponse": {
+      "PaginatedProducts": {
         "type": "object",
         "properties": {
           "data": {
             "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Product"
-            }
+            "items": { "$ref": "#/components/schemas/Product" }
           },
-          "current_page": {
-            "type": "integer"
-          },
-          "last_page": {
-            "type": "integer"
-          },
-          "per_page": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer"
-          }
+          "links": { "$ref": "#/components/schemas/PaginationLinks" },
+          "meta": { "$ref": "#/components/schemas/PaginationMeta" }
         }
       },
-      "User": {
+      "PaginationLinks": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "manager",
-              "warehouse_worker",
-              "employee"
-            ]
-          },
-          "company_id": {
-            "type": "integer"
-          },
-          "warehouse_id": {
-            "type": "integer",
-            "nullable": true
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "company": {
-            "$ref": "#/components/schemas/Company"
-          },
-          "warehouse": {
-            "$ref": "#/components/schemas/Warehouse"
-          }
+          "first": { "type": "string", "nullable": true },
+          "last": { "type": "string", "nullable": true },
+          "prev": { "type": "string", "nullable": true },
+          "next": { "type": "string", "nullable": true }
         }
       },
-      "Sale": {
+      "PaginationMeta": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "product_id": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer"
-          },
-          "price": {
-            "type": "number",
-            "format": "float"
-          },
-          "total_amount": {
-            "type": "number",
-            "format": "float"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "completed",
-              "cancelled"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "product": {
-            "$ref": "#/components/schemas/Product"
-          }
-        }
-      },
-      "CreateSaleRequest": {
-        "type": "object",
-        "required": [
-          "product_id",
-          "quantity",
-          "price"
-        ],
-        "properties": {
-          "product_id": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "price": {
-            "type": "number",
-            "format": "float",
-            "minimum": 0
-          }
-        }
-      },
-      "SalesPaginatedResponse": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Sale"
-            }
-          },
-          "current_page": {
-            "type": "integer"
-          },
-          "last_page": {
-            "type": "integer"
-          },
-          "per_page": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer"
-          }
-        }
-      },
-      "Company": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "employees_count": {
-            "type": "integer"
-          },
-          "warehouses_count": {
-            "type": "integer"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Warehouse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "company_id": {
-            "type": "integer"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "company": {
-            "$ref": "#/components/schemas/Company"
-          }
-        }
-      },
-      "CreateWarehouseRequest": {
-        "type": "object",
-        "required": [
-          "name",
-          "address",
-          "company_id"
-        ],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "company_id": {
-            "type": "integer"
-          }
-        }
-      },
-      "ProductTemplate": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "unit": {
-            "type": "string"
-          },
-          "volume_formula": {
-            "type": "string"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Producer": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Receipt": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "product_id": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer"
-          },
-          "received_quantity": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "received",
-              "partially_received"
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "product": {
-            "$ref": "#/components/schemas/Product"
-          }
-        }
-      },
-      "CreateReceiptRequest": {
-        "type": "object",
-        "required": [
-          "product_id",
-          "quantity"
-        ],
-        "properties": {
-          "product_id": {
-            "type": "integer"
-          },
-          "quantity": {
-            "type": "integer",
-            "minimum": 1
-          }
-        }
-      },
-      "MessageResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Операция выполнена успешно"
-          }
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string"
-          },
-          "errors": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
+          "current_page": { "type": "integer" },
+          "last_page": { "type": "integer" },
+          "per_page": { "type": "integer" },
+          "total": { "type": "integer" }
         }
       }
     }
