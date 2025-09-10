@@ -25,42 +25,53 @@ class ViewProduct extends ViewRecord
         return $infolist
             ->schema([
                 Infolists\Components\Section::make('Основная информация')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('name')
-                            ->label('Наименование')
-                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
-                            ->weight('bold'),
+                    ->schema(function () {
+                        $components = [
+                            Infolists\Components\TextEntry::make('name')
+                                ->label('Наименование')
+                                ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                                ->weight('bold'),
+                            
+                            Infolists\Components\TextEntry::make('producer.name')
+                                ->label('Производитель'),
+                            
+                            Infolists\Components\TextEntry::make('quantity')
+                                ->label('Количество')
+                                ->numeric(),
+                            
+                            Infolists\Components\TextEntry::make('transport_number')
+                                ->label('Номер транспорта'),
+                            
+                            Infolists\Components\TextEntry::make('arrival_date')
+                                ->label('Дата поступления')
+                                ->date('d.m.Y'),
+                            
+                            Infolists\Components\TextEntry::make('status')
+                                ->label('Статус')
+                                ->badge()
+                                ->color(fn (string $state): string => match ($state) {
+                                    'in_stock' => 'success',
+                                    'in_transit' => 'warning',
+                                    'for_receipt' => 'info',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn (string $state): string => match ($state) {
+                                    'in_stock' => 'На складе',
+                                    'in_transit' => 'В пути',
+                                    'for_receipt' => 'На приемку',
+                                    default => $state,
+                                }),
+                        ];
                         
-                        Infolists\Components\TextEntry::make('producer.name')
-                            ->label('Производитель'),
+                        // Добавляем место отгрузки если заполнено
+                        if (!empty($this->record->shipping_location)) {
+                            $components[] = Infolists\Components\TextEntry::make('shipping_location')
+                                ->label('Место отгрузки')
+                                ->state($this->record->shipping_location);
+                        }
                         
-                        Infolists\Components\TextEntry::make('quantity')
-                            ->label('Количество')
-                            ->numeric(),
-                        
-                        Infolists\Components\TextEntry::make('transport_number')
-                            ->label('Номер транспорта'),
-                        
-                        Infolists\Components\TextEntry::make('arrival_date')
-                            ->label('Дата поступления')
-                            ->date('d.m.Y'),
-                        
-                        Infolists\Components\TextEntry::make('status')
-                            ->label('Статус')
-                            ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'in_stock' => 'success',
-                                'in_transit' => 'warning',
-                                'for_receipt' => 'info',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'in_stock' => 'На складе',
-                                'in_transit' => 'В пути',
-                                'for_receipt' => 'На приемку',
-                                default => $state,
-                            }),
-                    ])
+                        return $components;
+                    })
                     ->columns(2),
 
                 Infolists\Components\Section::make('Характеристики товара')
@@ -77,13 +88,6 @@ class ViewProduct extends ViewRecord
                                 }
                                 return $state ?: '0.000';
                             });
-                        
-                        // Добавляем место отгрузки если заполнено
-                        if (!empty($this->record->shipping_location)) {
-                            $components[] = Infolists\Components\TextEntry::make('shipping_location')
-                                ->label('Место отгрузки')
-                                ->state($this->record->shipping_location);
-                        }
                         
                         if (empty($attributes)) {
                             $components[] = Infolists\Components\TextEntry::make('no_attributes')
