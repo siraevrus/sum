@@ -1,9 +1,8 @@
-name: Deploy with Frontend Build
+name: Simple Deploy
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # Позволяет запускать вручную
 
 jobs:
   deploy:
@@ -20,44 +19,22 @@ jobs:
         script_stop: true
         debug: true
         script: |
-          echo "🚀 Starting deployment..."
-          echo "📁 Current directory: $(pwd)"
-          echo "👤 Current user: $(whoami)"
+          echo "Starting deployment..."
+          echo "Current directory: $(pwd)"
+          echo "Current user: $(whoami)"
           
           cd /var/www/sklad
-          echo "📂 Changed to /var/www/sklad"
+          echo "Changed to /var/www/sklad"
           
-          echo "📥 Pulling latest changes..."
+          echo "Pulling latest changes..."
           git pull origin main
           
-          echo "📦 Installing/updating Composer dependencies..."
-          composer install --no-dev --optimize-autoloader
-          
-          echo "🗄️ Running database migrations..."
+          echo "Running migrations..."
           php artisan migrate --force
           
-          echo "🧹 Clearing all Laravel caches..."
+          echo "Clearing caches..."
           php artisan config:clear
           php artisan route:clear
-          php artisan view:clear
           php artisan cache:clear
-          php artisan event:clear
-          php artisan queue:clear
           
-          echo "⚙️ Optimizing Laravel..."
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          
-          echo "📦 Installing/updating NPM dependencies..."
-          npm ci --production
-          
-          echo "🔨 Building frontend assets..."
-          npm run build
-          
-          echo "🔄 Restarting services..."
-          sudo systemctl reload php8.4-fpm
-          sudo systemctl reload nginx
-          
-          echo "✅ Deployment completed successfully!"
-          echo "🌐 Application is ready at: $(curl -s http://localhost/health || echo 'Check manually')"
+          echo "Deployment completed successfully!"
