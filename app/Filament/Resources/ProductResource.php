@@ -664,6 +664,12 @@ class ProductResource extends Resource
                     ->sortable()
                     ->color(function (Product $record): ?string {
                         return $record->hasCorrection() ? 'danger' : null;
+                    })
+                    ->formatStateUsing(function (string $state, Product $record): string {
+                        if ($record->hasCorrection()) {
+                            return '⚠️ ' . $state;
+                        }
+                        return $state;
                     }),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
