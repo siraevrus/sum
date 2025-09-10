@@ -31,9 +31,6 @@ class ViewProduct extends ViewRecord
                             ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
                             ->weight('bold'),
                         
-                        Infolists\Components\TextEntry::make('productTemplate.name')
-                            ->label('Шаблон товара'),
-                        
                         Infolists\Components\TextEntry::make('producer.name')
                             ->label('Производитель'),
                         
@@ -41,14 +38,12 @@ class ViewProduct extends ViewRecord
                             ->label('Количество')
                             ->numeric(),
                         
-                        Infolists\Components\TextEntry::make('calculated_volume')
-                            ->label('Объем')
-                            ->formatStateUsing(function ($state) {
-                                if (is_numeric($state)) {
-                                    return number_format($state, 3, '.', ' ') . ' ' . ($this->record->productTemplate->unit ?? '');
-                                }
-                                return $state ?: '0.000';
-                            }),
+                        Infolists\Components\TextEntry::make('transport_number')
+                            ->label('Номер транспорта'),
+                        
+                        Infolists\Components\TextEntry::make('arrival_date')
+                            ->label('Дата поступления')
+                            ->date('d.m.Y'),
                         
                         Infolists\Components\TextEntry::make('status')
                             ->label('Статус')
@@ -68,24 +63,41 @@ class ViewProduct extends ViewRecord
                     ])
                     ->columns(2),
 
-                Infolists\Components\Section::make('Характеристики')
+                Infolists\Components\Section::make('Характеристики товара')
                     ->schema(function () {
                         $attributes = $this->record->attributes ?? [];
-                        if (empty($attributes)) {
-                            return [
-                                Infolists\Components\TextEntry::make('no_attributes')
-                                    ->label('')
-                                    ->state('Характеристики не заданы')
-                                    ->color('gray'),
-                            ];
-                        }
-
                         $components = [];
-                        foreach ($attributes as $key => $value) {
-                            $components[] = Infolists\Components\TextEntry::make("attribute_{$key}")
-                                ->label(ucfirst($key))
-                                ->state($value);
+                        
+                        // Добавляем объем в начало
+                        $components[] = Infolists\Components\TextEntry::make('calculated_volume')
+                            ->label('Объем')
+                            ->formatStateUsing(function ($state) {
+                                if (is_numeric($state)) {
+                                    return number_format($state, 3, '.', ' ') . ' ' . ($this->record->productTemplate->unit ?? '');
+                                }
+                                return $state ?: '0.000';
+                            });
+                        
+                        // Добавляем место отгрузки если заполнено
+                        if (!empty($this->record->shipping_location)) {
+                            $components[] = Infolists\Components\TextEntry::make('shipping_location')
+                                ->label('Место отгрузки')
+                                ->state($this->record->shipping_location);
                         }
+                        
+                        if (empty($attributes)) {
+                            $components[] = Infolists\Components\TextEntry::make('no_attributes')
+                                ->label('')
+                                ->state('Характеристики не заданы')
+                                ->color('gray');
+                        } else {
+                            foreach ($attributes as $key => $value) {
+                                $components[] = Infolists\Components\TextEntry::make("attribute_{$key}")
+                                    ->label(ucfirst($key))
+                                    ->state($value);
+                            }
+                        }
+                        
                         return $components;
                     })
                     ->columns(2),
@@ -95,14 +107,6 @@ class ViewProduct extends ViewRecord
                         Infolists\Components\TextEntry::make('description')
                             ->label('Описание')
                             ->columnSpanFull(),
-                        
-                        Infolists\Components\TextEntry::make('created_at')
-                            ->label('Дата создания')
-                            ->dateTime('d.m.Y H:i'),
-                        
-                        Infolists\Components\TextEntry::make('updated_at')
-                            ->label('Дата обновления')
-                            ->dateTime('d.m.Y H:i'),
                     ])
                     ->columns(2),
 
