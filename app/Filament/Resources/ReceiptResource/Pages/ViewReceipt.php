@@ -106,7 +106,6 @@ class ViewReceipt extends ViewRecord
                         TextEntry::make('calculated_volume')
                             ->label('Объем')
                             ->formatStateUsing(fn ($state) => is_numeric($state) ? number_format($state, 3, '.', ' ') : '0.000'),
-                        TextEntry::make('template.name')->label('Шаблон товара')->placeholder('—'),
                         TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
                         KeyValueEntry::make('attributes')
                             ->label('Характеристики')
