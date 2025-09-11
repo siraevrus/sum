@@ -4,26 +4,41 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+    // ВАЖНО: Публичная регистрация создает только warehouse_worker
+    // Для создания пользователей с другими ролями используйте UserController::store() (только для админов)
+
     /**
      * Регистрация пользователя
      */
     public function register(Request $request): JsonResponse
     {
+        // Публичная регистрация только в dev окружении
+        if (app()->environment('production')) {
+            Log::warning('Попытка регистрации в продакшн окружении', [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'email' => $request->input('email'),
+                'timestamp' => now(),
+            ]);
+
+            return response()->json([
+
+                'message' => 'Регистрация отключена в продакшн окружении',
+            ], 403);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'sometimes|string|max:255|unique:users,username',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'sometimes|string|in:admin,operator,warehouse_worker,sales_manager',
-            'company_id' => 'sometimes|integer|exists:companies,id',
         ]);
 
         $user = User::create([
@@ -31,8 +46,7 @@ class AuthController extends Controller
             'username' => $request->get('username', $request->name),
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->get('role', 'admin'),
-            'company_id' => $request->get('company_id'),
+            'role' => 'warehouse_worker', // Безопасная дефолтная роль
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -43,6 +57,9 @@ class AuthController extends Controller
             'token' => $token,
         ], 201);
     }
+
+    // ВАЖНО: Публичная регистрация создает только warehouse_worker
+    // Для создания пользователей с другими ролями используйте UserController::store() (только для админов)
 
     /**
      * Вход пользователя
@@ -68,7 +85,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user || !Hash::check($password, $user->password)) {
+        if (! $user || ! Hash::check($password, $user->password)) {
             return response()->json([
                 'message' => 'Неверные учетные данные',
                 'errors' => ['login' => ['Invalid login or password']],
@@ -84,6 +101,9 @@ class AuthController extends Controller
         ]);
     }
 
+    // ВАЖНО: Публичная регистрация создает только warehouse_worker
+    // Для создания пользователей с другими ролями используйте UserController::store() (только для админов)
+
     /**
      * Выход пользователя
      */
@@ -96,6 +116,9 @@ class AuthController extends Controller
         ]);
     }
 
+    // ВАЖНО: Публичная регистрация создает только warehouse_worker
+    // Для создания пользователей с другими ролями используйте UserController::store() (только для админов)
+
     /**
      * Получение информации о текущем пользователе
      */
@@ -103,6 +126,9 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    // ВАЖНО: Публичная регистрация создает только warehouse_worker
+    // Для создания пользователей с другими ролями используйте UserController::store() (только для админов)
 
     /**
      * Обновление профиля пользователя
@@ -113,8 +139,8 @@ class AuthController extends Controller
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'username' => 'sometimes|string|max:255|unique:users,username,'.$user->id,
+            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
             'password' => 'sometimes|string|min:8|confirmed',
         ]);
 
@@ -131,4 +157,4 @@ class AuthController extends Controller
             'user' => $user,
         ]);
     }
-} 
+}
