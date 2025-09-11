@@ -77,6 +77,13 @@ class ReceiptResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
+                                // Первый столбец
+                                TextInput::make('name')
+                                    ->label('Наименование')
+                                    ->disabled()
+                                    ->columnSpan(1)
+                                    ->columnStart(1),
+
                                 Select::make('warehouse_id')
                                     ->label('Склад назначения')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -99,34 +106,52 @@ class ReceiptResource extends Resource
                                         return $user->isAdmin();
                                     })
                                     ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->columnSpan(1)
+                                    ->columnStart(1),
 
+                                TextInput::make('transport_number')
+                                    ->label('Номер транспорта')
+                                    ->maxLength(255)
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->columnSpan(1)
+                                    ->columnStart(1),
+
+                                DatePicker::make('expected_arrival_date')
+                                    ->label('Ожидаемая дата прибытия')
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->columnSpan(1)
+                                    ->columnStart(1),
+
+                                // Второй столбец
                                 TextInput::make('shipping_location')
                                     ->label('Место отгрузки')
                                     ->maxLength(255)
                                     ->required()
-                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->columnSpan(1)
+                                    ->columnStart(2),
 
                                 DatePicker::make('shipping_date')
                                     ->label('Дата отгрузки')
                                     ->required()
                                     ->default(now())
-                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->columnSpan(1)
+                                    ->columnStart(2),
 
-                                TextInput::make('transport_number')
-                                    ->label('Номер транспорта')
-                                    ->maxLength(255)
-                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
-
-                                DatePicker::make('expected_arrival_date')
-                                    ->label('Ожидаемая дата прибытия')
-                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                \Filament\Forms\Components\Placeholder::make('creator_name')
+                                    ->label('Создатель')
+                                    ->content(fn (?Product $record) => $record?->creator?->name ?? '—')
+                                    ->columnSpan(1)
+                                    ->columnStart(2),
 
                                 Textarea::make('notes')
                                     ->label('Заметки')
                                     ->rows(3)
                                     ->maxLength(1000)
-                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit'),
+                                    ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                    ->columnSpanFull(),
 
                                 // Удалено поле actual_arrival_date
                             ]),
@@ -280,8 +305,10 @@ class ReceiptResource extends Resource
                                                 if (is_string($state)) {
                                                     // Убираем пробелы и преобразуем в число
                                                     $cleanState = str_replace(' ', '', $state);
+
                                                     return is_numeric($cleanState) ? (float) $cleanState : null;
                                                 }
+
                                                 return is_numeric($state) ? (float) $state : null;
                                             })
                                             ->suffix(function (Get $get) {
