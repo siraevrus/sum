@@ -74,7 +74,7 @@ class ViewProduct extends ViewRecord
                     })
                     ->columns(2),
 
-                Infolists\Components\Section::make('Характеристики товара')
+                Infolists\Components\Section::make('Информация о товаре')
                     ->schema(function () {
                         $attributes = $this->record->attributes ?? [];
                         $components = [];
