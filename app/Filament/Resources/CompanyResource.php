@@ -298,7 +298,7 @@ class CompanyResource extends Resource
                                     ->send();
                             }
                         })
-                        ->visible(fn (Collection $records): bool => $records->contains(fn ($record) => ! $record->is_archived)),
+                        ->visible(fn (?Collection $records = null): bool => $records?->contains(fn ($record) => ! $record->is_archived) ?? false),
 
                     Tables\Actions\BulkAction::make('restore')
                         ->label('Восстановить')
@@ -336,7 +336,7 @@ class CompanyResource extends Resource
                                     ->send();
                             }
                         })
-                        ->visible(fn (Collection $records): bool => $records->contains(fn ($record) => $record->is_archived)),
+                        ->visible(fn (?Collection $records = null): bool => $records?->contains(fn ($record) => $record->is_archived) ?? false),
 
                     Tables\Actions\DeleteBulkAction::make()
                         ->before(function (Collection $records) {
