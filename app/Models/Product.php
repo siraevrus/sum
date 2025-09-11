@@ -39,7 +39,6 @@ class Product extends Model
         'is_active',
         'shipping_location',
         'shipping_date',
-        'tracking_number',
         'expected_arrival_date',
         'actual_arrival_date',
         'document_path',
@@ -74,7 +73,7 @@ class Product extends Model
     {
         if ($value !== null) {
             $maxValue = 999999999.9999; // Максимум для decimal(15,4)
-            
+
             if ($value > $maxValue) {
                 \Log::warning('Product: Volume exceeds maximum value', [
                     'calculated_volume' => $value,
@@ -82,10 +81,11 @@ class Product extends Model
                     'product_id' => $this->id ?? 'new',
                 ]);
                 $this->attributes['calculated_volume'] = null;
+
                 return;
             }
         }
-        
+
         $this->attributes['calculated_volume'] = $value;
     }
 
@@ -96,7 +96,7 @@ class Product extends Model
     {
         if ($value !== null) {
             $maxValue = 2147483647; // Максимум для integer в MySQL
-            
+
             if ($value > $maxValue) {
                 \Log::warning('Product: Quantity exceeds maximum value', [
                     'quantity' => $value,
@@ -104,19 +104,21 @@ class Product extends Model
                     'product_id' => $this->id ?? 'new',
                 ]);
                 $this->attributes['quantity'] = 1; // Устанавливаем разумное значение по умолчанию
+
                 return;
             }
-            
+
             if ($value < 0) {
                 \Log::warning('Product: Quantity is negative', [
                     'quantity' => $value,
                     'product_id' => $this->id ?? 'new',
                 ]);
                 $this->attributes['quantity'] = 0;
+
                 return;
             }
         }
-        
+
         $this->attributes['quantity'] = $value;
     }
 
@@ -127,7 +129,7 @@ class Product extends Model
     {
         if ($value !== null) {
             $maxValue = 2147483647; // Максимум для integer в MySQL
-            
+
             if ($value > $maxValue) {
                 \Log::warning('Product: Sold quantity exceeds maximum value', [
                     'sold_quantity' => $value,
@@ -135,19 +137,21 @@ class Product extends Model
                     'product_id' => $this->id ?? 'new',
                 ]);
                 $this->attributes['sold_quantity'] = 0;
+
                 return;
             }
-            
+
             if ($value < 0) {
                 \Log::warning('Product: Sold quantity is negative', [
                     'sold_quantity' => $value,
                     'product_id' => $this->id ?? 'new',
                 ]);
                 $this->attributes['sold_quantity'] = 0;
+
                 return;
             }
         }
-        
+
         $this->attributes['sold_quantity'] = $value;
     }
 
