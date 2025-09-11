@@ -83,7 +83,7 @@ class ViewReceipt extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
-                        TextEntry::make('warehouse.name')->label('Склад'),
+                        TextEntry::make('warehouse.name')->label('Склад назначения'),
                         TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
                         TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
                         TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
