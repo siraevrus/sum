@@ -43,18 +43,14 @@ class ViewProductInTransit extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
-                        TextEntry::make('name')->label('Наименование')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
-                        TextEntry::make('status')
-                            ->label('Статус')
-                            ->badge()
-                            ->color(fn (Product $record) => $record->isInTransit() ? 'info' : ($record->isForReceipt() ? 'warning' : 'success'))
-                            ->formatStateUsing(fn (Product $record): string => $record->isInTransit() ? 'В пути' : ($record->isForReceipt() ? 'Для приемки' : 'На складе')),
+                        TextEntry::make('name')->label('Наименование'),
+                        TextEntry::make('creator.name')->label('Создатель'),
+                        TextEntry::make('shipping_location')->label('Место отгрузки'),
+                        TextEntry::make('shipping_date')->label('Дата отгрузки'),
                         TextEntry::make('warehouse.name')->label('Склад назначения'),
-                        TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
-                        TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
-                        TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
-                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата')->date()->placeholder('—'),
-                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
+                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата'),
+                        TextEntry::make('transport_number')->label('Номер транспорта'),
+                        TextEntry::make('status')->label('Статус'),
                     ])
                     ->columns(2),
 
