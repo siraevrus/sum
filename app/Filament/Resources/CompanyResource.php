@@ -10,7 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class CompanyResource extends Resource
@@ -261,102 +260,7 @@ class CompanyResource extends Resource
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('archive')
-                        ->label('Архивировать')
-                        ->icon('heroicon-o-archive-box')
-                        ->color('danger')
-                        ->requiresConfirmation()
-                        ->modalHeading('Архивировать выбранные компании?')
-                        ->modalDescription('Выбранные компании будут архивированы. Вместе с ними скроются все внесенные данные связанные с этими компаниями.')
-                        ->modalSubmitActionLabel('Да, архивировать')
-                        ->modalCancelActionLabel('Отмена')
-                        ->action(function (Collection $records) {
-                            $archivedCount = 0;
-                            $skippedCount = 0;
-
-                            foreach ($records as $record) {
-                                if (! $record->is_archived) {
-                                    $record->archive();
-                                    $archivedCount++;
-                                } else {
-                                    $skippedCount++;
-                                }
-                            }
-
-                            if ($archivedCount > 0) {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Компании архивированы')
-                                    ->body("Архивировано компаний: {$archivedCount}".($skippedCount > 0 ? ", пропущено уже архивированных: {$skippedCount}" : ''))
-                                    ->success()
-                                    ->send();
-                            } else {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Нет компаний для архивации')
-                                    ->body('Все выбранные компании уже архивированы.')
-                                    ->warning()
-                                    ->send();
-                            }
-                        })
-                        ->visible(fn (?Collection $records = null): bool => $records?->contains(fn ($record) => ! $record->is_archived) ?? false),
-
-                    Tables\Actions\BulkAction::make('restore')
-                        ->label('Восстановить')
-                        ->icon('heroicon-o-arrow-path')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Восстановить выбранные компании?')
-                        ->modalDescription('Выбранные компании будут восстановлены из архива.')
-                        ->modalSubmitActionLabel('Да, восстановить')
-                        ->modalCancelActionLabel('Отмена')
-                        ->action(function (Collection $records) {
-                            $restoredCount = 0;
-                            $skippedCount = 0;
-
-                            foreach ($records as $record) {
-                                if ($record->is_archived) {
-                                    $record->restore();
-                                    $restoredCount++;
-                                } else {
-                                    $skippedCount++;
-                                }
-                            }
-
-                            if ($restoredCount > 0) {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Компании восстановлены')
-                                    ->body("Восстановлено компаний: {$restoredCount}".($skippedCount > 0 ? ", пропущено неархивированных: {$skippedCount}" : ''))
-                                    ->success()
-                                    ->send();
-                            } else {
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Нет компаний для восстановления')
-                                    ->body('Все выбранные компании уже активны.')
-                                    ->warning()
-                                    ->send();
-                            }
-                        })
-                        ->visible(fn (?Collection $records = null): bool => $records?->contains(fn ($record) => $record->is_archived) ?? false),
-
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->before(function (Collection $records) {
-                            // Фильтруем записи, которые можно удалить
-                            $deletableRecords = $records->filter(function ($record) {
-                                return ! ($record->warehouses()->exists() || $record->employees()->exists());
-                            });
-
-                            if ($deletableRecords->count() !== $records->count()) {
-                                // Если есть записи, которые нельзя удалить, показываем предупреждение
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Некоторые компании не могут быть удалены')
-                                    ->body('Компании с связанными складами или сотрудниками пропущены.')
-                                    ->warning()
-                                    ->send();
-                            }
-
-                            return $deletableRecords;
-                        }),
-                ]),
+                // Bulk actions скрыты
             ]);
     }
 
