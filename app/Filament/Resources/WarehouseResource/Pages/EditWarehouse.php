@@ -14,7 +14,7 @@ class EditWarehouse extends EditRecord
     {
         return [
             Actions\DeleteAction::make()
-                ->label(''),
+                ->label('Удалить'),
         ];
     }
 }
