@@ -107,26 +107,36 @@ class ViewProductInTransit extends ViewRecord
                         TextEntry::make('document_path')
                             ->label('Файлы')
                             ->formatStateUsing(function ($state) {
-                                if (! is_array($state) || empty($state)) {
+                                // Если пустое значение
+                                if (empty($state)) {
+                                    return '—';
+                                }
+
+                                // Если это строка, преобразуем в массив
+                                if (is_string($state)) {
+                                    $state = [$state];
+                                }
+
+                                // Если это не массив, возвращаем прочерк
+                                if (! is_array($state)) {
                                     return '—';
                                 }
 
                                 $links = [];
-                                foreach ($state as $index => $document) {
-                                    $fileName = basename($document);
-                                    $fileUrl = asset('storage/'.$document);
-                                    $links[] = "<a href=\"{$fileUrl}\" target=\"_blank\" class=\"text-primary-600 hover:text-primary-800 underline\">{$fileName}</a>";
+                                foreach ($state as $document) {
+                                    if (! empty($document)) {
+                                        $fileName = basename($document);
+                                        $fileUrl = asset('storage/'.$document);
+                                        $links[] = "<a href=\"{$fileUrl}\" target=\"_blank\" class=\"text-primary-600 hover:text-primary-800 underline\">{$fileName}</a>";
+                                    }
                                 }
 
-                                return implode('<br>', $links);
+                                return empty($links) ? '—' : implode('<br>', $links);
                             })
                             ->html()
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn (Product $record): bool => $record->document_path &&
-                        is_array($record->document_path) &&
-                        ! empty($record->document_path)
-                    )
+                    ->visible(fn (Product $record): bool => ! empty($record->document_path))
                     ->icon('heroicon-o-document'),
 
             ]);
