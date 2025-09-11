@@ -59,7 +59,7 @@ class ViewProduct extends ViewRecord
                                     default => $state,
                                 }),
 
-                            Infolists\Components\TextEntry::make('createdBy.name')
+                            Infolists\Components\TextEntry::make('creator.name')
                                 ->label('Создатель'),
                         ];
 
