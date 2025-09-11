@@ -83,6 +83,7 @@ class ViewReceipt extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
+                        TextEntry::make('name')->label('Наименование')->size(TextEntry::TextEntrySize::Large)->weight('bold'),
                         TextEntry::make('warehouse.name')->label('Склад назначения'),
                         TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
                         TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
@@ -93,7 +94,6 @@ class ViewReceipt extends ViewRecord
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
-                        TextEntry::make('name')->label('Наименование'),
                         TextEntry::make('quantity')->label('Количество'),
                         TextEntry::make('calculated_volume')
                             ->label('Объем')
