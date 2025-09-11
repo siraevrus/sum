@@ -21,6 +21,19 @@ class ViewProductInTransit extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('Изменить'),
+            Actions\Action::make('send_for_receipt')
+                ->label('Отправить на приемку')
+                ->color('success')
+                ->icon('heroicon-o-arrow-right-circle')
+                ->visible(fn () => $this->record->status !== 'for_receipt')
+                ->requiresConfirmation()
+                ->action(function () {
+                    $this->record->status = 'for_receipt';
+                    $this->record->save();
+                    $this->redirect($this->getResource()::getUrl('index'));
+                })
+                ->modalHeading('Отправить на приемку')
+                ->modalDescription('Статус будет изменен на "Для приемки", и карточка закроется.'),
         ];
     }
 
