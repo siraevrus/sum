@@ -4,9 +4,9 @@ namespace App\Filament\Resources\ProductResource\Pages;
 
 use App\Filament\Resources\ProductResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewProduct extends ViewRecord
 {
@@ -31,21 +31,21 @@ class ViewProduct extends ViewRecord
                                 ->label('Наименование')
                                 ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
                                 ->weight('bold'),
-                            
+
                             Infolists\Components\TextEntry::make('producer.name')
                                 ->label('Производитель'),
-                            
+
                             Infolists\Components\TextEntry::make('quantity')
                                 ->label('Количество')
                                 ->numeric(),
-                            
+
                             Infolists\Components\TextEntry::make('transport_number')
                                 ->label('Номер транспорта'),
-                            
+
                             Infolists\Components\TextEntry::make('arrival_date')
                                 ->label('Дата поступления')
                                 ->date('d.m.Y'),
-                            
+
                             Infolists\Components\TextEntry::make('status')
                                 ->label('Статус')
                                 ->badge()
@@ -62,14 +62,14 @@ class ViewProduct extends ViewRecord
                                     default => $state,
                                 }),
                         ];
-                        
+
                         // Добавляем место отгрузки если заполнено
-                        if (!empty($this->record->shipping_location)) {
+                        if (! empty($this->record->shipping_location)) {
                             $components[] = Infolists\Components\TextEntry::make('shipping_location')
                                 ->label('Место отгрузки')
                                 ->state($this->record->shipping_location);
                         }
-                        
+
                         return $components;
                     })
                     ->columns(2),
@@ -78,30 +78,41 @@ class ViewProduct extends ViewRecord
                     ->schema(function () {
                         $attributes = $this->record->attributes ?? [];
                         $components = [];
-                        
+
                         // Добавляем объем в начало
                         $components[] = Infolists\Components\TextEntry::make('calculated_volume')
                             ->label('Объем')
                             ->formatStateUsing(function ($state) {
                                 if (is_numeric($state)) {
-                                    return number_format($state, 3, '.', ' ') . ' ' . ($this->record->productTemplate->unit ?? '');
+                                    return number_format($state, 3, '.', ' ').' '.($this->record->productTemplate->unit ?? '');
                                 }
+
                                 return $state ?: '0.000';
                             });
-                        
+
                         if (empty($attributes)) {
                             $components[] = Infolists\Components\TextEntry::make('no_attributes')
                                 ->label('')
                                 ->state('Характеристики не заданы')
                                 ->color('gray');
                         } else {
+                            // Построим карту переменная -> полное название из шаблона, чтобы показать названия характеристик
+                            $template = $this->record->productTemplate;
+                            $variableToName = [];
+                            if ($template && method_exists($template, 'attributes')) {
+                                foreach ($template->attributes as $templateAttribute) {
+                                    $variableToName[$templateAttribute->variable] = $templateAttribute->full_name ?? $templateAttribute->variable;
+                                }
+                            }
+
                             foreach ($attributes as $key => $value) {
+                                $label = $variableToName[$key] ?? ucfirst($key);
                                 $components[] = Infolists\Components\TextEntry::make("attribute_{$key}")
-                                    ->label(ucfirst($key))
+                                    ->label($label)
                                     ->state($value);
                             }
                         }
-                        
+
                         return $components;
                     })
                     ->columns(2),
@@ -120,11 +131,12 @@ class ViewProduct extends ViewRecord
                         Infolists\Components\TextEntry::make('correction_info')
                             ->label('')
                             ->state(function () {
-                                if (!$this->record->hasCorrection()) {
+                                if (! $this->record->hasCorrection()) {
                                     return null;
                                 }
                                 $correctionText = $this->record->correction ?? 'Нет текста уточнения';
                                 $updatedAt = $this->record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
+
                                 return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n*Дата внесения:* {$updatedAt}";
                             })
                             ->markdown()
@@ -139,7 +151,7 @@ class ViewProduct extends ViewRecord
                         Infolists\Components\ViewEntry::make('documents')
                             ->view('filament.infolists.components.documents-list')
                             ->viewData(function (): array {
-                                if (!$this->record->document_path || empty($this->record->document_path)) {
+                                if (! $this->record->document_path || empty($this->record->document_path)) {
                                     return ['documents' => []];
                                 }
                                 $documents = is_array($this->record->document_path) ? $this->record->document_path : [];
@@ -153,18 +165,19 @@ class ViewProduct extends ViewRecord
                                     $documentsList[] = [
                                         'index' => $index + 1,
                                         'name' => $fileName,
-                                        'url' => $fileUrl
+                                        'url' => $fileUrl,
                                     ];
                                 }
+
                                 return ['documents' => $documentsList];
                             })
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (): bool => $this->record->document_path &&
                         is_array($this->record->document_path) &&
-                        !empty($this->record->document_path)
+                        ! empty($this->record->document_path)
                     )
                     ->icon('heroicon-o-document'),
             ]);
     }
-} 
+}
