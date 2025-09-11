@@ -32,9 +32,6 @@ class ViewProduct extends ViewRecord
                                 ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
                                 ->weight('bold'),
 
-                            Infolists\Components\TextEntry::make('producer.name')
-                                ->label('Производитель'),
-
                             Infolists\Components\TextEntry::make('quantity')
                                 ->label('Количество')
                                 ->numeric(),
@@ -79,7 +76,11 @@ class ViewProduct extends ViewRecord
                         $attributes = $this->record->attributes ?? [];
                         $components = [];
 
-                        // Добавляем объем в начало
+                        // Добавляем производителя в начало
+                        $components[] = Infolists\Components\TextEntry::make('producer.name')
+                            ->label('Производитель');
+
+                        // Добавляем объем
                         $components[] = Infolists\Components\TextEntry::make('calculated_volume')
                             ->label('Объем')
                             ->formatStateUsing(function ($state) {
