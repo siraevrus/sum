@@ -103,10 +103,10 @@ class ViewReceipt extends ViewRecord
                 InfoSection::make('Информация о товаре')
                     ->schema([
                         TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
+                        TextEntry::make('quantity')->label('Количество'),
                         TextEntry::make('calculated_volume')
                             ->label('Объем')
                             ->formatStateUsing(fn ($state) => is_numeric($state) ? number_format($state, 3, '.', ' ') : '0.000'),
-                        TextEntry::make('quantity')->label('Количество'),
                         KeyValueEntry::make('attributes')
                             ->label('Характеристики')
                             ->keyLabel('')
