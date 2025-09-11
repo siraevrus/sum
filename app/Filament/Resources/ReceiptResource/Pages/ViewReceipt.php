@@ -107,26 +107,6 @@ class ViewReceipt extends ViewRecord
                             ->badge()
                             ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
                         TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
-                    ])
-                    ->columns(2),
-
-                InfoSection::make('Документы')
-                    ->schema([
-                        TextEntry::make('document_path')
-                            ->label('Файлы')
-                            ->formatStateUsing(function ($state) {
-                                if (is_array($state)) {
-                                    return implode("\n", $state);
-                                }
-
-                                return $state ?: '—';
-                            })
-                            ->extraAttributes(['class' => 'whitespace-pre-line'])
-                            ->columnSpanFull(),
-                    ]),
-
-                InfoSection::make('Характеристики товара')
-                    ->schema([
                         KeyValueEntry::make('attributes')
                             ->label('Характеристики')
                             ->keyLabel('')
@@ -167,6 +147,21 @@ class ViewReceipt extends ViewRecord
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
+
+                InfoSection::make('Документы')
+                    ->schema([
+                        TextEntry::make('document_path')
+                            ->label('Файлы')
+                            ->formatStateUsing(function ($state) {
+                                if (is_array($state)) {
+                                    return implode("\n", $state);
+                                }
+
+                                return $state ?: '—';
+                            })
+                            ->extraAttributes(['class' => 'whitespace-pre-line'])
+                            ->columnSpanFull(),
+                    ]),
 
                 InfoSection::make('Уточнения')
                     ->schema([
