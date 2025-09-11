@@ -102,6 +102,26 @@ class ViewProductInTransit extends ViewRecord
                     ])
                     ->columns(2),
 
+                InfoSection::make('Документы')
+                    ->schema([
+                        TextEntry::make('document_path')
+                            ->label('Файлы')
+                            ->formatStateUsing(function ($state) {
+                                if (is_array($state)) {
+                                    return implode("\n", $state);
+                                }
+
+                                return $state ?: '—';
+                            })
+                            ->extraAttributes(['class' => 'whitespace-pre-line'])
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (Product $record): bool => $record->document_path &&
+                        is_array($record->document_path) &&
+                        ! empty($record->document_path)
+                    )
+                    ->icon('heroicon-o-document'),
+
             ]);
     }
 }
