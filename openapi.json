@@ -2,25 +2,60 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Sklad API",
-    "version": "1.0.0",
-    "description": "Машиночитаемая спецификация API для склада. Использует аутентификацию Laravel Sanctum через Bearer токен."
+    "version": "1.2.0",
+    "description": "Машиночитаемая спецификация API для системы управления складом. \nИспользует аутентификацию Laravel Sanctum через Bearer токен.\n\n## Основные возможности:\n- Управление товарами и их шаблонами\n- Управление продажами и запросами\n- Система складов и компаний\n- Приемка товаров и товары в пути\n- Управление пользователями и ролями\n- Аналитика и статистика\n"
   },
   "servers": [
     {
       "url": "http://localhost:8000/api",
       "description": "Локальный сервер разработки"
+    },
+    {
+      "url": "https://your-production-domain.com/api",
+      "description": "Продакшн сервер"
     }
   ],
   "tags": [
-    { "name": "Auth" },
-    { "name": "Products" },
-    { "name": "Sales" },
-    { "name": "Stock" },
-    { "name": "Requests" },
-    { "name": "Users" },
-    { "name": "Companies" },
-    { "name": "Warehouses" },
-    { "name": "ProductTemplates" }
+    {
+      "name": "Auth",
+      "description": "Аутентификация и авторизация"
+    },
+    {
+      "name": "Products",
+      "description": "Управление товарами"
+    },
+    {
+      "name": "Sales",
+      "description": "Управление продажами"
+    },
+    {
+      "name": "Requests",
+      "description": "Управление запросами"
+    },
+    {
+      "name": "Users",
+      "description": "Управление пользователями"
+    },
+    {
+      "name": "Companies",
+      "description": "Управление компаниями"
+    },
+    {
+      "name": "Warehouses",
+      "description": "Управление складами"
+    },
+    {
+      "name": "ProductTemplates",
+      "description": "Шаблоны товаров"
+    },
+    {
+      "name": "Receipts",
+      "description": "Приемка товаров"
+    },
+    {
+      "name": "Stocks",
+      "description": "Остатки товаров"
+    }
   ],
   "security": [
     {
@@ -30,8 +65,10 @@
   "paths": {
     "/auth/register": {
       "post": {
-        "tags": ["Auth"],
-        "summary": "Регистрация",
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Регистрация пользователя",
         "security": [],
         "requestBody": {
           "required": true,
@@ -39,11 +76,51 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "email", "password"],
+                "required": [
+                  "name",
+                  "email",
+                  "password",
+                  "password_confirmation"
+                ],
                 "properties": {
-                  "name": { "type": "string" },
-                  "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string", "format": "password" }
+                  "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "Иван Иванов"
+                  },
+                  "username": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "example": "ivan_ivanov"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "ivan@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  },
+                  "password_confirmation": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "operator",
+                      "warehouse_worker",
+                      "sales_manager"
+                    ],
+                    "default": "admin"
+                  },
+                  "company_id": {
+                    "type": "integer",
+                    "example": 1
+                  }
                 }
               }
             }
@@ -51,27 +128,40 @@
         },
         "responses": {
           "201": {
-            "description": "Успех",
+            "description": "Успешная регистрация",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "user": { "$ref": "#/components/schemas/User" },
-                    "token": { "type": "string" }
+                    "message": {
+                      "type": "string",
+                      "example": "Пользователь успешно зарегистрирован"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "1|abc123..."
+                    }
                   }
                 }
               }
             }
           },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
         }
       }
     },
     "/auth/login": {
       "post": {
-        "tags": ["Auth"],
-        "summary": "Вход",
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Вход в систему",
         "security": [],
         "requestBody": {
           "required": true,
@@ -79,10 +169,20 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password"],
+                "required": [
+                  "login",
+                  "password"
+                ],
                 "properties": {
-                  "email": { "type": "string", "format": "email" },
-                  "password": { "type": "string", "format": "password" }
+                  "login": {
+                    "type": "string",
+                    "description": "Email или username",
+                    "example": "ivan@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
                 }
               }
             }
@@ -90,123 +190,1789 @@
         },
         "responses": {
           "200": {
-            "description": "Успех",
+            "description": "Успешный вход",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "user": { "$ref": "#/components/schemas/User" },
-                    "token": { "type": "string" }
+                    "message": {
+                      "type": "string",
+                      "example": "Успешный вход"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "1|abc123..."
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" }
+          "401": {
+            "description": "Неверные учетные данные",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Выход из системы",
+        "responses": {
+          "200": {
+            "description": "Успешный выход",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Успешный выход"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Получение информации о текущем пользователе",
+        "responses": {
+          "200": {
+            "description": "Информация о пользователе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Обновление профиля текущего пользователя",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "username": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8
+                  },
+                  "password_confirmation": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Профиль обновлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Профиль обновлен"
+                    },
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
     "/products": {
       "get": {
-        "tags": ["Products"],
-        "summary": "Список товаров",
+        "tags": [
+          "Products"
+        ],
+        "summary": "Получение списка товаров",
         "parameters": [
-          { "$ref": "#/components/parameters/page" },
-          { "$ref": "#/components/parameters/per_page" },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 15,
+              "maximum": 100
+            }
+          },
           {
             "name": "search",
             "in": "query",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            },
+            "description": "Поиск по названию, описанию или производителю"
           },
           {
             "name": "warehouse_id",
             "in": "query",
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Фильтр по складу"
           },
           {
             "name": "template_id",
             "in": "query",
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Фильтр по шаблону товара"
           },
           {
-            "name": "producer",
+            "name": "producer_id",
             "in": "query",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Фильтр по производителю"
           },
           {
             "name": "in_stock",
             "in": "query",
-            "schema": { "type": "boolean" }
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Только товары в наличии"
           },
           {
             "name": "low_stock",
             "in": "query",
-            "schema": { "type": "boolean" }
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Товары с низким остатком"
           },
           {
             "name": "active",
             "in": "query",
-            "schema": { "type": "boolean" }
-          },
-          {
-            "name": "has_correction",
-            "in": "query",
-            "schema": { "type": "boolean" },
-            "description": "Показать только товары с уточнениями"
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Только активные товары"
           }
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Список товаров",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/PaginatedProducts" }
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    },
+                    "links": {
+                      "$ref": "#/components/schemas/PaginationLinks"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  }
+                }
               }
             }
           }
         }
       },
       "post": {
-        "tags": ["Products"],
-        "summary": "Создать товар",
+        "tags": [
+          "Products"
+        ],
+        "summary": "Создание товара",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateProductRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Создано",
+            "description": "Товар создан",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string" },
-                    "data": { "$ref": "#/components/schemas/Product" }
+                    "message": {
+                      "type": "string",
+                      "example": "Товар создан"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
                   }
                 }
               }
             }
           },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
         }
       }
     },
-    "/products/{id}/correction": {
-      "post": {
-        "tags": ["Products"],
-        "summary": "Добавить уточнение к товару",
+    "/products/stats": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Статистика по товарам",
+        "responses": {
+          "200": {
+            "description": "Статистика товаров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "example": 150
+                    },
+                    "in_stock": {
+                      "type": "integer",
+                      "example": 120
+                    },
+                    "low_stock": {
+                      "type": "integer",
+                      "example": 15
+                    },
+                    "out_of_stock": {
+                      "type": "integer",
+                      "example": 15
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/popular": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Популярные товары",
         "parameters": [
           {
-            "name": "id",
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список популярных товаров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/export": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Экспорт товаров",
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "xlsx"
+              ],
+              "default": "csv"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Файл экспорта",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{product}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Получение товара по ID",
+        "parameters": [
+          {
+            "name": "product",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о товаре",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Обновление товара",
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Товар обновлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Товар обновлен"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Удаление товара",
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Товар удален",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Товар удален"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/sales": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Получение списка продаж",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список продаж",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedSales"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Создание продажи",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Продажа создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Sale"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales/stats": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Статистика по продажам",
+        "responses": {
+          "200": {
+            "description": "Статистика продаж",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "total_amount": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "pending": {
+                      "type": "integer"
+                    },
+                    "processed": {
+                      "type": "integer"
+                    },
+                    "cancelled": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales/{sale}": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Получение продажи по ID",
+        "parameters": [
+          {
+            "name": "sale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о продаже",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sale"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Обновление продажи",
+        "parameters": [
+          {
+            "name": "sale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Продажа обновлена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Sale"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Удаление продажи",
+        "parameters": [
+          {
+            "name": "sale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Продажа удалена"
+          }
+        }
+      }
+    },
+    "/sales/{sale}/process": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Обработка продажи",
+        "parameters": [
+          {
+            "name": "sale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Продажа обработана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Sale"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales/{sale}/cancel": {
+      "post": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Отмена продажи",
+        "parameters": [
+          {
+            "name": "sale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Продажа отменена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Sale"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Получение списка запросов",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processed",
+                "rejected"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedRequests"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Создание запроса",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Запрос создан"
+          }
+        }
+      }
+    },
+    "/requests/{request}": {
+      "get": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Получение запроса по ID",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о запросе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Request"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request}/process": {
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Обработка запроса",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос обработан"
+          }
+        }
+      }
+    },
+    "/requests/{request}/reject": {
+      "post": {
+        "tags": [
+          "Requests"
+        ],
+        "summary": "Отклонение запроса",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "description": "Причина отклонения"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Запрос отклонен"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Получение списка пользователей",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "admin",
+                "operator",
+                "warehouse_worker",
+                "sales_manager"
+              ]
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список пользователей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUsers"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Создание пользователя",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Пользователь создан"
+          }
+        }
+      }
+    },
+    "/users/{user}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Получение пользователя по ID",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о пользователе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Обновление пользователя",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Пользователь обновлен"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Удаление пользователя",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Пользователь удален"
+          }
+        }
+      }
+    },
+    "/users/{user}/block": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Блокировка пользователя",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Пользователь заблокирован"
+          }
+        }
+      }
+    },
+    "/users/{user}/unblock": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Разблокировка пользователя",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Пользователь разблокирован"
+          }
+        }
+      }
+    },
+    "/companies": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Получение списка компаний",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Показать архивированные компании"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список компаний",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCompanies"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Создание компании",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Компания создана"
+          }
+        }
+      }
+    },
+    "/companies/{company}": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Получение компании по ID",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о компании",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Обновление компании",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Компания обновлена"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Удаление компании",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Компания удалена"
+          }
+        }
+      }
+    },
+    "/companies/{company}/archive": {
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Архивирование компании",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Компания архивирована"
+          }
+        }
+      }
+    },
+    "/companies/{company}/restore": {
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Восстановление компании из архива",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Компания восстановлена"
+          }
+        }
+      }
+    },
+    "/companies/{company}/warehouses": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Получение складов компании",
+        "parameters": [
+          {
+            "name": "company",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список складов компании",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Warehouse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/warehouses": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Получение списка складов",
+        "responses": {
+          "200": {
+            "description": "Список складов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Warehouse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Создание склада",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarehouseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Склад создан"
+          }
+        }
+      }
+    },
+    "/warehouses/stats": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Общая статистика по складам",
+        "responses": {
+          "200": {
+            "description": "Статистика складов"
+          }
+        }
+      }
+    },
+    "/warehouses/{warehouse}": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Получение склада по ID",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о складе",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Warehouse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Обновление склада",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarehouseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Склад обновлен"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Удаление склада",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Склад удален"
+          }
+        }
+      }
+    },
+    "/warehouses/{warehouse}/stats": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Статистика по складу",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статистика склада"
+          }
+        }
+      }
+    },
+    "/warehouses/{warehouse}/products": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Товары на складе",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список товаров на складе"
+          }
+        }
+      }
+    },
+    "/warehouses/{warehouse}/employees": {
+      "get": {
+        "tags": [
+          "Warehouses"
+        ],
+        "summary": "Сотрудники склада",
+        "parameters": [
+          {
+            "name": "warehouse",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список сотрудников склада"
+          }
+        }
+      }
+    },
+    "/product-templates": {
+      "get": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Получение списка шаблонов товаров",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список шаблонов товаров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedProductTemplates"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Создание шаблона товара",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductTemplateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Шаблон товара создан"
+          }
+        }
+      }
+    },
+    "/product-templates/units": {
+      "get": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Получение доступных единиц измерения",
+        "responses": {
+          "200": {
+            "description": "Список единиц измерения",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "string",
+                        "example": "kg"
+                      },
+                      "label": {
+                        "type": "string",
+                        "example": "Килограмм"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/product-templates/{productTemplate}": {
+      "get": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Получение шаблона товара по ID",
+        "parameters": [
+          {
+            "name": "productTemplate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о шаблоне товара",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductTemplate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Обновление шаблона товара",
+        "parameters": [
+          {
+            "name": "productTemplate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductTemplateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Шаблон товара обновлен"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Удаление шаблона товара",
+        "parameters": [
+          {
+            "name": "productTemplate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Шаблон товара удален"
+          }
+        }
+      }
+    },
+    "/product-templates/{productTemplate}/test-formula": {
+      "post": {
+        "tags": [
+          "ProductTemplates"
+        ],
+        "summary": "Тестирование формулы шаблона",
+        "parameters": [
+          {
+            "name": "productTemplate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "requestBody": {
@@ -215,13 +1981,10 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["correction"],
                 "properties": {
-                  "correction": {
-                    "type": "string",
-                    "minLength": 10,
-                    "maxLength": 1000,
-                    "description": "Текст уточнения"
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": true
                   }
                 }
               }
@@ -230,52 +1993,257 @@
         },
         "responses": {
           "200": {
-            "description": "Уточнение добавлено",
+            "description": "Результат тестирования формулы",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
-                    "message": { "type": "string" },
-                    "data": { "$ref": "#/components/schemas/Product" }
+                    "result": {
+                      "type": "string"
+                    },
+                    "calculated_volume": {
+                      "type": "number"
+                    }
                   }
                 }
               }
             }
-          },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "422": { "$ref": "#/components/responses/ValidationError" }
+          }
         }
-      },
-      "delete": {
-        "tags": ["Products"],
-        "summary": "Удалить уточнение у товара",
+      }
+    },
+    "/receipts": {
+      "get": {
+        "tags": [
+          "Receipts"
+        ],
+        "summary": "Получение списка приемок",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "in_transit",
+                "for_receipt",
+                "in_stock"
+              ]
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Уточнение удалено",
+            "description": "Список приемок",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean" },
-                    "message": { "type": "string" },
-                    "data": { "$ref": "#/components/schemas/Product" }
+                  "$ref": "#/components/schemas/PaginatedReceipts"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Receipts"
+        ],
+        "summary": "Создание приемки",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Приемка создана"
+          }
+        }
+      }
+    },
+    "/receipts/{receipt}": {
+      "get": {
+        "tags": [
+          "Receipts"
+        ],
+        "summary": "Получение приемки по ID",
+        "parameters": [
+          {
+            "name": "receipt",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация о приемке",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/receipts/{receipt}/receive": {
+      "post": {
+        "tags": [
+          "Receipts"
+        ],
+        "summary": "Принятие товара",
+        "parameters": [
+          {
+            "name": "receipt",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actual_quantity": {
+                    "type": "integer",
+                    "description": "Фактическое количество"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Заметки при приемке"
                   }
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Товар принят"
+          }
+        }
+      }
+    },
+    "/products-in-transit": {
+      "get": {
+        "tags": [
+          "Receipts"
+        ],
+        "summary": "Получение списка товаров в пути (алиас для receipts)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
           },
-          "404": { "$ref": "#/components/responses/NotFound" }
+          {
+            "$ref": "#/components/parameters/PerPage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список товаров в пути",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReceipts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stocks": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Получение остатков товаров",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "low_stock",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Только товары с низким остатком"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Остатки товаров",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedStocks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stocks/{stock}": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Получение остатка по ID",
+        "parameters": [
+          {
+            "name": "stock",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Информация об остатке",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stock"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -289,46 +2257,29 @@
       }
     },
     "parameters": {
-      "page": {
+      "Page": {
         "name": "page",
         "in": "query",
-        "schema": { "type": "integer", "minimum": 1 },
-        "required": false
+        "schema": {
+          "type": "integer",
+          "default": 1,
+          "minimum": 1
+        },
+        "description": "Номер страницы"
       },
-      "per_page": {
+      "PerPage": {
         "name": "per_page",
         "in": "query",
-        "schema": { "type": "integer", "minimum": 1, "maximum": 200 },
-        "required": false
+        "schema": {
+          "type": "integer",
+          "default": 15,
+          "minimum": 1,
+          "maximum": 100
+        },
+        "description": "Количество элементов на странице"
       }
     },
     "responses": {
-      "Unauthorized": {
-        "description": "Не авторизован",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "message": { "type": "string" }
-              }
-            }
-          }
-        }
-      },
-      "NotFound": {
-        "description": "Не найдено",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "message": { "type": "string" }
-              }
-            }
-          }
-        }
-      },
       "ValidationError": {
         "description": "Ошибка валидации",
         "content": {
@@ -336,12 +2287,17 @@
             "schema": {
               "type": "object",
               "properties": {
-                "message": { "type": "string" },
+                "message": {
+                  "type": "string",
+                  "example": "The given data was invalid."
+                },
                 "errors": {
                   "type": "object",
                   "additionalProperties": {
                     "type": "array",
-                    "items": { "type": "string" }
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -349,121 +2305,1200 @@
           }
         }
       },
-      "MessageOk": {
-        "description": "OK",
+      "NotFound": {
+        "description": "Ресурс не найден",
         "content": {
           "application/json": {
             "schema": {
-              "type": "object",
-              "properties": {
-                "message": { "type": "string" }
-              }
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Не авторизован",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Доступ запрещен",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
             }
           }
         }
       }
     },
     "schemas": {
-      "User": {
+      "Error": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer" },
-          "name": { "type": "string" },
-          "username": { "type": "string", "nullable": true },
-          "email": { "type": "string", "format": "email" },
-          "role": { "type": "string" },
-          "company_id": { "type": "integer", "nullable": true },
-          "warehouse_id": { "type": "integer", "nullable": true },
-          "is_blocked": { "type": "boolean", "nullable": true }
-        }
-      },
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "integer" },
-          "name": { "type": "string" },
-          "description": { "type": "string", "nullable": true },
-          "quantity": { "type": "number" },
-          "attributes": { "type": "object", "additionalProperties": true, "nullable": true },
-          "transport_number": { "type": "string", "nullable": true },
-          "producer": { "type": "string", "nullable": true },
-          "arrival_date": { "type": "string", "format": "date", "nullable": true },
-          "is_active": { "type": "boolean" },
-          "calculated_volume": { "type": "number", "nullable": true },
-          "correction": { "type": "string", "nullable": true, "description": "Текст уточнения/коррекции" },
-          "correction_status": { "type": "string", "nullable": true, "enum": ["none", "correction"], "description": "Статус коррекции" },
-          "document_path": { "type": "array", "items": { "type": "string" }, "nullable": true, "description": "Пути к прикрепленным документам" },
-          "template": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "integer" }
-            }
+          "message": {
+            "type": "string",
+            "example": "Ошибка"
           },
-          "warehouse": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "integer" }
-            }
-          },
-          "creator": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "integer" }
-            }
+          "code": {
+            "type": "integer",
+            "example": 404
           }
-        }
-      },
-      "CreateProductRequest": {
-        "type": "object",
-        "required": ["product_template_id", "warehouse_id", "quantity"],
-        "properties": {
-          "product_template_id": { "type": "integer" },
-          "warehouse_id": { "type": "integer" },
-          "name": { "type": "string", "description": "Автоматически формируется из характеристик товара (необязательное)" },
-          "quantity": { "type": "number" },
-          "description": { "type": "string" },
-          "attributes": { "type": "object", "additionalProperties": true, "description": "Характеристики товара (обязательные для выбранного шаблона)" },
-          "transport_number": { "type": "string", "description": "Номер транспортного средства" },
-          "producer": { "type": "string" },
-          "arrival_date": { "type": "string", "format": "date" },
-          "is_active": { "type": "boolean" },
-          "correction": { "type": "string", "nullable": true, "description": "Текст уточнения/коррекции" },
-          "correction_status": { "type": "string", "nullable": true, "enum": ["none", "correction"], "description": "Статус коррекции" },
-          "document_path": { "type": "array", "items": { "type": "string" }, "nullable": true, "description": "Пути к прикрепленным документам" }
-        }
-      },
-      "UpdateProductRequest": {
-        "allOf": [
-          { "$ref": "#/components/schemas/CreateProductRequest" }
-        ]
-      },
-      "PaginatedProducts": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/Product" }
-          },
-          "links": { "$ref": "#/components/schemas/PaginationLinks" },
-          "meta": { "$ref": "#/components/schemas/PaginationMeta" }
         }
       },
       "PaginationLinks": {
         "type": "object",
         "properties": {
-          "first": { "type": "string", "nullable": true },
-          "last": { "type": "string", "nullable": true },
-          "prev": { "type": "string", "nullable": true },
-          "next": { "type": "string", "nullable": true }
+          "first": {
+            "type": "string",
+            "nullable": true
+          },
+          "last": {
+            "type": "string",
+            "nullable": true
+          },
+          "prev": {
+            "type": "string",
+            "nullable": true
+          },
+          "next": {
+            "type": "string",
+            "nullable": true
+          }
         }
       },
       "PaginationMeta": {
         "type": "object",
         "properties": {
-          "current_page": { "type": "integer" },
-          "last_page": { "type": "integer" },
-          "per_page": { "type": "integer" },
-          "total": { "type": "integer" }
+          "current_page": {
+            "type": "integer"
+          },
+          "from": {
+            "type": "integer",
+            "nullable": true
+          },
+          "last_page": {
+            "type": "integer"
+          },
+          "per_page": {
+            "type": "integer"
+          },
+          "to": {
+            "type": "integer",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Иван Иванов"
+          },
+          "username": {
+            "type": "string",
+            "example": "ivan_ivanov"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ivan@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator",
+              "warehouse_worker",
+              "sales_manager"
+            ],
+            "example": "admin"
+          },
+          "company_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "warehouse_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "is_blocked": {
+            "type": "boolean",
+            "example": false
+          },
+          "email_verified_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/Warehouse"
+          }
+        }
+      },
+      "UserInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8
+          },
+          "password_confirmation": {
+            "type": "string",
+            "format": "password"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator",
+              "warehouse_worker",
+              "sales_manager"
+            ]
+          },
+          "company_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "warehouse_id": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "ООО Компания"
+          },
+          "inn": {
+            "type": "string",
+            "example": "1234567890"
+          },
+          "kpp": {
+            "type": "string",
+            "example": "123456789"
+          },
+          "ogrn": {
+            "type": "string",
+            "example": "1234567890123"
+          },
+          "legal_address": {
+            "type": "string",
+            "example": "г. Москва, ул. Примерная, д. 1"
+          },
+          "postal_address": {
+            "type": "string",
+            "example": "г. Москва, ул. Примерная, д. 1"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+7 (495) 123-45-67"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "info@company.com"
+          },
+          "bank_name": {
+            "type": "string",
+            "example": "Сбербанк"
+          },
+          "account_number": {
+            "type": "string",
+            "example": "40702810000000000000"
+          },
+          "correspondent_account": {
+            "type": "string",
+            "example": "30101810400000000225"
+          },
+          "bik": {
+            "type": "string",
+            "example": "044525225"
+          },
+          "is_archived": {
+            "type": "boolean",
+            "example": false
+          },
+          "archived_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CompanyInput": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "inn": {
+            "type": "string",
+            "maxLength": 12
+          },
+          "kpp": {
+            "type": "string",
+            "maxLength": 9
+          },
+          "ogrn": {
+            "type": "string",
+            "maxLength": 15
+          },
+          "legal_address": {
+            "type": "string"
+          },
+          "postal_address": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "bank_name": {
+            "type": "string"
+          },
+          "account_number": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "correspondent_account": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "bik": {
+            "type": "string",
+            "maxLength": 9
+          }
+        }
+      },
+      "Warehouse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Склад №1"
+          },
+          "address": {
+            "type": "string",
+            "example": "г. Москва, ул. Складская, д. 1"
+          },
+          "company_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          }
+        }
+      },
+      "WarehouseInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "company_id"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "address": {
+            "type": "string"
+          },
+          "company_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "ProductTemplate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Металлопрокат"
+          },
+          "unit": {
+            "type": "string",
+            "example": "kg"
+          },
+          "formula": {
+            "type": "string",
+            "example": "length * width * height * density"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductAttribute"
+            }
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProductTemplateInput": {
+        "type": "object",
+        "required": [
+          "name",
+          "unit"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "unit": {
+            "type": "string"
+          },
+          "formula": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "variable": {
+                  "type": "string"
+                },
+                "full_name": {
+                  "type": "string"
+                },
+                "data_type": {
+                  "type": "string",
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProductAttribute": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "variable": {
+            "type": "string",
+            "example": "length"
+          },
+          "full_name": {
+            "type": "string",
+            "example": "Длина"
+          },
+          "data_type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean"
+            ],
+            "example": "number"
+          },
+          "product_template_id": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Лист стальной 10x2000x6000"
+          },
+          "description": {
+            "type": "string",
+            "example": "Лист стальной горячекатаный"
+          },
+          "product_template_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "warehouse_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "producer_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "length": 6000,
+              "width": 2000,
+              "thickness": 10
+            }
+          },
+          "calculated_volume": {
+            "type": "number",
+            "format": "float",
+            "example": 120.5
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 100
+          },
+          "sold_quantity": {
+            "type": "integer",
+            "example": 25
+          },
+          "transport_number": {
+            "type": "string",
+            "example": "А123БВ77"
+          },
+          "arrival_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_stock",
+              "in_transit",
+              "for_receipt"
+            ],
+            "example": "in_stock"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "shipping_location": {
+            "type": "string",
+            "example": "Завод №1"
+          },
+          "shipping_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-10"
+          },
+          "expected_arrival_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "actual_arrival_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "document_path": {
+            "type": "string",
+            "nullable": true,
+            "example": "documents/product_1.pdf"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Заметки о товаре"
+          },
+          "correction": {
+            "type": "number",
+            "format": "float",
+            "example": 0.95
+          },
+          "correction_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "example": "approved"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "template": {
+            "$ref": "#/components/schemas/ProductTemplate"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/Warehouse"
+          },
+          "producer": {
+            "$ref": "#/components/schemas/Producer"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": [
+          "product_template_id",
+          "warehouse_id",
+          "attributes",
+          "quantity"
+        ],
+        "properties": {
+          "product_template_id": {
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "producer_id": {
+            "type": "integer"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "transport_number": {
+            "type": "string"
+          },
+          "arrival_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "shipping_location": {
+            "type": "string"
+          },
+          "shipping_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "expected_arrival_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "correction": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          }
+        }
+      },
+      "Producer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Металлургический завод"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Sale": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "product_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 10
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "example": 1500.5
+          },
+          "total_amount": {
+            "type": "number",
+            "format": "float",
+            "example": 15005.0
+          },
+          "client_name": {
+            "type": "string",
+            "example": "ООО Клиент"
+          },
+          "client_contact": {
+            "type": "string",
+            "example": "+7 (495) 123-45-67"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processed",
+              "cancelled"
+            ],
+            "example": "processed"
+          },
+          "sale_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Заметки о продаже"
+          },
+          "created_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "SaleInput": {
+        "type": "object",
+        "required": [
+          "product_id",
+          "quantity",
+          "price",
+          "client_name"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "client_name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "client_contact": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "Request": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "type": {
+            "type": "string",
+            "example": "product_request"
+          },
+          "title": {
+            "type": "string",
+            "example": "Запрос на товар"
+          },
+          "description": {
+            "type": "string",
+            "example": "Описание запроса"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processed",
+              "rejected"
+            ],
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "example": "medium"
+          },
+          "requested_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "assigned_to": {
+            "type": "integer",
+            "nullable": true
+          },
+          "processed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/User"
+          },
+          "assignee": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "RequestInput": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "description"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "default": "medium"
+          },
+          "assigned_to": {
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Приемка №1"
+          },
+          "product_template_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "warehouse_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "producer_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "calculated_volume": {
+            "type": "number",
+            "format": "float"
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_transit",
+              "for_receipt",
+              "in_stock"
+            ],
+            "example": "in_transit"
+          },
+          "shipping_location": {
+            "type": "string",
+            "example": "Завод №1"
+          },
+          "shipping_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "expected_arrival_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "transport_number": {
+            "type": "string",
+            "example": "А123БВ77"
+          },
+          "document_path": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReceiptInput": {
+        "type": "object",
+        "required": [
+          "product_template_id",
+          "warehouse_id",
+          "attributes",
+          "quantity"
+        ],
+        "properties": {
+          "product_template_id": {
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "producer_id": {
+            "type": "integer"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "shipping_location": {
+            "type": "string"
+          },
+          "shipping_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "expected_arrival_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "transport_number": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "Stock": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "product_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "warehouse_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 100
+          },
+          "reserved_quantity": {
+            "type": "integer",
+            "example": 10
+          },
+          "available_quantity": {
+            "type": "integer",
+            "example": 90
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/Warehouse"
+          }
+        }
+      },
+      "PaginatedUsers": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedCompanies": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Company"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedSales": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Sale"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedRequests": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Request"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedProductTemplates": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductTemplate"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedReceipts": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Receipt"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginatedStocks": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Stock"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
         }
       }
     }
