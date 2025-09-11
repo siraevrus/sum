@@ -14,7 +14,6 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -76,6 +75,7 @@ class ProductInTransitResource extends Resource
                                         if (! $user) {
                                             return null;
                                         }
+
                                         return $user->isAdmin() ? null : $user->warehouse_id;
                                     })
                                     ->visible(function () {
@@ -83,6 +83,7 @@ class ProductInTransitResource extends Resource
                                         if (! $user) {
                                             return false;
                                         }
+
                                         return $user->isAdmin();
                                     })
                                     ->searchable(),
@@ -143,7 +144,7 @@ class ProductInTransitResource extends Resource
                                             ->label('Наименование')
                                             ->maxLength(255)
                                             ->disabled()
-                                            ->hidden(fn() => true)
+                                            ->hidden(fn () => true)
                                             ->helperText('Автоматически формируется из характеристик товара'),
 
                                         Select::make('producer_id')
@@ -162,7 +163,7 @@ class ProductInTransitResource extends Resource
                                             ->required()
                                             ->rules(['regex:/^\d+([.,]\d+)?$/'])
                                             ->validationMessages([
-                                                'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                                'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                             ])
                                             ->live()
                                             ->debounce(300)
@@ -230,7 +231,7 @@ class ProductInTransitResource extends Resource
                                                         ]);
                                                     } else {
                                                         // Если расчет не удался, показываем ошибку
-                                                        $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                        $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                         \Log::warning('Volume calculation failed from quantity change (ProductInTransit)', [
                                                             'template' => $template->name,
                                                             'attributes' => $numericAttributes,
@@ -292,7 +293,7 @@ class ProductInTransitResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->rules(['regex:/^\d+([.,]\d+)?$/'])
                                                         ->validationMessages([
-                                                            'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                                            'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                                         ])
                                                         ->live()
                                                         ->debounce(300)
@@ -350,7 +351,7 @@ class ProductInTransitResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ProductInTransit)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -445,7 +446,7 @@ class ProductInTransitResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ProductInTransit)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -540,7 +541,7 @@ class ProductInTransitResource extends Resource
                                                                     ]);
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
-                                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                                    $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                                     \Log::warning('Volume calculation failed (ProductInTransit)', [
                                                                         'template' => $template->name,
                                                                         'attributes' => $numericAttributes,
@@ -591,6 +592,7 @@ class ProductInTransitResource extends Resource
                                                 if (is_numeric($state)) {
                                                     return number_format($state, 3, '.', ' ');
                                                 }
+
                                                 return $state ?: '0.000';
                                             })
                                             ->suffix(function (Get $get) {
@@ -645,7 +647,7 @@ class ProductInTransitResource extends Resource
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
                     ->formatStateUsing(function ($state) {
-                        return $state ? number_format($state, 3) . ' м³' : '-';
+                        return $state ? number_format($state, 3).' м³' : '-';
                     })
                     ->sortable(),
 
@@ -719,6 +721,7 @@ class ProductInTransitResource extends Resource
             ->emptyStateHeading('Нет товаров в пути')
             ->emptyStateDescription('Создайте первый товар в пути, чтобы начать работу.')
             ->actions([
+                Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
