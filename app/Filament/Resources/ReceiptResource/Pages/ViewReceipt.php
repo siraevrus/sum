@@ -10,6 +10,7 @@ use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\TextEntry\TextEntrySize;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -150,18 +151,13 @@ class ViewReceipt extends ViewRecord
 
                 InfoSection::make('Документы')
                     ->schema([
-                        TextEntry::make('document_path')
+                        ViewEntry::make('document_path')
                             ->label('Файлы')
-                            ->formatStateUsing(function ($state) {
-                                if (is_array($state)) {
-                                    return implode("\n", $state);
-                                }
-
-                                return $state ?: '—';
-                            })
-                            ->extraAttributes(['class' => 'whitespace-pre-line'])
+                            ->view('filament.infolists.components.document-links')
                             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->visible(fn (Product $record): bool => ! empty($record->document_path))
+                    ->icon('heroicon-o-document'),
 
                 InfoSection::make('Уточнения')
                     ->schema([
