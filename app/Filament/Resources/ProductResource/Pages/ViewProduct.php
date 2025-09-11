@@ -32,10 +32,6 @@ class ViewProduct extends ViewRecord
                                 ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
                                 ->weight('bold'),
 
-                            Infolists\Components\TextEntry::make('quantity')
-                                ->label('Количество')
-                                ->numeric(),
-
                             Infolists\Components\TextEntry::make('transport_number')
                                 ->label('Номер транспорта'),
 
@@ -82,6 +78,11 @@ class ViewProduct extends ViewRecord
                         // Добавляем производителя в начало
                         $components[] = Infolists\Components\TextEntry::make('producer.name')
                             ->label('Производитель');
+
+                        // Добавляем количество
+                        $components[] = Infolists\Components\TextEntry::make('quantity')
+                            ->label('Количество')
+                            ->numeric();
 
                         // Добавляем объем
                         $components[] = Infolists\Components\TextEntry::make('calculated_volume')
