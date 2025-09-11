@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource;
 use Filament\Actions;
 use Filament\Infolists;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -95,28 +96,35 @@ class ViewProduct extends ViewRecord
                                 return $state ?: '0.000';
                             });
 
-                        if (empty($attributes)) {
-                            $components[] = Infolists\Components\TextEntry::make('no_attributes')
-                                ->label('')
-                                ->state('Характеристики не заданы')
-                                ->color('gray');
-                        } else {
-                            // Построим карту переменная -> полное название из шаблона, чтобы показать названия характеристик
-                            $template = $this->record->productTemplate;
-                            $variableToName = [];
-                            if ($template && method_exists($template, 'attributes')) {
-                                foreach ($template->attributes as $templateAttribute) {
-                                    $variableToName[$templateAttribute->variable] = $templateAttribute->full_name ?? $templateAttribute->variable;
+                        // Добавляем характеристики в табличном виде
+                        $components[] = KeyValueEntry::make('attributes')
+                            ->label('Характеристики')
+                            ->keyLabel('')
+                            ->valueLabel('')
+                            ->state(function () {
+                                $attributes = $this->record->attributes ?? [];
+                                if (empty($attributes)) {
+                                    return [];
                                 }
-                            }
 
-                            foreach ($attributes as $key => $value) {
-                                $label = $variableToName[$key] ?? ucfirst($key);
-                                $components[] = Infolists\Components\TextEntry::make("attribute_{$key}")
-                                    ->label($label)
-                                    ->state($value);
-                            }
-                        }
+                                // Построим карту переменная -> полное название из шаблона
+                                $template = $this->record->productTemplate;
+                                $variableToName = [];
+                                if ($template && method_exists($template, 'attributes')) {
+                                    foreach ($template->attributes as $templateAttribute) {
+                                        $variableToName[$templateAttribute->variable] = $templateAttribute->full_name ?? $templateAttribute->variable;
+                                    }
+                                }
+
+                                $mapped = [];
+                                foreach ($attributes as $key => $value) {
+                                    $label = $variableToName[$key] ?? ucfirst($key);
+                                    $mapped[$label] = is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE);
+                                }
+
+                                return $mapped;
+                            })
+                            ->columnSpanFull();
 
                         return $components;
                     })
