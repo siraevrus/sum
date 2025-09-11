@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
@@ -83,7 +84,7 @@ class ViewReceipt extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
-                        TextEntry::make('name')->label('Наименование')->size(TextEntry::TextEntrySize::Large)->weight('bold'),
+                        TextEntry::make('name')->label('Наименование')->size(TextEntrySize::Large)->weight('bold'),
                         TextEntry::make('warehouse.name')->label('Склад назначения'),
                         TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
                         TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
