@@ -123,7 +123,8 @@ class ViewProduct extends ViewRecord
                             ->label('Заметки')
                             ->columnSpanFull(),
                         Infolists\Components\TextEntry::make('description')
-                            ->label('Описание')
+                            ->label('')
+                            ->hiddenLabel()
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
