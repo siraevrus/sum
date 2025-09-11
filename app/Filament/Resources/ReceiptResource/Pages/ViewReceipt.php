@@ -86,17 +86,17 @@ class ViewReceipt extends ViewRecord
                 InfoSection::make('Основная информация')
                     ->schema([
                         TextEntry::make('name')->label('Наименование')->size(TextEntrySize::Large)->weight('bold'),
+                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
                         TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
                         TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
                         TextEntry::make('warehouse.name')->label('Склад назначения'),
                         TextEntry::make('expected_arrival_date')->label('Ожидаемая дата')->date()->placeholder('—'),
+                        TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
                         TextEntry::make('status')
                             ->label('Статус')
                             ->formatStateUsing(fn (Product $record): string => $record->isForReceipt() ? 'Для приемки' : 'На складе')
                             ->badge()
                             ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
-                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
-                        TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
                     ])
                     ->columns(2),
 
