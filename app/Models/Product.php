@@ -28,7 +28,7 @@ class Product extends Model
         'created_by',
         'name',
         'description',
-        'attributes',
+
         'calculated_volume',
         'quantity',
         'sold_quantity',
@@ -419,7 +419,7 @@ class Product extends Model
      */
     public function scopeByProducer(Builder $query, string $producer): void
     {
-        $query->where('producer', $producer);
+        $query->where('producer_id', $producer);
     }
 
     /**
@@ -469,8 +469,8 @@ class Product extends Model
             ->select([
                 'product_template_id',
                 'warehouse_id',
-                'producer',
-                'attributes',
+                'producer_id',
+
                 DB::raw('SUM(quantity) as total_quantity'),
                 DB::raw('SUM(calculated_volume) as total_volume'),
                 DB::raw('COUNT(*) as product_count'),
@@ -479,7 +479,7 @@ class Product extends Model
                 DB::raw('MIN(arrival_date) as first_arrival_date'),
                 DB::raw('MAX(arrival_date) as last_arrival_date'),
             ])
-            ->groupBy(['product_template_id', 'warehouse_id', 'producer', 'attributes'])
+            ->groupBy(['product_template_id', 'warehouse_id', 'producer_id'])
             ->having('total_quantity', '>', 0)
             ->orderBy('total_quantity', 'desc')
             ->get();
@@ -497,7 +497,7 @@ class Product extends Model
             $this->product_template_id.'|'.
             $this->warehouse_id.'|'.
             ($this->producer_id ?? '').'|'. // Используем producer_id
-            json_encode($attributes)
+            md5(json_encode($attributes))
         );
     }
 

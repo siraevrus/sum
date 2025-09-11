@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Company extends Model
 {
+    use \App\Traits\HasEncryptedFields;
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -32,6 +33,12 @@ class Company extends Model
     ];
 
     protected $casts = [
+        'account_number' => 'encrypted',
+        'correspondent_account' => 'encrypted',
+        'bik' => 'encrypted',
+        'inn' => 'encrypted',
+        'kpp' => 'encrypted',
+        'ogrn' => 'encrypted',
         'employees_count' => 'integer',
         'warehouses_count' => 'integer',
         'is_archived' => 'boolean',
@@ -135,5 +142,49 @@ class Company extends Model
                 throw new \RuntimeException('Нельзя удалить компанию, у которой есть склады или сотрудники. Архивируйте компанию или удалите связанные записи.');
             }
         });
+    }
+
+    /**
+     * Get masked account number for display.
+     */
+    public function getMaskedAccountNumber(): string
+    {
+        return $this->getMaskedField('account_number', 4);
+    }
+
+    /**
+     * Get masked BIK for display.
+     */
+    public function getMaskedBik(): string
+    {
+        return $this->getMaskedField('bik', 3);
+    }
+
+    /**
+     * Get masked INN for display.
+     */
+    public function getMaskedInn(): string
+    {
+        return $this->getMaskedField('inn', 2);
+    }
+
+    /**
+     * Safely update banking information.
+     */
+    public function updateBankingInfo(array $bankingData): bool
+    {
+        $encryptedFields = ['account_number', 'correspondent_account', 'bik', 'inn', 'kpp', 'ogrn'];
+
+        foreach ($bankingData as $field => $value) {
+            if (in_array($field, $encryptedFields)) {
+                if (! $this->setEncryptedField($field, $value)) {
+                    return false;
+                }
+            } else {
+                $this->setAttribute($field, $value);
+            }
+        }
+
+        return $this->save();
     }
 }

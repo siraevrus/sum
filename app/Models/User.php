@@ -14,8 +14,10 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser
 {
+    use \App\Traits\HasEncryptedFields;
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -61,6 +63,7 @@ class User extends Authenticatable implements FilamentUser
             'role' => \App\Casts\UserRoleCast::class,
             'is_blocked' => 'boolean',
             'blocked_at' => 'datetime',
+            'phone' => 'encrypted',
         ];
     }
 
@@ -72,9 +75,9 @@ class User extends Authenticatable implements FilamentUser
         $parts = array_filter([
             $this->last_name,
             $this->first_name,
-            $this->middle_name
+            $this->middle_name,
         ]);
-        
+
         return implode(' ', $parts) ?: $this->name;
     }
 
@@ -124,6 +127,6 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         // Все аутентифицированные пользователи могут получить доступ к админке
-        return !$this->isBlocked();
+        return ! $this->isBlocked();
     }
 }
