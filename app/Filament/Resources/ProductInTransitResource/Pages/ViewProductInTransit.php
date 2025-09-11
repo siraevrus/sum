@@ -8,6 +8,7 @@ use Filament\Actions;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -104,36 +105,9 @@ class ViewProductInTransit extends ViewRecord
 
                 InfoSection::make('Документы')
                     ->schema([
-                        TextEntry::make('document_path')
+                        ViewEntry::make('document_path')
                             ->label('Файлы')
-                            ->formatStateUsing(function ($state) {
-                                // Если пустое значение
-                                if (empty($state)) {
-                                    return '—';
-                                }
-
-                                // Если это строка, преобразуем в массив
-                                if (is_string($state)) {
-                                    $state = [$state];
-                                }
-
-                                // Если это не массив, возвращаем прочерк
-                                if (! is_array($state)) {
-                                    return '—';
-                                }
-
-                                $links = [];
-                                foreach ($state as $document) {
-                                    if (! empty($document)) {
-                                        $fileName = basename($document);
-                                        $fileUrl = asset('storage/'.$document);
-                                        $links[] = "<a href=\"{$fileUrl}\" target=\"_blank\" class=\"text-primary-600 hover:text-primary-800 underline\">{$fileName}</a>";
-                                    }
-                                }
-
-                                return empty($links) ? '—' : implode('<br>', $links);
-                            })
-                            ->html()
+                            ->view('filament.infolists.components.document-links')
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (Product $record): bool => ! empty($record->document_path))
