@@ -58,6 +58,9 @@ class ViewProduct extends ViewRecord
                                     'for_receipt' => 'На приемку',
                                     default => $state,
                                 }),
+
+                            Infolists\Components\TextEntry::make('createdBy.name')
+                                ->label('Создатель'),
                         ];
 
                         // Добавляем место отгрузки если заполнено
