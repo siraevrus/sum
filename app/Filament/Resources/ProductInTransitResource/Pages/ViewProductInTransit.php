@@ -107,13 +107,20 @@ class ViewProductInTransit extends ViewRecord
                         TextEntry::make('document_path')
                             ->label('Файлы')
                             ->formatStateUsing(function ($state) {
-                                if (is_array($state)) {
-                                    return implode("\n", $state);
+                                if (! is_array($state) || empty($state)) {
+                                    return '—';
                                 }
 
-                                return $state ?: '—';
+                                $links = [];
+                                foreach ($state as $index => $document) {
+                                    $fileName = basename($document);
+                                    $fileUrl = asset('storage/'.$document);
+                                    $links[] = "<a href=\"{$fileUrl}\" target=\"_blank\" class=\"text-primary-600 hover:text-primary-800 underline\">{$fileName}</a>";
+                                }
+
+                                return implode('<br>', $links);
                             })
-                            ->extraAttributes(['class' => 'whitespace-pre-line'])
+                            ->html()
                             ->columnSpanFull(),
                     ])
                     ->visible(fn (Product $record): bool => $record->document_path &&
