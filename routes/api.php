@@ -23,8 +23,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Публичные маршруты (без аутентификации)
-Route::post('/auth/register', [AuthController::class, 'register'])->name('register');
-Route::post('/auth/login', [AuthController::class, 'login'])->name('login');
+Route::post('/auth/register', [AuthController::class, 'register'])
+    ->middleware('throttle:3,1')
+    ->name('register');
+Route::post('/auth/login', [AuthController::class, 'login'])
+    ->middleware('throttle:5,1')
+    ->name('login');
 
 // Защищенные маршруты (требуют аутентификации)
 // Временно без gzip-сжатия, чтобы исключить влияние на клиентов
