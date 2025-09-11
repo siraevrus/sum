@@ -91,6 +91,12 @@ class ViewReceipt extends ViewRecord
                         TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
                         TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
                         TextEntry::make('expected_arrival_date')->label('Ожидаемая дата')->date()->placeholder('—'),
+                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
+                        TextEntry::make('status')
+                            ->label('Статус')
+                            ->formatStateUsing(fn (Product $record): string => $record->isForReceipt() ? 'Для приемки' : 'На складе')
+                            ->badge()
+                            ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
                     ])
                     ->columns(2),
 
@@ -102,12 +108,6 @@ class ViewReceipt extends ViewRecord
                             ->formatStateUsing(fn ($state) => is_numeric($state) ? number_format($state, 3, '.', ' ') : '0.000'),
                         TextEntry::make('template.name')->label('Шаблон товара')->placeholder('—'),
                         TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
-                        TextEntry::make('status')
-                            ->label('Статус')
-                            ->formatStateUsing(fn (Product $record): string => $record->isForReceipt() ? 'Для приемки' : 'На складе')
-                            ->badge()
-                            ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
-                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
                         KeyValueEntry::make('attributes')
                             ->label('Характеристики')
                             ->keyLabel('')
