@@ -119,6 +119,9 @@ class ViewProduct extends ViewRecord
 
                 Infolists\Components\Section::make('Дополнительная информация')
                     ->schema([
+                        Infolists\Components\TextEntry::make('notes')
+                            ->label('Заметки')
+                            ->columnSpanFull(),
                         Infolists\Components\TextEntry::make('description')
                             ->label('Описание')
                             ->columnSpanFull(),
