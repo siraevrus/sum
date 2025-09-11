@@ -298,7 +298,7 @@ class ReceiptResource extends Resource
                                                     return number_format($state, 3, '.', ' ');
                                                 }
 
-                                                return $state ?: '0.000';
+                                                return e($state ?: '0.000');
                                             })
                                             ->dehydrateStateUsing(function ($state) {
                                                 // Преобразуем отформатированное значение обратно в число

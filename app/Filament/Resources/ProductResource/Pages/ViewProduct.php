@@ -96,7 +96,7 @@ class ViewProduct extends ViewRecord
                                     return number_format($state, 3, '.', ' ').' '.($this->record->productTemplate->unit ?? '');
                                 }
 
-                                return $state ?: '0.000';
+                                return e($state ?: '0.000');
                             });
 
                         // Добавляем характеристики в табличном виде

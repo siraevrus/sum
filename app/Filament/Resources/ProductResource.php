@@ -29,8 +29,9 @@ use Illuminate\Support\Facades\Log;
 
 class ProductResource extends Resource
 {
-    protected static ?string $model = Product::class;
+    use \App\Traits\SafeFilamentFormatting;
 
+    protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
@@ -159,7 +160,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->rules(['regex:/^\d+([.,]\d+)?$/'])
                                     ->validationMessages([
-                                        'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
+                                        'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                     ])
                                     ->live()
                                     ->debounce(300)
@@ -208,7 +209,7 @@ class ProductResource extends Resource
                                             $testResult = $template->testFormula($numericAttributes);
                                             if ($testResult['success']) {
                                                 $result = $testResult['result'];
-                                                
+
                                                 // Проверяем на превышение лимита
                                                 $maxValue = 999999999.9999; // Максимум для decimal(15,4)
                                                 if ($result > $maxValue) {
@@ -221,7 +222,7 @@ class ProductResource extends Resource
                                                     ]);
                                                 } else {
                                                     $set('calculated_volume', $result);
-                                                    
+
                                                     // Логируем для отладки
                                                     Log::info('Volume calculated from quantity change', [
                                                         'template' => $template->name,
@@ -231,7 +232,7 @@ class ProductResource extends Resource
                                                 }
                                             } else {
                                                 // Если расчет не удался, показываем ошибку
-                                                $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
                                                 Log::warning('Volume calculation failed from quantity change', [
                                                     'template' => $template->name,
                                                     'attributes' => $numericAttributes,
@@ -253,381 +254,382 @@ class ProductResource extends Resource
                         Grid::make(3)
                             ->visible(fn (Get $get) => $get('product_template_id') !== null)
                             ->schema(function (Get $get) {
-                        $templateId = $get('product_template_id');
-                        if (! $templateId) {
-                            return [];
-                        }
-
-                        $template = ProductTemplate::with('attributes')->find($templateId);
-                        if (! $template) {
-                            return [];
-                        }
-
-                        $fields = [];
-                        foreach ($template->attributes as $attribute) {
-                            $fieldName = "attribute_{$attribute->variable}";
-
-                            switch ($attribute->type) {
-                                case 'number':
-                                    $fields[] = TextInput::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->inputMode('decimal')
-                                        ->maxLength(10)
-                                        ->required($attribute->is_required)
-                                        ->rules(['regex:/^\d+([.,]\d+)?$/'])
-                                        ->validationMessages([
-                                            'regex' => 'Поле должно содержать только цифры и одну запятую или точку'
-                                        ])
-                                        ->live()
-                                        ->debounce(300)
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            // Рассчитываем объем при изменении характеристики
-                                            $attributes = [];
-                                            $formData = $get();
-
-                                            foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
-                                                    $attributeName = str_replace('attribute_', '', $key);
-                                                    // Нормализуем числовые значения: заменяем запятую на точку
-                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
-                                                    $attributes[$attributeName] = $normalizedValue;
-                                                }
-                                            }
-
-                                            // Рассчитываем объем для заполненных числовых характеристик
-                                            $numericAttributes = [];
-                                            foreach ($attributes as $key => $value) {
-                                                if (is_numeric($value) && $value > 0) {
-                                                    $numericAttributes[$key] = $value;
-                                                }
-                                            }
-
-                                            // Добавляем количество в атрибуты для формулы
-                                            $quantity = $get('quantity') ?? 1;
-                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                $numericAttributes['quantity'] = $quantity;
-                                            }
-
-                                            // Логируем атрибуты для отладки
-                                            Log::info('Attributes for volume calculation (number)', [
-                                                'template' => $template->name,
-                                                'all_attributes' => $attributes,
-                                                'numeric_attributes' => $numericAttributes,
-                                                'quantity' => $quantity,
-                                                'formula' => $template->formula,
-                                            ]);
-
-                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
-                                            if (! empty($numericAttributes) && $template->formula) {
-                                                $testResult = $template->testFormula($numericAttributes);
-                                                if ($testResult['success']) {
-                                                    $result = $testResult['result'];
-                                                    // Проверяем на превышение лимита
-                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
-                                                    if ($result > $maxValue) {
-                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
-                                                        Log::warning('Volume exceeds maximum value', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                            'max_value' => $maxValue,
-                                                        ]);
-                                                    } else {
-                                                        $set('calculated_volume', $result);
-                                                        
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    }
-                                                } else {
-                                                    // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
-                                                    Log::warning('Volume calculation failed', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'error' => $testResult['error'],
-                                                    ]);
-                                                }
-                                            } else {
-                                                // Если недостаточно данных для расчета, показываем подсказку
-                                                if (empty($numericAttributes)) {
-                                                    $set('calculated_volume', 'Заполните числовые характеристики');
-                                                } else {
-                                                    $set('calculated_volume', 'Формула не задана');
-                                                }
-                                            }
-
-                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
-                                            $nameParts = [];
-                                            foreach ($template->attributes as $templateAttribute) {
-                                                $attributeKey = $templateAttribute->variable;
-                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
-                                                    $nameParts[] = $attributes[$attributeKey];
-                                                }
-                                            }
-
-                                            if (! empty($nameParts)) {
-                                                $templateName = $template->name ?? 'Товар';
-                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                $set('name', $generatedName);
-                                            } else {
-                                                $set('name', $template->name ?? 'Товар');
-                                            }
-                                        });
-                                    break;
-
-                                case 'text':
-                                    $fields[] = TextInput::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->maxLength(255)
-                                        ->required($attribute->is_required)
-                                        ->live()
-                                        ->debounce(300)
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            // Рассчитываем объем при изменении характеристики
-                                            $attributes = [];
-                                            $formData = $get();
-
-                                            foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
-                                                    $attributeName = str_replace('attribute_', '', $key);
-                                                    // Нормализуем числовые значения: заменяем запятую на точку
-                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
-                                                    $attributes[$attributeName] = $normalizedValue;
-                                                }
-                                            }
-
-                                            // Рассчитываем объем для заполненных числовых характеристик
-                                            $numericAttributes = [];
-                                            foreach ($attributes as $key => $value) {
-                                                if (is_numeric($value) && $value > 0) {
-                                                    $numericAttributes[$key] = $value;
-                                                }
-                                            }
-
-                                            // Добавляем количество в атрибуты для формулы
-                                            $quantity = $get('quantity') ?? 1;
-                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                $numericAttributes['quantity'] = $quantity;
-                                            }
-
-                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
-                                            if (! empty($numericAttributes) && $template->formula) {
-                                                $testResult = $template->testFormula($numericAttributes);
-                                                if ($testResult['success']) {
-                                                    $result = $testResult['result'];
-                                                    // Проверяем на превышение лимита
-                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
-                                                    if ($result > $maxValue) {
-                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
-                                                        Log::warning('Volume exceeds maximum value', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                            'max_value' => $maxValue,
-                                                        ]);
-                                                    } else {
-                                                        $set('calculated_volume', $result);
-                                                        
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    }
-                                                } else {
-                                                    // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
-                                                    Log::warning('Volume calculation failed', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'error' => $testResult['error'],
-                                                    ]);
-                                                }
-                                            } else {
-                                                // Если недостаточно данных для расчета, показываем подсказку
-                                                if (empty($numericAttributes)) {
-                                                    $set('calculated_volume', 'Заполните числовые характеристики');
-                                                } else {
-                                                    $set('calculated_volume', 'Формула не задана');
-                                                }
-                                            }
-                                        });
-                                    break;
-
-                                case 'select':
-                                    $options = $attribute->options_array;
-                                    $fields[] = Select::make($fieldName)
-                                        ->label($attribute->full_name)
-                                        ->options($options)
-                                        ->required($attribute->is_required)
-                                        ->live()
-                                        ->debounce(300)
-                                        ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
-                                            // Рассчитываем объем при изменении характеристики
-                                            $attributes = [];
-                                            $formData = $get();
-
-                                            foreach ($formData as $key => $value) {
-                                                if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
-                                                    $attributeName = str_replace('attribute_', '', $key);
-                                                    // Нормализуем числовые значения: заменяем запятую на точку
-                                                    $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
-                                                    $attributes[$attributeName] = $normalizedValue;
-                                                }
-                                            }
-
-                                            // Рассчитываем объем для заполненных числовых характеристик
-                                            $numericAttributes = [];
-                                            foreach ($attributes as $key => $value) {
-                                                if (is_numeric($value) && $value > 0) {
-                                                    $numericAttributes[$key] = $value;
-                                                }
-                                            }
-
-                                            // Добавляем количество в атрибуты для формулы
-                                            $quantity = $get('quantity') ?? 1;
-                                            if (is_numeric($quantity) && $quantity > 0) {
-                                                $numericAttributes['quantity'] = $quantity;
-                                            }
-
-                                            // Если есть заполненные числовые характеристики и формула, рассчитываем объем
-                                            if (! empty($numericAttributes) && $template->formula) {
-                                                $testResult = $template->testFormula($numericAttributes);
-                                                if ($testResult['success']) {
-                                                    $result = $testResult['result'];
-                                                    // Проверяем на превышение лимита
-                                                    $maxValue = 999999999.9999; // Максимум для decimal(15,4)
-                                                    if ($result > $maxValue) {
-                                                        $set('calculated_volume', 'Объем превышает максимальное значение');
-                                                        Log::warning('Volume exceeds maximum value', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                            'max_value' => $maxValue,
-                                                        ]);
-                                                    } else {
-                                                        $set('calculated_volume', $result);
-                                                        
-                                                        // Логируем для отладки
-                                                        Log::info('Volume calculated', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
-                                                    }
-                                                } else {
-                                                    // Если расчет не удался, показываем ошибку
-                                                    $set('calculated_volume', 'Заполните поля: ' . ($testResult['error'] ?? 'Неизвестная ошибка'));
-                                                    Log::warning('Volume calculation failed', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'error' => $testResult['error'],
-                                                    ]);
-                                                }
-                                            } else {
-                                                // Если недостаточно данных для расчета, показываем подсказку
-                                                if (empty($numericAttributes)) {
-                                                    $set('calculated_volume', 'Заполните числовые характеристики');
-                                                } else {
-                                                    $set('calculated_volume', 'Формула не задана');
-                                                }
-                                            }
-
-                                            // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
-                                            $nameParts = [];
-                                            foreach ($template->attributes as $templateAttribute) {
-                                                $attributeKey = $templateAttribute->variable;
-                                                if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
-                                                    $nameParts[] = $attributes[$attributeKey];
-                                                }
-                                            }
-
-                                            if (! empty($nameParts)) {
-                                                $templateName = $template->name ?? 'Товар';
-                                                $generatedName = $templateName.': '.implode(', ', $nameParts);
-                                                $set('name', $generatedName);
-                                            } else {
-                                                $set('name', $template->name ?? 'Товар');
-                                            }
-                                        })
-                                        ->dehydrateStateUsing(function ($state, $get) use ($options) {
-                                            // Преобразуем индекс в значение для селектов
-                                            if ($state !== null && is_numeric($state) && isset($options[$state])) {
-                                                return $options[$state];
-                                            }
-
-                                            return $state;
-                                        });
-                                    break;
-                            }
-                        }
-
-                        // Добавляем поле рассчитанного объема в конец
-                        $fields[] = TextInput::make('calculated_volume')
-                            ->label('Рассчитанный объем')
-                            ->disabled()
-                            ->live()
-                            ->columnSpanFull()
-                            ->formatStateUsing(function ($state) {
-                                // Если это число - форматируем, если строка - показываем как есть
-                                if (is_numeric($state)) {
-                                    return number_format($state, 3, '.', ' ');
+                                $templateId = $get('product_template_id');
+                                if (! $templateId) {
+                                    return [];
                                 }
 
-                                return $state ?: '0.000';
-                            })
-                            ->suffix(function (Get $get) {
-                                $templateId = $get('product_template_id');
-                                if ($templateId) {
-                                    $template = ProductTemplate::find($templateId);
-
-                                    return $template ? $template->unit : '';
+                                $template = ProductTemplate::with('attributes')->find($templateId);
+                                if (! $template) {
+                                    return [];
                                 }
 
-                                return '';
-                            })
-                            ->helperText(function (Get $get) {
-                                $templateId = $get('product_template_id');
-                                if ($templateId) {
-                                    $template = ProductTemplate::find($templateId);
-                                    if ($template && $template->formula) {
-                                        return 'Автоматически рассчитывается при заполнении характеристик или изменении количества. Если объем не отображается, возможно, результат превышает максимальное значение.';
+                                $fields = [];
+                                foreach ($template->attributes as $attribute) {
+                                    $fieldName = "attribute_{$attribute->variable}";
+
+                                    switch ($attribute->type) {
+                                        case 'number':
+                                            $fields[] = TextInput::make($fieldName)
+                                                ->label($attribute->full_name)
+                                                ->inputMode('decimal')
+                                                ->maxLength(10)
+                                                ->required($attribute->is_required)
+                                                ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                                ->validationMessages([
+                                                    'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
+                                                ])
+                                                ->live()
+                                                ->debounce(300)
+                                                ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                    // Рассчитываем объем при изменении характеристики
+                                                    $attributes = [];
+                                                    $formData = $get();
+
+                                                    foreach ($formData as $key => $value) {
+                                                        if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                            $attributeName = str_replace('attribute_', '', $key);
+                                                            // Нормализуем числовые значения: заменяем запятую на точку
+                                                            $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                            $attributes[$attributeName] = $normalizedValue;
+                                                        }
+                                                    }
+
+                                                    // Рассчитываем объем для заполненных числовых характеристик
+                                                    $numericAttributes = [];
+                                                    foreach ($attributes as $key => $value) {
+                                                        if (is_numeric($value) && $value > 0) {
+                                                            $numericAttributes[$key] = $value;
+                                                        }
+                                                    }
+
+                                                    // Добавляем количество в атрибуты для формулы
+                                                    $quantity = $get('quantity') ?? 1;
+                                                    if (is_numeric($quantity) && $quantity > 0) {
+                                                        $numericAttributes['quantity'] = $quantity;
+                                                    }
+
+                                                    // Логируем атрибуты для отладки
+                                                    Log::info('Attributes for volume calculation (number)', [
+                                                        'template' => $template->name,
+                                                        'all_attributes' => $attributes,
+                                                        'numeric_attributes' => $numericAttributes,
+                                                        'quantity' => $quantity,
+                                                        'formula' => $template->formula,
+                                                    ]);
+
+                                                    // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                    if (! empty($numericAttributes) && $template->formula) {
+                                                        $testResult = $template->testFormula($numericAttributes);
+                                                        if ($testResult['success']) {
+                                                            $result = $testResult['result'];
+                                                            // Проверяем на превышение лимита
+                                                            $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                            if ($result > $maxValue) {
+                                                                $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                                Log::warning('Volume exceeds maximum value', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                    'max_value' => $maxValue,
+                                                                ]);
+                                                            } else {
+                                                                $set('calculated_volume', $result);
+
+                                                                // Логируем для отладки
+                                                                Log::info('Volume calculated', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                ]);
+                                                            }
+                                                        } else {
+                                                            // Если расчет не удался, показываем ошибку
+                                                            $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                            Log::warning('Volume calculation failed', [
+                                                                'template' => $template->name,
+                                                                'attributes' => $numericAttributes,
+                                                                'error' => $testResult['error'],
+                                                            ]);
+                                                        }
+                                                    } else {
+                                                        // Если недостаточно данных для расчета, показываем подсказку
+                                                        if (empty($numericAttributes)) {
+                                                            $set('calculated_volume', 'Заполните числовые характеристики');
+                                                        } else {
+                                                            $set('calculated_volume', 'Формула не задана');
+                                                        }
+                                                    }
+
+                                                    // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
+                                                    $nameParts = [];
+                                                    foreach ($template->attributes as $templateAttribute) {
+                                                        $attributeKey = $templateAttribute->variable;
+                                                        if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                            $nameParts[] = $attributes[$attributeKey];
+                                                        }
+                                                    }
+
+                                                    if (! empty($nameParts)) {
+                                                        $templateName = $template->name ?? 'Товар';
+                                                        $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                        $set('name', $generatedName);
+                                                    } else {
+                                                        $set('name', $template->name ?? 'Товар');
+                                                    }
+                                                });
+                                            break;
+
+                                        case 'text':
+                                            $fields[] = TextInput::make($fieldName)
+                                                ->label($attribute->full_name)
+                                                ->maxLength(255)
+                                                ->required($attribute->is_required)
+                                                ->live()
+                                                ->debounce(300)
+                                                ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                    // Рассчитываем объем при изменении характеристики
+                                                    $attributes = [];
+                                                    $formData = $get();
+
+                                                    foreach ($formData as $key => $value) {
+                                                        if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                            $attributeName = str_replace('attribute_', '', $key);
+                                                            // Нормализуем числовые значения: заменяем запятую на точку
+                                                            $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                            $attributes[$attributeName] = $normalizedValue;
+                                                        }
+                                                    }
+
+                                                    // Рассчитываем объем для заполненных числовых характеристик
+                                                    $numericAttributes = [];
+                                                    foreach ($attributes as $key => $value) {
+                                                        if (is_numeric($value) && $value > 0) {
+                                                            $numericAttributes[$key] = $value;
+                                                        }
+                                                    }
+
+                                                    // Добавляем количество в атрибуты для формулы
+                                                    $quantity = $get('quantity') ?? 1;
+                                                    if (is_numeric($quantity) && $quantity > 0) {
+                                                        $numericAttributes['quantity'] = $quantity;
+                                                    }
+
+                                                    // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                    if (! empty($numericAttributes) && $template->formula) {
+                                                        $testResult = $template->testFormula($numericAttributes);
+                                                        if ($testResult['success']) {
+                                                            $result = $testResult['result'];
+                                                            // Проверяем на превышение лимита
+                                                            $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                            if ($result > $maxValue) {
+                                                                $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                                Log::warning('Volume exceeds maximum value', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                    'max_value' => $maxValue,
+                                                                ]);
+                                                            } else {
+                                                                $set('calculated_volume', $result);
+
+                                                                // Логируем для отладки
+                                                                Log::info('Volume calculated', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                ]);
+                                                            }
+                                                        } else {
+                                                            // Если расчет не удался, показываем ошибку
+                                                            $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                            Log::warning('Volume calculation failed', [
+                                                                'template' => $template->name,
+                                                                'attributes' => $numericAttributes,
+                                                                'error' => $testResult['error'],
+                                                            ]);
+                                                        }
+                                                    } else {
+                                                        // Если недостаточно данных для расчета, показываем подсказку
+                                                        if (empty($numericAttributes)) {
+                                                            $set('calculated_volume', 'Заполните числовые характеристики');
+                                                        } else {
+                                                            $set('calculated_volume', 'Формула не задана');
+                                                        }
+                                                    }
+                                                });
+                                            break;
+
+                                        case 'select':
+                                            $options = $attribute->options_array;
+                                            $fields[] = Select::make($fieldName)
+                                                ->label($attribute->full_name)
+                                                ->options($options)
+                                                ->required($attribute->is_required)
+                                                ->live()
+                                                ->debounce(300)
+                                                ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
+                                                    // Рассчитываем объем при изменении характеристики
+                                                    $attributes = [];
+                                                    $formData = $get();
+
+                                                    foreach ($formData as $key => $value) {
+                                                        if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
+                                                            $attributeName = str_replace('attribute_', '', $key);
+                                                            // Нормализуем числовые значения: заменяем запятую на точку
+                                                            $normalizedValue = is_string($value) ? str_replace(',', '.', $value) : $value;
+                                                            $attributes[$attributeName] = $normalizedValue;
+                                                        }
+                                                    }
+
+                                                    // Рассчитываем объем для заполненных числовых характеристик
+                                                    $numericAttributes = [];
+                                                    foreach ($attributes as $key => $value) {
+                                                        if (is_numeric($value) && $value > 0) {
+                                                            $numericAttributes[$key] = $value;
+                                                        }
+                                                    }
+
+                                                    // Добавляем количество в атрибуты для формулы
+                                                    $quantity = $get('quantity') ?? 1;
+                                                    if (is_numeric($quantity) && $quantity > 0) {
+                                                        $numericAttributes['quantity'] = $quantity;
+                                                    }
+
+                                                    // Если есть заполненные числовые характеристики и формула, рассчитываем объем
+                                                    if (! empty($numericAttributes) && $template->formula) {
+                                                        $testResult = $template->testFormula($numericAttributes);
+                                                        if ($testResult['success']) {
+                                                            $result = $testResult['result'];
+                                                            // Проверяем на превышение лимита
+                                                            $maxValue = 999999999.9999; // Максимум для decimal(15,4)
+                                                            if ($result > $maxValue) {
+                                                                $set('calculated_volume', 'Объем превышает максимальное значение');
+                                                                Log::warning('Volume exceeds maximum value', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                    'max_value' => $maxValue,
+                                                                ]);
+                                                            } else {
+                                                                $set('calculated_volume', $result);
+
+                                                                // Логируем для отладки
+                                                                Log::info('Volume calculated', [
+                                                                    'template' => $template->name,
+                                                                    'attributes' => $numericAttributes,
+                                                                    'result' => $result,
+                                                                ]);
+                                                            }
+                                                        } else {
+                                                            // Если расчет не удался, показываем ошибку
+                                                            $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
+                                                            Log::warning('Volume calculation failed', [
+                                                                'template' => $template->name,
+                                                                'attributes' => $numericAttributes,
+                                                                'error' => $testResult['error'],
+                                                            ]);
+                                                        }
+                                                    } else {
+                                                        // Если недостаточно данных для расчета, показываем подсказку
+                                                        if (empty($numericAttributes)) {
+                                                            $set('calculated_volume', 'Заполните числовые характеристики');
+                                                        } else {
+                                                            $set('calculated_volume', 'Формула не задана');
+                                                        }
+                                                    }
+
+                                                    // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
+                                                    $nameParts = [];
+                                                    foreach ($template->attributes as $templateAttribute) {
+                                                        $attributeKey = $templateAttribute->variable;
+                                                        if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
+                                                            $nameParts[] = $attributes[$attributeKey];
+                                                        }
+                                                    }
+
+                                                    if (! empty($nameParts)) {
+                                                        $templateName = $template->name ?? 'Товар';
+                                                        $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                        $set('name', $generatedName);
+                                                    } else {
+                                                        $set('name', $template->name ?? 'Товар');
+                                                    }
+                                                })
+                                                ->dehydrateStateUsing(function ($state, $get) use ($options) {
+                                                    // Преобразуем индекс в значение для селектов
+                                                    if ($state !== null && is_numeric($state) && isset($options[$state])) {
+                                                        return $options[$state];
+                                                    }
+
+                                                    return e($state);
+                                                });
+                                            break;
                                     }
                                 }
-                                return 'Автоматически рассчитывается при заполнении характеристик или изменении количества.';
-                            });
 
-                        // Обертываем поля в компактную сетку
-                        return [
-                            Grid::make(4) // 4 колонки для компактности
-                                ->schema($fields),
-                        ];
-                    }),
+                                // Добавляем поле рассчитанного объема в конец
+                                $fields[] = TextInput::make('calculated_volume')
+                                    ->label('Рассчитанный объем')
+                                    ->disabled()
+                                    ->live()
+                                    ->columnSpanFull()
+                                    ->formatStateUsing(function ($state) {
+                                        // Если это число - форматируем, если строка - показываем как есть
+                                        if (is_numeric($state)) {
+                                            return number_format($state, 3, '.', ' ');
+                                        }
+
+                                        return e($state ?: '0.000');
+                                    })
+                                    ->suffix(function (Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+
+                                            return $template ? $template->unit : '';
+                                        }
+
+                                        return '';
+                                    })
+                                    ->helperText(function (Get $get) {
+                                        $templateId = $get('product_template_id');
+                                        if ($templateId) {
+                                            $template = ProductTemplate::find($templateId);
+                                            if ($template && $template->formula) {
+                                                return 'Автоматически рассчитывается при заполнении характеристик или изменении количества. Если объем не отображается, возможно, результат превышает максимальное значение.';
+                                            }
+                                        }
+
+                                        return 'Автоматически рассчитывается при заполнении характеристик или изменении количества.';
+                                    });
+
+                                // Обертываем поля в компактную сетку
+                                return [
+                                    Grid::make(4) // 4 колонки для компактности
+                                        ->schema($fields),
+                                ];
+                            }),
                     ]),
 
                 Section::make('Информация о корректировке')
                     ->schema([
-                        Forms\Components\Placeholder::make('correction_info')
-                            ->label('')
-                            ->content(function (?Product $record): string {
-                                if (! $record || ! $record->hasCorrection()) {
-                                    return '';
-                                }
+                                Forms\Components\Placeholder::make('correction_info')
+                                    ->label('')
+                                    ->content(function (?Product $record): string {
+                                        if (! $record || ! $record->hasCorrection()) {
+                                            return '';
+                                        }
 
-                                $correctionText = $record->correction ?? 'Нет текста уточнения';
-                                $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
+                                        $correctionText = $record->correction ?? 'Нет текста уточнения';
+                                        $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
 
-                                return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
-                                       "*Дата внесения:* {$updatedAt}";
-                            })
-                            ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
-                            ->columnSpanFull(),
-                    ])
+                                        return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
+                                               "*Дата внесения:* {$updatedAt}";
+                                    })
+                                    ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
+                                    ->columnSpanFull(),
+                            ])
                     ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
                     ->collapsible(false)
                     ->icon('heroicon-o-exclamation-triangle'),
@@ -635,35 +637,35 @@ class ProductResource extends Resource
                 Section::make('Документы')
                     ->schema([
                         Forms\Components\View::make('documents-list')
-                            ->view('filament.forms.components.documents-list')
-                            ->viewData(function (?Product $record): array {
-                                if (! $record || ! $record->document_path || empty($record->document_path)) {
-                                    return ['documents' => []];
-                                }
+                                    ->view('filament.forms.components.documents-list')
+                                    ->viewData(function (?Product $record): array {
+                                        if (! $record || ! $record->document_path || empty($record->document_path)) {
+                                            return ['documents' => []];
+                                        }
 
-                                $documents = is_array($record->document_path) ? $record->document_path : [];
-                                if (empty($documents)) {
-                                    return ['documents' => []];
-                                }
+                                        $documents = is_array($record->document_path) ? $record->document_path : [];
+                                        if (empty($documents)) {
+                                            return ['documents' => []];
+                                        }
 
-                                $documentsList = [];
-                                foreach ($documents as $index => $document) {
-                                    $fileName = basename($document);
-                                    $fileUrl = asset('storage/'.$document);
-                                    $documentsList[] = [
-                                        'index' => $index + 1,
-                                        'name' => $fileName,
-                                        'url' => $fileUrl,
-                                    ];
-                                }
+                                        $documentsList = [];
+                                        foreach ($documents as $index => $document) {
+                                            $fileName = basename($document);
+                                            $fileUrl = asset('storage/'.$document);
+                                            $documentsList[] = [
+                                                'index' => $index + 1,
+                                                'name' => $fileName,
+                                                'url' => $fileUrl,
+                                            ];
+                                        }
 
-                                return ['documents' => $documentsList];
-                            })
-                            ->visible(fn (?Product $record): bool => $record && $record->document_path &&
-                                is_array($record->document_path) &&
-                                ! empty($record->document_path)
-                            )
-                            ->columnSpanFull(),
+                                        return ['documents' => $documentsList];
+                                    })
+                                    ->visible(fn (?Product $record): bool => $record && $record->document_path &&
+                                        is_array($record->document_path) &&
+                                        ! empty($record->document_path)
+                                    )
+                                    ->columnSpanFull(),
                     ])
                     ->visible(fn (?Product $record): bool => $record && $record->document_path &&
                         is_array($record->document_path) &&
@@ -727,7 +729,7 @@ class ProductResource extends Resource
                 $testResult = $template->testFormula($numericAttributes);
                 if ($testResult['success']) {
                     $result = $testResult['result'];
-                    
+
                     // Проверяем на превышение лимита
                     $maxValue = 999999999.9999; // Максимум для decimal(15,4)
                     if ($result > $maxValue) {
@@ -759,9 +761,10 @@ class ProductResource extends Resource
                     })
                     ->formatStateUsing(function (string $state, ?Product $record): string {
                         if ($record && $record->hasCorrection()) {
-                            return '⚠️ ' . $state;
+                            return '⚠️ '.e($state);
                         }
-                        return $state;
+
+                        return e($state);
                     }),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
