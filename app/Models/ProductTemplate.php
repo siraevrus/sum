@@ -170,7 +170,7 @@ class ProductTemplate extends Model
         $expression = str_replace(' ', '', $expression);
 
         // Проверяем на безопасность (только математические операции)
-        if (! preg_match('/^[0-9+-*/().]+$/', $expression)) {
+        if (! preg_match('/^[0-9+\-*\/\(\)\.]+$/', $expression)) {
             throw new \Exception('Выражение содержит недопустимые символы');
         }
 

@@ -49,8 +49,12 @@ class CompanyResourceTest extends TestCase
 
         $this->assertDatabaseHas('companies', [
             'name' => 'Test Company',
-            'inn' => '1234567890',
         ]);
+        
+        // Проверяем, что INN правильно сохраняется и расшифровывается
+        $company = \App\Models\Company::where('name', 'Test Company')->first();
+        $this->assertEquals('1234567890', $company->inn); // Проверяем, что расшифрованное значение правильное
+        $this->assertNotEquals('1234567890', $company->getRawOriginal('inn')); // Проверяем, что в базе зашифровано
     }
 
     public function test_admin_can_edit_company_via_livewire(): void
