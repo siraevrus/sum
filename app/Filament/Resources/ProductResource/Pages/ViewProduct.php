@@ -33,12 +33,18 @@ class ViewProduct extends ViewRecord
                                 ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
                                 ->weight('bold'),
 
-                            Infolists\Components\TextEntry::make('transport_number')
-                                ->label('Номер транспорта'),
+                            Infolists\Components\TextEntry::make('creator.name')
+                                ->label('Создатель'),
+
+                            Infolists\Components\TextEntry::make('warehouse.name')
+                                ->label('Склад назначения'),
 
                             Infolists\Components\TextEntry::make('arrival_date')
                                 ->label('Дата поступления')
                                 ->date('d.m.Y'),
+
+                            Infolists\Components\TextEntry::make('transport_number')
+                                ->label('Номер транспорта'),
 
                             Infolists\Components\TextEntry::make('status')
                                 ->label('Статус')
@@ -55,9 +61,6 @@ class ViewProduct extends ViewRecord
                                     'for_receipt' => 'На приемку',
                                     default => $state,
                                 }),
-
-                            Infolists\Components\TextEntry::make('creator.name')
-                                ->label('Создатель'),
                         ];
 
                         // Добавляем место отгрузки если заполнено
