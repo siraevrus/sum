@@ -55,6 +55,11 @@ class ViewProductInTransit extends ViewRecord
 
                                 return is_numeric($state) ? number_format($state, 3, '.', ' ').($unit ? ' '.$unit : '') : '0.000';
                             }),
+                    ])
+                    ->columns(2),
+
+                InfoSection::make('Дополнительная информация')
+                    ->schema([
                         TextEntry::make('notes')->label('Заметки')->columnSpanFull(),
                     ])
                     ->columns(2),
