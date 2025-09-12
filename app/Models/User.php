@@ -14,8 +14,6 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use \App\Traits\HasEncryptedFields;
-
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -29,11 +27,11 @@ class User extends Authenticatable implements FilamentUser
         'username',
         'email',
         'password',
-        'role',
         'first_name',
         'last_name',
         'middle_name',
         'phone',
+        'role',
         'company_id',
         'warehouse_id',
         'is_blocked',
@@ -63,7 +61,6 @@ class User extends Authenticatable implements FilamentUser
             'role' => \App\Casts\UserRoleCast::class,
             'is_blocked' => 'boolean',
             'blocked_at' => 'datetime',
-            'phone' => 'encrypted',
         ];
     }
 
