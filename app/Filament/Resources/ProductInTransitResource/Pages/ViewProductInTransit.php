@@ -50,7 +50,29 @@ class ViewProductInTransit extends ViewRecord
                         TextEntry::make('warehouse.name')->label('Склад назначения'),
                         TextEntry::make('expected_arrival_date')->label('Ожидаемая дата'),
                         TextEntry::make('transport_number')->label('Номер транспорта'),
-                        TextEntry::make('status')->label('Статус'),
+                        TextEntry::make('status')
+                            ->label('Статус')
+                            ->formatStateUsing(function (Product $record): string {
+                                if ($record->isInTransit()) {
+                                    return 'В пути';
+                                }
+                                if ($record->isForReceipt()) {
+                                    return 'Для приемки';
+                                }
+
+                                return 'На складе';
+                            })
+                            ->badge()
+                            ->color(function (Product $record): string {
+                                if ($record->isInTransit()) {
+                                    return 'info';
+                                }
+                                if ($record->isForReceipt()) {
+                                    return 'warning';
+                                }
+
+                                return 'success';
+                            }),
                     ])
                     ->columns(2),
 
