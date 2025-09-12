@@ -93,12 +93,19 @@ class EditReceipt extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // В режиме редактирования приемки используем существующие характеристики из записи
+        $record = $this->getRecord();
+        $existingAttributes = [];
+        if ($record && $record->attributes) {
+            $existingAttributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+        }
+
         // Обрабатываем характеристики из repeater
         $products = $data['products'] ?? [];
         if (! empty($products)) {
             $firstProduct = $products[0];
 
-            // Собираем характеристики
+            // Собираем характеристики (хотя они должны быть отключены)
             $attributes = [];
             foreach ($firstProduct as $key => $value) {
                 if (str_starts_with($key, 'attribute_') && $value !== null && $value !== '') {
@@ -114,21 +121,20 @@ class EditReceipt extends EditRecord
                 }
             }
 
-            // Обновляем основные поля
-            $data['attributes'] = $attributes;
+            // Обновляем основные поля - сохраняем существующие характеристики
+            $data['attributes'] = $existingAttributes;
             $data['product_template_id'] = $firstProduct['product_template_id'] ?? null;
             $data['producer_id'] = $firstProduct['producer_id'] ?? null;
             $data['name'] = $firstProduct['name'] ?? null;
             $data['quantity'] = $firstProduct['quantity'] ?? 1;
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
 
-            // В режиме редактирования не пересчитываем объем, если характеристики отключены
-            // Рассчитываем объем только если есть характеристики для расчета
-            if (! empty($data['product_template_id']) && ! empty($attributes)) {
+            // Используем существующие характеристики для расчета объема
+            if (! empty($data['product_template_id']) && ! empty($existingAttributes)) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);
                 if ($template && $template->formula) {
-                    // Создаем копию атрибутов для формулы, включая quantity
-                    $formulaAttributes = $attributes;
+                    // Создаем копию существующих атрибутов для формулы, включая quantity
+                    $formulaAttributes = $existingAttributes;
                     if (isset($data['quantity']) && is_numeric($data['quantity']) && $data['quantity'] > 0) {
                         $formulaAttributes['quantity'] = $data['quantity'];
                     }
@@ -136,7 +142,7 @@ class EditReceipt extends EditRecord
                     // Логируем атрибуты для отладки
                     \Log::info('EditReceipt: Attributes for formula', [
                         'template' => $template->name,
-                        'attributes' => $attributes,
+                        'existing_attributes' => $existingAttributes,
                         'formula_attributes' => $formulaAttributes,
                         'quantity' => $data['quantity'] ?? 'not set',
                         'formula' => $template->formula,

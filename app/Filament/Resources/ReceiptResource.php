@@ -192,7 +192,7 @@ class ReceiptResource extends Resource
                                             ->minValue(1)
                                             ->required()
                                             ->live()
-                                            ->debounce(300)
+                                            ->debounce(50)
                                             ->afterStateUpdated(function (Set $set, Get $get) {
                                                 // Пересчитываем объем при изменении количества
                                                 $templateId = $get('product_template_id');
@@ -359,8 +359,8 @@ class ReceiptResource extends Resource
                                                         ->numeric()
                                                         ->required($attribute->is_required)
                                                         ->live()
-                                                        ->debounce(300)
-                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                                        ->debounce(30)
+                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -451,8 +451,8 @@ class ReceiptResource extends Resource
                                                         ->label($attribute->name)
                                                         ->required($attribute->is_required)
                                                         ->live()
-                                                        ->debounce(300)
-                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                                        ->debounce(30)
+                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -545,8 +545,8 @@ class ReceiptResource extends Resource
                                                         ->options($options)
                                                         ->required($attribute->is_required)
                                                         ->live()
-                                                        ->debounce(300)
-                                                        ->disabled(fn () => request()->route()->getName() === 'filament.admin.resources.receipts.edit')
+                                                        ->debounce(30)
+                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
