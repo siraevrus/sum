@@ -42,10 +42,14 @@ class CreateProduct extends CreateRecord
             $data['attributes'] = [];
         }
 
-        // Добавляем quantity в характеристики для формулы, если есть
-        if (isset($data['quantity'])) {
-            $attributes['quantity'] = $data['quantity'];
-        }
+        // quantity не сохраняется в attributes, только используется для формулы
+
+        // Логируем финальные данные перед сохранением
+        \Log::info('CreateProduct: Final data before save', [
+            'attributes' => $data['attributes'],
+            'product_template_id' => $data['product_template_id'] ?? 'not set',
+            'name' => $data['name'] ?? 'not set',
+        ]);
 
         // Рассчитываем и сохраняем объем
         if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {

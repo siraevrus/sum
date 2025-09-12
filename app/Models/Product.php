@@ -28,6 +28,7 @@ class Product extends Model
         'created_by',
         'name',
         'description',
+        'attributes',
 
         'calculated_volume',
         'quantity',
