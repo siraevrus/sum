@@ -267,7 +267,7 @@ class RequestResource extends Resource
                                         ->numeric()
                                         ->required($attribute->is_required)
                                         ->live()
-                                        ->debounce(300)
+                                        ->debounce(30)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
@@ -329,7 +329,7 @@ class RequestResource extends Resource
                                         ->options($options)
                                         ->required($attribute->is_required)
                                         ->live()
-                                        ->debounce(300)
+                                        ->debounce(30)
                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                             // Рассчитываем объем при изменении характеристики
                                             $attributes = [];
@@ -379,7 +379,10 @@ class RequestResource extends Resource
                             }
                         }
 
-                        return $fields;
+                        return [
+                            Grid::make(3)
+                                ->schema($fields)
+                        ];
                     }),
 
                 Section::make('Расчет объема')
