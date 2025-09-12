@@ -164,6 +164,30 @@ class EditReceipt extends EditRecord
             $data['quantity'] = $firstProduct['quantity'] ?? 1;
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
 
+            // Генерируем имя, если оно пустое
+            if (empty($data['name']) && !empty($data['product_template_id'])) {
+                $template = \App\Models\ProductTemplate::find($data['product_template_id']);
+                if ($template && !empty($existingAttributes)) {
+                    $nameParts = [];
+                    foreach ($template->attributes as $attribute) {
+                        if (isset($existingAttributes[$attribute->variable]) && !empty($existingAttributes[$attribute->variable])) {
+                            $nameParts[] = $existingAttributes[$attribute->variable];
+                        }
+                    }
+                    
+                    if (!empty($nameParts)) {
+                        $data['name'] = $template->name . ': ' . implode(', ', $nameParts);
+                    } else {
+                        $data['name'] = $template->name ?? 'Товар';
+                    }
+                }
+            }
+
+            // Если имя все еще пустое, используем запасной вариант
+            if (empty($data['name'])) {
+                $data['name'] = $record->name ?? 'Товар';
+            }
+
             // Используем существующие характеристики для расчета объема
             if (! empty($data['product_template_id']) && ! empty($existingAttributes)) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);

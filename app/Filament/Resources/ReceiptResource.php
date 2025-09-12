@@ -182,8 +182,7 @@ class ReceiptResource extends Resource
                                             ->label('Наименование')
                                             ->maxLength(255)
                                             ->required()
-                                            ->disabled()
-                                            ->hidden(fn () => true),
+                                            ->disabled(), // Убираем hidden, оставляем видимым но отключенным
 
                                         TextInput::make('quantity')
                                             ->label('Количество')
@@ -668,7 +667,7 @@ class ReceiptResource extends Resource
                                 // Удалено поле description
                             ])
                             ->addActionLabel('Добавить товар')
-                            ->addable(fn () => request()->route()->getName() !== 'filament.admin.resources.receipts.edit')
+                            ->addable(false) // Полностью отключаем кнопку добавления товара
                             ->deletable(false)
                             ->reorderable()
                             ->collapsible()
