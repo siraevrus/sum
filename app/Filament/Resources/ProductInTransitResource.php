@@ -166,7 +166,7 @@ class ProductInTransitResource extends Resource
                                                 'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                             ])
                                             ->live()
-                                            ->debounce(300)
+                                            ->debounce(50)
                                             ->afterStateUpdated(function (Set $set, Get $get) {
                                                 // Пересчитываем объем при изменении количества
                                                 $templateId = $get('product_template_id');
@@ -296,7 +296,7 @@ class ProductInTransitResource extends Resource
                                                             'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                                         ])
                                                         ->live()
-                                                        ->debounce(300)
+                                                        ->debounce(30)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -391,7 +391,7 @@ class ProductInTransitResource extends Resource
                                                         ->maxLength(255)
                                                         ->required($attribute->is_required)
                                                         ->live()
-                                                        ->debounce(300)
+                                                        ->debounce(30)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -486,7 +486,7 @@ class ProductInTransitResource extends Resource
                                                         ->options($options)
                                                         ->required($attribute->is_required)
                                                         ->live()
-                                                        ->debounce(300)
+                                                        ->debounce(30)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
