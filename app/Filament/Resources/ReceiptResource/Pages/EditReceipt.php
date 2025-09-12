@@ -71,6 +71,14 @@ class EditReceipt extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        // Логируем исходные данные для отладки
+        \Log::info('EditReceipt: mutateFormDataBeforeFill input', [
+            'has_attributes' => isset($data['attributes']),
+            'attributes_type' => gettype($data['attributes'] ?? 'not set'),
+            'attributes' => $data['attributes'] ?? 'not set',
+            'product_template_id' => $data['product_template_id'] ?? 'not set',
+        ]);
+
         // Преобразуем attributes в поля для репитера товаров (один товар)
         $item = [
             'product_template_id' => $data['product_template_id'] ?? null,
@@ -81,12 +89,38 @@ class EditReceipt extends EditRecord
             'description' => $data['description'] ?? null,
             'actual_arrival_date' => $data['actual_arrival_date'] ?? null,
         ];
+        
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($data['attributes'] as $key => $value) {
                 $item["attribute_{$key}"] = $value;
+                \Log::info("EditReceipt: Adding attribute", [
+                    'key' => $key,
+                    'value' => $value,
+                    'field_name' => "attribute_{$key}"
+                ]);
+            }
+        } elseif (isset($data['attributes']) && is_string($data['attributes'])) {
+            // Если attributes сохранены как JSON строка
+            $attributes = json_decode($data['attributes'], true);
+            if (is_array($attributes)) {
+                foreach ($attributes as $key => $value) {
+                    $item["attribute_{$key}"] = $value;
+                    \Log::info("EditReceipt: Adding attribute from JSON", [
+                        'key' => $key,
+                        'value' => $value,
+                        'field_name' => "attribute_{$key}"
+                    ]);
+                }
             }
         }
+        
         $data['products'] = [$item];
+
+        \Log::info('EditReceipt: mutateFormDataBeforeFill output', [
+            'item_keys' => array_keys($item),
+            'products_count' => count($data['products']),
+            'first_product_keys' => array_keys($data['products'][0]),
+        ]);
 
         return $data;
     }

@@ -360,8 +360,16 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(30)
-                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->readOnly() // Характеристики только для чтения на странице приемки
                                                         ->dehydrated(false) // Не отправляем значения на сервер
+                                                        ->formatStateUsing(function ($state, $record) use ($attribute) {
+                                                            // Принудительно загружаем значение из записи, если пустое
+                                                            if (empty($state) && $record && $record->attributes) {
+                                                                $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+                                                                return $attributes[$attribute->variable] ?? $state;
+                                                            }
+                                                            return $state;
+                                                        })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -453,8 +461,16 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(30)
-                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->readOnly() // Характеристики только для чтения на странице приемки
                                                         ->dehydrated(false) // Не отправляем значения на сервер
+                                                        ->formatStateUsing(function ($state, $record) use ($attribute) {
+                                                            // Принудительно загружаем значение из записи, если пустое
+                                                            if (empty($state) && $record && $record->attributes) {
+                                                                $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+                                                                return $attributes[$attribute->variable] ?? $state;
+                                                            }
+                                                            return $state;
+                                                        })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -548,8 +564,16 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(30)
-                                                        ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->readOnly() // Характеристики только для чтения на странице приемки
                                                         ->dehydrated(false) // Не отправляем значения на сервер
+                                                        ->formatStateUsing(function ($state, $record) use ($attribute) {
+                                                            // Принудительно загружаем значение из записи, если пустое
+                                                            if (empty($state) && $record && $record->attributes) {
+                                                                $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+                                                                return $attributes[$attribute->variable] ?? $state;
+                                                            }
+                                                            return $state;
+                                                        })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
