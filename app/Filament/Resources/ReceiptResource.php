@@ -564,7 +564,7 @@ class ReceiptResource extends Resource
                                                         ->required($attribute->is_required)
                                                         ->live()
                                                         ->debounce(30)
-                                                        ->readOnly() // Характеристики только для чтения на странице приемки
+                                                        ->disabled() // Select не поддерживает readOnly, используем disabled
                                                         ->dehydrated(false) // Не отправляем значения на сервер
                                                         ->formatStateUsing(function ($state, $record) use ($attribute) {
                                                             // Принудительно загружаем значение из записи, если пустое
