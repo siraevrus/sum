@@ -361,6 +361,7 @@ class ReceiptResource extends Resource
                                                         ->live()
                                                         ->debounce(30)
                                                         ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->dehydrated(false) // Не отправляем значения на сервер
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -453,6 +454,7 @@ class ReceiptResource extends Resource
                                                         ->live()
                                                         ->debounce(30)
                                                         ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->dehydrated(false) // Не отправляем значения на сервер
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -547,6 +549,7 @@ class ReceiptResource extends Resource
                                                         ->live()
                                                         ->debounce(30)
                                                         ->disabled(true) // Характеристики всегда отключены на странице приемки для стабильности расчета объема
+                                                        ->dehydrated(false) // Не отправляем значения на сервер
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];

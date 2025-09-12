@@ -91,6 +91,7 @@ class EditReceipt extends EditRecord
         return $data;
     }
 
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // В режиме редактирования приемки используем существующие характеристики из записи
