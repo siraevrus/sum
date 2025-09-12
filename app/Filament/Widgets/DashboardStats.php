@@ -48,27 +48,6 @@ class DashboardStats extends BaseWidget
                 ->description('Ожидают рассмотрения')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('info'),
-
-            Stat::make('Продажи USD', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
-                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->where('currency', 'USD')
-                ->sum('total_price'), 0, ',', ' ').' $')
-                ->description('Выручка за сегодня (USD)')
-                ->color('success'),
-
-            Stat::make('Продажи RUB', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
-                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->where('currency', 'RUB')
-                ->sum('total_price'), 0, ',', ' ').' ₽')
-                ->description('Выручка за сегодня (RUB)')
-                ->color('success'),
-
-            Stat::make('Продажи UZS', number_format(Sale::where('sale_date', '>=', now()->startOfDay())
-                ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
-                ->where('currency', 'UZS')
-                ->sum('total_price'), 0, ',', ' ').' Сум')
-                ->description('Выручка за сегодня (UZS)')
-                ->color('success'),
         ];
     }
 }
