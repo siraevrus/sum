@@ -31,20 +31,30 @@ class ViewProduct extends ViewRecord
                             Infolists\Components\TextEntry::make('name')
                                 ->label('Наименование')
                                 ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
-                                ->weight('bold'),
+                                ->weight('bold')
+                                ->badge()
+                                ->color('primary'),
 
                             Infolists\Components\TextEntry::make('creator.name')
-                                ->label('Создатель'),
+                                ->label('Создатель')
+                                ->badge()
+                                ->color('info'),
 
                             Infolists\Components\TextEntry::make('warehouse.name')
-                                ->label('Склад назначения'),
+                                ->label('Склад назначения')
+                                ->badge()
+                                ->color('warning'),
 
                             Infolists\Components\TextEntry::make('arrival_date')
                                 ->label('Дата поступления')
-                                ->date('d.m.Y'),
+                                ->date('d.m.Y')
+                                ->badge()
+                                ->color('success'),
 
                             Infolists\Components\TextEntry::make('transport_number')
-                                ->label('Номер транспорта'),
+                                ->label('Номер транспорта')
+                                ->badge()
+                                ->color('gray'),
 
                             Infolists\Components\TextEntry::make('status')
                                 ->label('Статус')
@@ -67,12 +77,14 @@ class ViewProduct extends ViewRecord
                         if (! empty($this->record->shipping_location)) {
                             $components[] = Infolists\Components\TextEntry::make('shipping_location')
                                 ->label('Место отгрузки')
-                                ->state($this->record->shipping_location);
+                                ->state($this->record->shipping_location)
+                                ->badge()
+                                ->color('secondary');
                         }
 
                         return $components;
                     })
-                    ->columns(2),
+                    ->columns(3),
 
                 Infolists\Components\Section::make('Информация о товаре')
                     ->schema(function () {
@@ -81,16 +93,22 @@ class ViewProduct extends ViewRecord
 
                         // Добавляем производителя в начало
                         $components[] = Infolists\Components\TextEntry::make('producer.name')
-                            ->label('Производитель');
+                            ->label('Производитель')
+                            ->badge()
+                            ->color('info');
 
                         // Добавляем количество
                         $components[] = Infolists\Components\TextEntry::make('quantity')
                             ->label('Количество')
-                            ->numeric();
+                            ->numeric()
+                            ->badge()
+                            ->color('success');
 
                         // Добавляем объем
                         $components[] = Infolists\Components\TextEntry::make('calculated_volume')
                             ->label('Объем')
+                            ->badge()
+                            ->color('warning')
                             ->formatStateUsing(function ($state) {
                                 if (is_numeric($state)) {
                                     return number_format($state, 3, '.', ' ').' '.($this->record->productTemplate->unit ?? '');
@@ -131,7 +149,7 @@ class ViewProduct extends ViewRecord
 
                         return $components;
                     })
-                    ->columns(2),
+                    ->columns(3),
 
                 Infolists\Components\Section::make('Дополнительная информация')
                     ->schema([

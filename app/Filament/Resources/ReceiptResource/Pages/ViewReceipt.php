@@ -85,27 +85,66 @@ class ViewReceipt extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
-                        TextEntry::make('name')->label('Наименование')->size(TextEntrySize::Large)->weight('bold'),
-                        TextEntry::make('creator.name')->label('Создатель')->placeholder('—'),
-                        TextEntry::make('shipping_location')->label('Место отгрузки')->placeholder('—'),
-                        TextEntry::make('shipping_date')->label('Дата отгрузки')->date()->placeholder('—'),
-                        TextEntry::make('warehouse.name')->label('Склад назначения'),
-                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата')->date()->placeholder('—'),
-                        TextEntry::make('transport_number')->label('Номер транспорта')->placeholder('—'),
+                        TextEntry::make('name')
+                            ->label('Наименование')
+                            ->size(TextEntrySize::Large)
+                            ->weight('bold')
+                            ->badge()
+                            ->color('primary'),
+                        TextEntry::make('creator.name')
+                            ->label('Создатель')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('info'),
+                        TextEntry::make('shipping_location')
+                            ->label('Место отгрузки')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('secondary'),
+                        TextEntry::make('shipping_date')
+                            ->label('Дата отгрузки')
+                            ->date()
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('success'),
+                        TextEntry::make('warehouse.name')
+                            ->label('Склад назначения')
+                            ->badge()
+                            ->color('warning'),
+                        TextEntry::make('expected_arrival_date')
+                            ->label('Ожидаемая дата')
+                            ->date()
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('danger'),
+                        TextEntry::make('transport_number')
+                            ->label('Номер транспорта')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('gray'),
                         TextEntry::make('status')
                             ->label('Статус')
                             ->formatStateUsing(fn (Product $record): string => $record->isForReceipt() ? 'Для приемки' : 'На складе')
                             ->badge()
                             ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
-                        TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
-                        TextEntry::make('quantity')->label('Количество'),
+                        TextEntry::make('producer.name')
+                            ->label('Производитель')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('info'),
+                        TextEntry::make('quantity')
+                            ->label('Количество')
+                            ->badge()
+                            ->color('success'),
                         TextEntry::make('calculated_volume')
                             ->label('Объем')
+                            ->badge()
+                            ->color('warning')
                             ->formatStateUsing(function ($state, Product $record) {
                                 if (is_numeric($state)) {
                                     return number_format($state, 3, '.', ' ').' '.($record->productTemplate->unit ?? '');
@@ -152,7 +191,7 @@ class ViewReceipt extends ViewRecord
                             })
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 InfoSection::make('Документы')
                     ->schema([

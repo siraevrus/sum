@@ -43,13 +43,34 @@ class ViewProductInTransit extends ViewRecord
             ->schema([
                 InfoSection::make('Основная информация')
                     ->schema([
-                        TextEntry::make('name')->label('Наименование'),
-                        TextEntry::make('creator.name')->label('Создатель'),
-                        TextEntry::make('shipping_location')->label('Место отгрузки'),
-                        TextEntry::make('shipping_date')->label('Дата отгрузки'),
-                        TextEntry::make('warehouse.name')->label('Склад назначения'),
-                        TextEntry::make('expected_arrival_date')->label('Ожидаемая дата'),
-                        TextEntry::make('transport_number')->label('Номер транспорта'),
+                        TextEntry::make('name')
+                            ->label('Наименование')
+                            ->badge()
+                            ->color('primary'),
+                        TextEntry::make('creator.name')
+                            ->label('Создатель')
+                            ->badge()
+                            ->color('info'),
+                        TextEntry::make('shipping_location')
+                            ->label('Место отгрузки')
+                            ->badge()
+                            ->color('secondary'),
+                        TextEntry::make('shipping_date')
+                            ->label('Дата отгрузки')
+                            ->badge()
+                            ->color('success'),
+                        TextEntry::make('warehouse.name')
+                            ->label('Склад назначения')
+                            ->badge()
+                            ->color('warning'),
+                        TextEntry::make('expected_arrival_date')
+                            ->label('Ожидаемая дата')
+                            ->badge()
+                            ->color('danger'),
+                        TextEntry::make('transport_number')
+                            ->label('Номер транспорта')
+                            ->badge()
+                            ->color('gray'),
                         TextEntry::make('status')
                             ->label('Статус')
                             ->formatStateUsing(function (Product $record): string {
@@ -74,7 +95,7 @@ class ViewProductInTransit extends ViewRecord
                                 return 'success';
                             }),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
