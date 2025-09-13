@@ -82,7 +82,9 @@ class ViewRequest extends ViewRecord
                 Section::make('Основная информация')
                     ->schema([
                         TextEntry::make('title')
-                            ->label('Заголовок'),
+                            ->label('Заголовок')
+                            ->badge()
+                            ->color('primary'),
 
                         TextEntry::make('status')
                             ->label('Статус')
@@ -99,28 +101,39 @@ class ViewRequest extends ViewRecord
                             }),
 
                         TextEntry::make('warehouse.name')
-                            ->label('Склад'),
+                            ->label('Склад')
+                            ->badge()
+                            ->color('info'),
 
                         TextEntry::make('user.name')
-                            ->label('Создатель'),
+                            ->label('Создатель')
+                            ->badge()
+                            ->color('success'),
 
                         TextEntry::make('productTemplate.name')
                             ->label('Шаблон товара')
-                            ->placeholder('Не выбран'),
+                            ->placeholder('Не выбран')
+                            ->badge()
+                            ->color('warning'),
 
                         TextEntry::make('quantity')
                             ->label('Количество')
-                            ->badge(),
+                            ->badge()
+                            ->color('danger'),
 
                         TextEntry::make('calculated_volume')
                             ->label('Рассчитанный объём')
-                            ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 3, '.', ' ') : '0.000'),
+                            ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 3, '.', ' ') : '0.000')
+                            ->badge()
+                            ->color('secondary'),
 
                         TextEntry::make('created_at')
                             ->label('Создан')
-                            ->dateTime(),
+                            ->dateTime()
+                            ->badge()
+                            ->color('gray'),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 Section::make('Описание')
                     ->schema([
