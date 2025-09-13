@@ -10,6 +10,7 @@ use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section as InfoSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -268,64 +269,10 @@ class ProductTemplateResource extends Resource
 
                 InfoSection::make('Характеристики')
                     ->schema([
-                        RepeatableEntry::make('attributes')
-                            ->label('')
-                            ->schema([
-                                TextEntry::make('name')
-                                    ->label('Название')
-                                    ->weight('bold')
-                                    ->columnSpan(2),
-                                TextEntry::make('variable')
-                                    ->label('Переменная')
-                                    ->badge()
-                                    ->color('gray'),
-                                TextEntry::make('type')
-                                    ->label('Тип')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        'number' => 'success',
-                                        'text' => 'info',
-                                        'select' => 'warning',
-                                        default => 'gray',
-                                    }),
-                                TextEntry::make('unit')
-                                    ->label('Единица')
-                                    ->badge()
-                                    ->color('secondary'),
-                                TextEntry::make('options')
-                                    ->label('Варианты')
-                                    ->formatStateUsing(function ($state) {
-                                        if (is_array($state)) {
-                                            return implode(', ', $state);
-                                        }
-                                        return (string) $state;
-                                    })
-                                    ->visible(fn ($record) => ($record->type ?? null) === 'select')
-                                    ->columnSpan(2),
-                                IconEntry::make('is_required')
-                                    ->label('Обязательно')
-                                    ->boolean()
-                                    ->trueIcon('heroicon-o-check-circle')
-                                    ->falseIcon('heroicon-o-x-circle')
-                                    ->trueColor('success')
-                                    ->falseColor('gray'),
-                                IconEntry::make('is_in_formula')
-                                    ->label('В формуле')
-                                    ->boolean()
-                                    ->trueIcon('heroicon-o-calculator')
-                                    ->falseIcon('heroicon-o-x-circle')
-                                    ->trueColor('warning')
-                                    ->falseColor('gray'),
-                                TextEntry::make('sort_order')
-                                    ->label('Порядок')
-                                    ->badge()
-                                    ->color('info'),
-                            ])
-                            ->columns(6)
-                            ->grid(1)
-                            ->state(function ($record) {
-                                return $record->attributes->sortBy('sort_order')->values()->toArray();
-                            }),
+                        ViewEntry::make('characteristics_table')
+                            ->view('filament.infolists.characteristics-table')
+                            ->viewData(fn ($record) => ['record' => $record])
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
