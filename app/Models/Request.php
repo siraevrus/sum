@@ -21,7 +21,6 @@ class Request extends Model
         'title',
         'description',
         'quantity',
-        'priority',
         'status',
         'admin_notes',
         'approved_by',
@@ -50,11 +49,6 @@ class Request extends Model
     const STATUS_COMPLETED = 'completed';
     const STATUS_CANCELLED = 'cancelled';
 
-    // Приоритеты запросов
-    const PRIORITY_LOW = 'low';
-    const PRIORITY_NORMAL = 'normal';
-    const PRIORITY_HIGH = 'high';
-    const PRIORITY_URGENT = 'urgent';
 
     /**
      * Связь с пользователем, создавшим запрос
@@ -136,33 +130,6 @@ class Request extends Model
         };
     }
 
-    /**
-     * Получить приоритет на русском языке
-     */
-    public function getPriorityLabel(): string
-    {
-        return match($this->priority) {
-            self::PRIORITY_LOW => 'Низкий',
-            self::PRIORITY_NORMAL => 'Обычный',
-            self::PRIORITY_HIGH => 'Высокий',
-            self::PRIORITY_URGENT => 'Срочный',
-            default => 'Неизвестно',
-        };
-    }
-
-    /**
-     * Получить цвет приоритета
-     */
-    public function getPriorityColor(): string
-    {
-        return match($this->priority) {
-            self::PRIORITY_LOW => 'gray',
-            self::PRIORITY_NORMAL => 'info',
-            self::PRIORITY_HIGH => 'warning',
-            self::PRIORITY_URGENT => 'danger',
-            default => 'gray',
-        };
-    }
 
     /**
      * Проверить, можно ли одобрить запрос
@@ -337,13 +304,6 @@ class Request extends Model
         $query->where('status', $status);
     }
 
-    /**
-     * Scope для фильтрации по приоритету
-     */
-    public function scopeByPriority(Builder $query, string $priority): void
-    {
-        $query->where('priority', $priority);
-    }
 
     /**
      * Scope для фильтрации по складу
@@ -390,7 +350,6 @@ class Request extends Model
             'in_progress_requests' => static::byStatus(self::STATUS_IN_PROGRESS)->count(),
             'completed_requests' => static::byStatus(self::STATUS_COMPLETED)->count(),
             'overdue_requests' => static::overdue()->count(),
-            'urgent_requests' => static::byPriority(self::PRIORITY_URGENT)->count(),
         ];
     }
 } 

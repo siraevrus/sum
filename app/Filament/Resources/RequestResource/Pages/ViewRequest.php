@@ -92,13 +92,6 @@ class ViewRequest extends ViewRecord
                             ->badge()
                             ->color(fn ($record) => $record->getStatusColor()),
 
-                        TextEntry::make('priority')
-                            ->label('Приоритет')
-                            ->formatStateUsing(fn ($state, $record) => $record->getPriorityLabel())
-                            ->badge()
-                            ->color(function ($record) {
-                                return method_exists($record, 'getPriorityColor') ? $record->getPriorityColor() : 'gray';
-                            }),
 
                         TextEntry::make('warehouse.name')
                             ->label('Склад')

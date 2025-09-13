@@ -32,10 +32,6 @@ class RequestController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Фильтрация по приоритету
-        if ($request->has('priority')) {
-            $query->where('priority', $request->priority);
-        }
 
         // Фильтрация по пользователю
         if ($request->has('user_id')) {
@@ -97,7 +93,6 @@ class RequestController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'quantity' => 'required|integer|min:1',
-            'priority' => 'required|in:low,normal,high,urgent',
             'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
             'attributes' => 'nullable|array',
         ]);
@@ -138,7 +133,6 @@ class RequestController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'quantity' => 'sometimes|integer|min:1',
-            'priority' => 'sometimes|in:low,normal,high,urgent',
             'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
             'admin_notes' => 'sometimes|string',
             'attributes' => 'sometimes|array',
