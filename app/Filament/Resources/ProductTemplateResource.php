@@ -83,67 +83,73 @@ class ProductTemplateResource extends Resource
                         Forms\Components\Repeater::make('attributes')
                             ->label('Характеристики')
                             ->schema([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Название характеристики')
-                                    ->required()
-                                    ->maxLength(255),
+                                Forms\Components\Grid::make(4)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Название характеристики')
+                                            ->required()
+                                            ->maxLength(255),
 
-                                Forms\Components\TextInput::make('variable')
-                                    ->label('Переменная')
-                                    ->required()
-                                    ->maxLength(50)
-                                    ->helperText('Только английские буквы, цифры и подчеркивание')
-                                    ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/'])
-                                    ->distinct()
-                                    ->validationMessages([
-                                        'distinct' => 'дайте уникальные имена переменным',
-                                    ])
-                                    ->afterStateHydrated(function ($component, $state, $set, $get) {
-                                        $variables = collect($get('../../attributes'))->pluck('variable');
-                                        $duplicates = $variables->duplicates();
-                                        if ($duplicates->contains($state)) {
-                                            $component->extraAttributes(['style' => 'border-color: #dc2626;']); // красная рамка
-                                        }
-                                    }),
+                                        Forms\Components\TextInput::make('variable')
+                                            ->label('Переменная')
+                                            ->required()
+                                            ->maxLength(50)
+                                            ->helperText('Только английские буквы, цифры и подчеркивание')
+                                            ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/'])
+                                            ->distinct()
+                                            ->validationMessages([
+                                                'distinct' => 'дайте уникальные имена переменным',
+                                            ])
+                                            ->afterStateHydrated(function ($component, $state, $set, $get) {
+                                                $variables = collect($get('../../attributes'))->pluck('variable');
+                                                $duplicates = $variables->duplicates();
+                                                if ($duplicates->contains($state)) {
+                                                    $component->extraAttributes(['style' => 'border-color: #dc2626;']); // красная рамка
+                                                }
+                                            }),
 
-                                Forms\Components\Select::make('type')
-                                    ->label('Тип данных')
-                                    ->options([
-                                        'number' => 'Число',
-                                        'text' => 'Текст',
-                                        'select' => 'Выпадающий список',
-                                    ])
-                                    ->default('number')
-                                    ->reactive(),
+                                        Forms\Components\Select::make('type')
+                                            ->label('Тип данных')
+                                            ->options([
+                                                'number' => 'Число',
+                                                'text' => 'Текст',
+                                                'select' => 'Выпадающий список',
+                                            ])
+                                            ->default('number')
+                                            ->reactive(),
+
+                                        Forms\Components\Select::make('unit')
+                                            ->label('Единица измерения')
+                                            ->options([
+                                                'шт' => 'шт',
+                                                'мм' => 'мм',
+                                                'см' => 'см',
+                                                'метр' => 'метр',
+                                                'радиус' => 'радиус',
+                                                'м³' => 'м³',
+                                                'м²' => 'м²',
+                                                'кг' => 'кг',
+                                                'грамм' => 'грамм',
+                                            ])
+                                            ->visible(fn ($get) => $get('type') === 'number'),
+                                    ]),
 
                                 Forms\Components\Textarea::make('options')
                                     ->label('Варианты (через запятую)')
                                     ->visible(fn ($get) => $get('type') === 'select')
-                                    ->helperText('Введите варианты через запятую'),
+                                    ->helperText('Введите варианты через запятую')
+                                    ->columnSpanFull(),
 
-                                Forms\Components\Select::make('unit')
-                                    ->label('Единица измерения')
-                                    ->options([
-                                        'шт' => 'шт',
-                                        'мм' => 'мм',
-                                        'см' => 'см',
-                                        'метр' => 'метр',
-                                        'радиус' => 'радиус',
-                                        'м³' => 'м³',
-                                        'м²' => 'м²',
-                                        'кг' => 'кг',
-                                        'грамм' => 'грамм',
-                                    ])
-                                    ->visible(fn ($get) => $get('type') === 'number'),
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Checkbox::make('is_required')
+                                            ->label('Обязательно к заполнению'),
 
-                                Forms\Components\Checkbox::make('is_required')
-                                    ->label('Обязательно к заполнению'),
-
-                                Forms\Components\Checkbox::make('is_in_formula')
-                                    ->label('Учитывать в формуле')
-                                    ->visible(fn ($get) => $get('type') === 'number'),
+                                        Forms\Components\Checkbox::make('is_in_formula')
+                                            ->label('Учитывать в формуле')
+                                            ->visible(fn ($get) => $get('type') === 'number'),
+                                    ]),
                             ])
-                            ->columns(3)
                             ->defaultItems(0)
                             ->default([])
                             ->collapsible()
