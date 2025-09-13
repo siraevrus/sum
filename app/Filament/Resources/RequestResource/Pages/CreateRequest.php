@@ -19,38 +19,9 @@ class CreateRequest extends CreateRecord
             $data['description'] = '';
         }
 
-        // Обрабатываем характеристики
-        $attributes = [];
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_') && $value !== null) {
-                $attributeName = str_replace('attribute_', '', $key);
-                $attributes[$attributeName] = $value;
-            }
-        }
-        $data['attributes'] = $attributes;
-
-        // Удаляем временные поля характеристик
-        foreach ($data as $key => $value) {
-            if (str_starts_with($key, 'attribute_')) {
-                unset($data[$key]);
-            }
-        }
-
-        // Убеждаемся, что attributes всегда установлен
-        if (! isset($data['attributes'])) {
-            $data['attributes'] = [];
-        }
-
-        // Рассчитываем и сохраняем объем
-        if (isset($data['product_template_id']) && isset($data['attributes']) && ! empty($data['attributes'])) {
-            $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-            if ($template && $template->formula) {
-                $testResult = $template->testFormula($data['attributes']);
-                if ($testResult['success']) {
-                    $data['calculated_volume'] = $testResult['result'];
-                }
-            }
-        }
+        // Устанавливаем пустые атрибуты, так как характеристики больше не используются
+        $data['attributes'] = [];
+        $data['calculated_volume'] = null;
 
         return $data;
     }
