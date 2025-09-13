@@ -872,6 +872,22 @@ class ProductResource extends Resource
                     })
                     ->searchable(),
 
+                SelectFilter::make('product_template_id')
+                    ->label('Тип товара')
+                    ->multiple()
+                    ->options(function () {
+                        $templates = ProductTemplate::whereHas('products')->get();
+                        $options = [];
+                        foreach ($templates as $template) {
+                            $productCount = $template->products()->count();
+                            $options[$template->id] = "{$template->name} ({$productCount})";
+                        }
+
+                        return $options;
+                    })
+                    ->searchable()
+                    ->placeholder('Все типы товаров'),
+
                 Filter::make('arrival_date_range')
                     ->label('Период поступления')
                     ->form([
