@@ -99,10 +99,19 @@ class ViewProductInTransit extends ViewRecord
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
-                        TextEntry::make('producer.name')->label('Производитель')->placeholder('—'),
-                        TextEntry::make('quantity')->label('Количество'),
+                        TextEntry::make('producer.name')
+                            ->label('Производитель')
+                            ->placeholder('—')
+                            ->badge()
+                            ->color('info'),
+                        TextEntry::make('quantity')
+                            ->label('Количество')
+                            ->badge()
+                            ->color('success'),
                         TextEntry::make('calculated_volume')
                             ->label('Объем')
+                            ->badge()
+                            ->color('warning')
                             ->formatStateUsing(function ($state, Product $record) {
                                 $unit = $record->template?->unit ?? '';
 
@@ -147,7 +156,7 @@ class ViewProductInTransit extends ViewRecord
                             })
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 InfoSection::make('Дополнительная информация')
                     ->schema([
