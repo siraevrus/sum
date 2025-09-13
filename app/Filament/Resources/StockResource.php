@@ -96,7 +96,7 @@ class StockResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('total_quantity')
-                    ->label('Доступное количество')
+                    ->label('Доступно')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -116,7 +116,7 @@ class StockResource extends Resource
                     ),
 
                 Tables\Columns\TextColumn::make('total_sold_quantity')
-                    ->label('Проданное количество')
+                    ->label('Продано')
                     ->numeric()
                     ->sortable()
                     ->badge()
@@ -127,7 +127,7 @@ class StockResource extends Resource
                     ),
 
                 Tables\Columns\TextColumn::make('total_volume')
-                    ->label('Доступный объем (м³)')
+                    ->label('Объем (м³)')
                     ->formatStateUsing(function ($state) {
                         return $state ? number_format($state, 3, '.', ' ') : '0.000';
                     })
@@ -146,11 +146,6 @@ class StockResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('info'),
-
-                Tables\Columns\TextColumn::make('last_arrival_date')
-                    ->label('Последнее поступление')
-                    ->date()
-                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('warehouse_id')
