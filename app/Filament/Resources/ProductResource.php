@@ -1025,7 +1025,7 @@ class ProductResource extends Resource
     {
         $user = Auth::user();
 
-        $base = parent::getEloquentQuery();
+        $base = parent::getEloquentQuery()->where('status', '!=', 'for_receipt');
 
         if (! $user) {
             return $base->whereRaw('1 = 0');
