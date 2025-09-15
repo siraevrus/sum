@@ -8,6 +8,7 @@ use App\Models\ProductTemplate;
 use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -636,41 +637,26 @@ class ProductResource extends Resource
 
                 Section::make('Документы')
                     ->schema([
-                        Forms\Components\View::make('documents-list')
-                                    ->view('filament.forms.components.documents-list')
-                                    ->viewData(function (?Product $record): array {
-                                        if (! $record || ! $record->document_path || empty($record->document_path)) {
-                                            return ['documents' => []];
-                                        }
-
-                                        $documents = is_array($record->document_path) ? $record->document_path : [];
-                                        if (empty($documents)) {
-                                            return ['documents' => []];
-                                        }
-
-                                        $documentsList = [];
-                                        foreach ($documents as $index => $document) {
-                                            $fileName = basename($document);
-                                            $fileUrl = asset('storage/'.$document);
-                                            $documentsList[] = [
-                                                'index' => $index + 1,
-                                                'name' => $fileName,
-                                                'url' => $fileUrl,
-                                            ];
-                                        }
-
-                                        return ['documents' => $documentsList];
-                                    })
-                                    ->visible(fn (?Product $record): bool => $record && $record->document_path &&
-                                        is_array($record->document_path) &&
-                                        ! empty($record->document_path)
-                                    )
-                                    ->columnSpanFull(),
+                        FileUpload::make('document_path')
+                            ->label('Документы')
+                            ->directory('documents')
+                            ->multiple()
+                            ->maxFiles(5)
+                            ->maxSize(51200) // 50MB
+                            ->acceptedFileTypes([
+                                'application/pdf',
+                                'image/*',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'text/plain',
+                            ])
+                            ->preserveFilenames()
+                            ->downloadable()
+                            ->openable()
+                            ->previewable()
+                            ->imagePreviewHeight('250')
+                            ->columnSpanFull(),
                     ])
-                    ->visible(fn (?Product $record): bool => $record && $record->document_path &&
-                        is_array($record->document_path) &&
-                        ! empty($record->document_path)
-                    )
                     ->collapsible(false)
                     ->icon('heroicon-o-document'),
 
