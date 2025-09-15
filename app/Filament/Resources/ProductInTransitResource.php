@@ -58,7 +58,7 @@ class ProductInTransitResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        Grid::make(4)
+                        Grid::make(5)
                             ->schema([
                                 TextInput::make('shipping_location')
                                     ->label('Место отгрузки')
