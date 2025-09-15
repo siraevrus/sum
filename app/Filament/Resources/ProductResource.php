@@ -124,7 +124,7 @@ class ProductResource extends Resource
 
                 Section::make('Товары')
                     ->schema([
-                        Grid::make(2)
+                        Grid::make(4)
                             ->schema([
                                 Select::make('product_template_id')
                                     ->label('Шаблон товара')
