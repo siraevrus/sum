@@ -130,7 +130,17 @@ class SaleResource extends Resource
                                 Select::make('warehouse_id')
                                     ->label('Склад')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
+                                    ->default(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return null;
+                                        }
+
+                                        return method_exists($user, 'isAdmin') && $user->isAdmin() ? null : $user->warehouse_id;
+                                    })
                                     ->required()
+                                    ->visible(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
+                                    ->dehydrated(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
                                     ->live()
                                     ->debounce(300)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -160,6 +170,12 @@ class SaleResource extends Resource
                                             return [];
                                         }
                                         $warehouseId = $get('warehouse_id');
+                                        if (! $warehouseId) {
+                                            $user = Auth::user();
+                                            if ($user && (! method_exists($user, 'isAdmin') || ! $user->isAdmin())) {
+                                                $warehouseId = $user->warehouse_id;
+                                            }
+                                        }
                                         if (! $warehouseId) {
                                             return [];
                                         }

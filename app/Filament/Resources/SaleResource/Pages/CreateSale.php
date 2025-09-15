@@ -18,7 +18,11 @@ class CreateSale extends CreateRecord
         $data['user_id'] = Auth::id();
         $data['sale_number'] = \App\Models\Sale::generateSaleNumber();
 
-        // warehouse_id уже выбран пользователем в форме
+        // Для не-админов проставляем склад из профиля независимо от скрытого поля
+        $user = Auth::user();
+        if ($user && (! method_exists($user, 'isAdmin') || ! $user->isAdmin())) {
+            $data['warehouse_id'] = $user->warehouse_id;
+        }
 
         // Обрабатываем составной ключ товара
         if (isset($data['product_id']) && str_contains($data['product_id'], '|')) {
