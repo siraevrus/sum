@@ -879,23 +879,6 @@ class ProductResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
-                Tables\Actions\Action::make('mark_in_transit')
-                    ->label('')
-                    ->icon('heroicon-o-truck')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->visible(fn (\App\Models\Product $record): bool => $record->status === Product::STATUS_IN_STOCK)
-                    ->action(function (\App\Models\Product $record): void {
-                        $record->markInTransit();
-                        \Filament\Notifications\Notification::make()
-                            ->title('Товар переведен в статус "В пути"')
-                            ->body('Товар теперь отображается в разделе "Приемка"')
-                            ->success()
-                            ->send();
-                    })
-                    ->modalHeading('Перевести товар в статус "В пути"')
-                    ->modalDescription('Товар будет перемещен в раздел товаров в пути и появится в разделе "Приемка".')
-                    ->modalSubmitActionLabel('Перевести'),
 
                 Tables\Actions\Action::make('mark_in_stock')
                     ->label('')
