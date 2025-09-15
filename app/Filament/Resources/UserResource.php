@@ -160,7 +160,7 @@ class UserResource extends Resource
                             ->label('Заблокирован')
                             ->default(false),
                     ])
-                    ->columns(4),
+                    ->columns(2),
 
                 Forms\Components\Section::make('Компания и склад')
                     ->schema([
