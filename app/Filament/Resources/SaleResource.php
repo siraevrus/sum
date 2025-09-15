@@ -119,13 +119,23 @@ class SaleResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
+                        Forms\Components\Placeholder::make('sale_number_header')
+                            ->label('')
+                            ->content(function (Get $get) {
+                                $num = $get('sale_number');
+                                return $num ? ('№ '.$num) : '';
+                            })
+                            ->extraAttributes(['class' => 'text-right text-sm text-gray-600'])
+                            ->columnSpanFull(),
+
                         Grid::make(3)
                             ->schema([
                                 TextInput::make('sale_number')
                                     ->label('Номер продажи')
                                     ->default(Sale::generateSaleNumber())
                                     ->disabled()
-                                    ->required(),
+                                    ->required()
+                                    ->hidden(),
 
                                 Select::make('warehouse_id')
                                     ->label('Склад')
