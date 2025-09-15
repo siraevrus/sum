@@ -36,8 +36,8 @@ class ViewProduct extends ViewRecord
                         
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
                 })
-                ->modalHeading('Сбросить статус коррекции')
-                ->modalDescription('Товар будет возвращен к обычному статусу "На складе". Это действие нельзя отменить.')
+                ->modalHeading('Подтверждение о внесении изменения')
+                ->modalDescription('Информация о поступившем заказке будет скорректирована и был внесен актуальный остаток. Это действие нельзя отменить.')
                 ->modalSubmitActionLabel('Скорректировано'),
         ];
     }
