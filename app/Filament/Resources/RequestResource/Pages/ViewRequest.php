@@ -122,11 +122,7 @@ class ViewRequest extends ViewRecord
                             ->badge()
                             ->color('danger'),
 
-                        TextEntry::make('calculated_volume')
-                            ->label('Рассчитанный объём')
-                            ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 3, '.', ' ') : '0.000')
-                            ->badge()
-                            ->color('secondary'),
+                        
 
                         TextEntry::make('created_at')
                             ->label('Создан')
