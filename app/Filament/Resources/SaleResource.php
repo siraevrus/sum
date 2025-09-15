@@ -260,10 +260,6 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -366,10 +362,6 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -381,10 +373,6 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -404,10 +392,6 @@ class SaleResource extends Resource
                                 TextInput::make('exchange_rate')
                                     ->label('Курс валюты')
                                     ->default(1)
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
                                     ->helperText('Курс валюты к рублю'),
                             ]),
                     ]),
