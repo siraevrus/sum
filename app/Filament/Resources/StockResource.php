@@ -37,6 +37,7 @@ class StockResource extends Resource
 
         return in_array($user->role->value, [
             'admin',
+            'operator',
             'warehouse_worker',
             'sales_manager',
         ]);
@@ -179,8 +180,16 @@ class StockResource extends Resource
             ->where('status', Product::STATUS_IN_STOCK)
             ->where('is_active', true);
 
-        if ($user->role->value !== 'admin' && $user->warehouse_id) {
-            $baseQuery->where('warehouse_id', $user->warehouse_id);
+        if ($user->role->value !== 'admin') {
+            if ($user->role->value === 'operator' && $user->company_id) {
+                // Для операторов фильтрация по компании через склады
+                $baseQuery->whereHas('warehouse', function ($q) use ($user) {
+                    $q->where('company_id', $user->company_id);
+                });
+            } elseif ($user->warehouse_id) {
+                // Для других ролей фильтрация по складу
+                $baseQuery->where('warehouse_id', $user->warehouse_id);
+            }
         }
 
         // Получаем переменные характеристик для группировки (только number и select типы)
