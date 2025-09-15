@@ -119,7 +119,7 @@ class ViewSale extends ViewRecord
                             ->placeholder('Не указан')
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
+                    ->columns(4)
                     ->collapsible(),
 
                 Section::make('Дополнительная информация')
