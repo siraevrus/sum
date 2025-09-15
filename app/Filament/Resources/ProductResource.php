@@ -845,14 +845,6 @@ class ProductResource extends Resource
             ->emptyStateHeading('Нет товаров')
             ->emptyStateDescription('Создайте первый товар, чтобы начать работу. Используйте фильтр по статусу для просмотра товаров в пути. Товары со статусом "В пути" автоматически появляются в разделе "Приемка".')
             ->filters([
-                SelectFilter::make('status')
-                    ->label('Статус')
-                    ->options([
-                        Product::STATUS_IN_STOCK => 'На складе',
-                        Product::STATUS_IN_TRANSIT => 'В пути',
-                    ])
-                    ->default(Product::STATUS_IN_STOCK),
-
                 SelectFilter::make('warehouse_id')
                     ->label('Склад')
                     ->options(fn () => Warehouse::optionsForCurrentUser())

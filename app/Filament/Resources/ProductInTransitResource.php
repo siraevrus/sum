@@ -105,7 +105,8 @@ class ProductInTransitResource extends Resource
                                         Product::STATUS_IN_STOCK => 'На складе',
                                     ])
                                     ->required()
-                                    ->default(Product::STATUS_IN_TRANSIT),
+                                    ->default(Product::STATUS_FOR_RECEIPT)
+                                    ->hidden(fn () => request()->route()?->getName() === 'filament.admin.resources.product-in-transits.create'),
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
@@ -814,7 +815,7 @@ class ProductInTransitResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = Auth::user();
-        $base = parent::getEloquentQuery()->where('status', Product::STATUS_IN_TRANSIT);
+        $base = parent::getEloquentQuery()->where('status', Product::STATUS_FOR_RECEIPT);
 
         if (! $user) {
             return $base->whereRaw('1 = 0');
