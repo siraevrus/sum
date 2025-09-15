@@ -25,6 +25,7 @@ class Login extends BaseLogin
                 TextInput::make('password')
                     ->label('Пароль')
                     ->password()
+                    ->revealable()
                     ->required()
                     ->extraInputAttributes(['tabindex' => 2]),
             ]);
