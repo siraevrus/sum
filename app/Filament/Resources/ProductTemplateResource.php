@@ -76,7 +76,7 @@ class ProductTemplateResource extends Resource
                             ->label('Активный')
                             ->default(true),
                     ])
-                    ->columns(2),
+                    ->columns(4),
 
                 Forms\Components\Section::make('Характеристики')
                     ->schema([
