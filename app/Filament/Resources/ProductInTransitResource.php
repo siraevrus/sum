@@ -688,6 +688,76 @@ class ProductInTransitResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                Tables\Columns\TextColumn::make('quantity')
+                    ->label('Количество')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable()
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('transport_number')
+                    ->label('Номер транспорта')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('tracking_number')
+                    ->label('Номер отслеживания')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Статус')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'ordered' => 'gray',
+                        'in_transit' => 'warning',
+                        'arrived' => 'info',
+                        'received' => 'success',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'ordered' => 'Заказан',
+                        'in_transit' => 'В пути',
+                        'arrived' => 'Прибыл',
+                        'received' => 'Получен',
+                        'cancelled' => 'Отменен',
+                        default => $state,
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Заметки')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    }),
+
+                Tables\Columns\ViewColumn::make('document_path')
+                    ->label('Документы')
+                    ->view('tables.columns.documents')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Дата создания')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->dateTime()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Дата обновления')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->dateTime()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Сотрудник')
                     ->sortable(),
