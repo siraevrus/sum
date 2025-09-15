@@ -794,12 +794,122 @@ class ProductResource extends Resource
                     ->view('tables.columns.documents')
                     ->toggleable(isToggledHiddenByDefault: false),
 
+                Tables\Columns\TextColumn::make('transport_number')
+                    ->label('Номер транспорта')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('producer.name')
+                    ->label('Производитель')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('sold_quantity')
+                    ->label('Продано')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable()
+                    ->badge()
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Статус')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'in_stock' => 'success',
+                        'in_transit' => 'warning',
+                        'for_receipt' => 'info',
+                        'correction' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'in_stock' => 'На складе',
+                        'in_transit' => 'В пути',
+                        'for_receipt' => 'На приемку',
+                        'correction' => 'Коррекция',
+                        default => $state,
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('shipping_location')
+                    ->label('Место отгрузки')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('shipping_date')
+                    ->label('Дата отгрузки')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('expected_arrival_date')
+                    ->label('Ожидаемая дата прибытия')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('actual_arrival_date')
+                    ->label('Фактическая дата прибытия')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->date()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Заметки')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    }),
+
+                Tables\Columns\TextColumn::make('correction')
+                    ->label('Коррекция')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    }),
+
+                Tables\Columns\TextColumn::make('correction_status')
+                    ->label('Статус коррекции')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'correction' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'correction' => 'Коррекция',
+                        default => 'Нет',
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Дата создания')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->dateTime()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Дата обновления')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->dateTime()
+                    ->sortable(),
+
                 
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Активен')
                     ->boolean()
-                    ->hidden()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('creator.name')
