@@ -803,6 +803,25 @@ class ProductResource extends Resource
                     ->date()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('document_path')
+                    ->label('Документы')
+                    ->formatStateUsing(function ($state) {
+                        if (empty($state) || ! is_array($state)) {
+                            return '—';
+                        }
+
+                        $links = [];
+                        foreach ($state as $path) {
+                            $url = asset('storage/'.$path);
+                            $name = basename($path);
+                            $links[] = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener noreferrer\">".e($name)."</a>";
+                        }
+
+                        return implode('<br>', $links);
+                    })
+                    ->html()
+                    ->toggleable(isToggledHiddenByDefault: false),
+
                 
 
                 Tables\Columns\IconColumn::make('is_active')
