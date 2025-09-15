@@ -119,14 +119,18 @@ class SaleResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        Grid::make(3)
+                        // Отдельная строка: номер продажи слева
+                        Grid::make(1)
                             ->schema([
                                 TextInput::make('sale_number')
                                     ->label('Номер продажи')
                                     ->default(Sale::generateSaleNumber())
                                     ->disabled()
                                     ->required(),
+                            ]),
 
+                        Grid::make(3)
+                            ->schema([
                                 Select::make('warehouse_id')
                                     ->label('Склад')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -142,7 +146,7 @@ class SaleResource extends Resource
                                     ->visible(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
                                     ->dehydrated(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
                                     ->live()
-                                    ->debounce(300)
+                                    ->debounce(600)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Сбрасываем выбор товара при смене склада
                                         $set('product_id', null);
@@ -224,7 +228,7 @@ class SaleResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->live()
-                                    ->debounce(300)
+                                    ->debounce(600)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $set('quantity', 1);
                                         static::calculateTotalPrice($set, $get);
@@ -257,7 +261,7 @@ class SaleResource extends Resource
                                     ->minValue(1)
                                     ->required()
                                     ->live()
-                                    ->debounce(300)
+                                    ->debounce(600)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
 
@@ -359,7 +363,7 @@ class SaleResource extends Resource
                                     ->default(0)
                                     ->required()
                                     ->live()
-                                    ->debounce(300)
+                                    ->debounce(600)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         static::calculateTotalPrice($set, $get);
                                     }),
