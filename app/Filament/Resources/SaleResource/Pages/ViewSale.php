@@ -79,6 +79,8 @@ class ViewSale extends ViewRecord
                         TextEntry::make('quantity')
                             ->label('Количество')
                             ->badge(),
+                        TextEntry::make('warehouse.name')
+                            ->label('Склад'),
                         TextEntry::make('total_price')
                             ->label('Общая сумма')
                             ->formatStateUsing(fn ($state, $record) => number_format($state, 2, '.', ' ').' '.($record->currency ?? '')),
@@ -88,20 +90,16 @@ class ViewSale extends ViewRecord
                         TextEntry::make('nocash_amount')
                             ->label('Сумма (безнал)')
                             ->formatStateUsing(fn ($state) => number_format($state, 2, '.', ' ')),
-                        TextEntry::make('currency')
-                            ->label('Валюта'),
                         TextEntry::make('exchange_rate')
                             ->label('Курс валюты')
                             ->formatStateUsing(fn ($state) => number_format($state, 4, '.', ' ')),
+                        TextEntry::make('user.name')
+                            ->label('Продавец'),
                         TextEntry::make('payment_status')
                             ->label('Статус оплаты')
                             ->formatStateUsing(fn ($state, $record) => $record->getPaymentStatusLabel())
                             ->badge()
                             ->color(fn ($record) => $record->getPaymentStatusColor()),
-                        TextEntry::make('user.name')
-                            ->label('Продавец'),
-                        TextEntry::make('warehouse.name')
-                            ->label('Склад'),
                     ])
                     ->columns(3),
 
