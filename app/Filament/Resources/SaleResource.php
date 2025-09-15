@@ -13,7 +13,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Support\RawJs;
+use Filament\Forms\Components\TextInput\Mask;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -265,7 +265,11 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 0, thousandsSeparator: " " })'))
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(0)
+                                        ->thousandsSeparator(' ')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -368,7 +372,12 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 2, thousandsSeparator: " ", decimalSeparator: "," })'))
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(2)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -380,7 +389,12 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 2, thousandsSeparator: " ", decimalSeparator: "," })'))
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(2)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -400,7 +414,12 @@ class SaleResource extends Resource
                                 TextInput::make('exchange_rate')
                                     ->label('Курс валюты')
                                     ->default(1)
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 4, thousandsSeparator: " ", decimalSeparator: "," })'))
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(4)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->helperText('Курс валюты к рублю'),
                             ]),
                     ]),
