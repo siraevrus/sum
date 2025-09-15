@@ -97,16 +97,7 @@ class ProductInTransitResource extends Resource
                                     ->label('Ожидаемая дата прибытия')
                                     ->default(null),
 
-                                Select::make('status')
-                                    ->label('Статус')
-                                    ->options([
-                                        Product::STATUS_IN_TRANSIT => 'В пути',
-                                        Product::STATUS_FOR_RECEIPT => 'Для приемки',
-                                        Product::STATUS_IN_STOCK => 'На складе',
-                                    ])
-                                    ->required()
-                                    ->default(Product::STATUS_FOR_RECEIPT)
-                                    ->hidden(fn () => request()->route()?->getName() === 'filament.admin.resources.product-in-transits.create'),
+                                
 
                                 TextInput::make('transport_number')
                                     ->label('Номер транспорта')
