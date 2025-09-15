@@ -20,7 +20,7 @@ class StockResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';
 
-    protected static ?string $navigationLabel = 'Остатки';
+    protected static ?string $navigationLabel = 'Остатки на складе';
 
     protected static ?string $modelLabel = 'Остаток';
 
