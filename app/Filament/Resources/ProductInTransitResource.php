@@ -115,7 +115,7 @@ class ProductInTransitResource extends Resource
                         Repeater::make('products')
                             ->label('Список товаров')
                             ->schema([
-                                Grid::make(2)
+                                Grid::make(5)
                                     ->schema([
                                         Select::make('product_template_id')
                                             ->label('Шаблон товара')
