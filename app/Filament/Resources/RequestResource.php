@@ -97,6 +97,7 @@ class RequestResource extends Resource
 
                         Textarea::make('description')
                             ->label('Описание')
+                            ->placeholder('Укажите характеристики и количество запрашиваемого материала')
                             ->rows(4)
                             ->maxLength(2000),
 
