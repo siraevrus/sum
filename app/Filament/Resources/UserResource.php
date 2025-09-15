@@ -160,7 +160,7 @@ class UserResource extends Resource
                             ->label('Заблокирован')
                             ->default(false),
                     ])
-                    ->columns(2),
+                    ->columns(4),
 
                 Forms\Components\Section::make('Компания и склад')
                     ->schema([
@@ -187,7 +187,7 @@ class UserResource extends Resource
                             ->preload()
                             ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
                     ])
-                    ->columns(2)
+                    ->columns(4)
                     ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
             ]);
     }
