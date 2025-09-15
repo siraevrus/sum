@@ -53,10 +53,6 @@ class ProductTemplateResource extends Resource
                             ->required()
                             ->maxLength(255),
 
-                        Forms\Components\Textarea::make('description')
-                            ->label('Описание')
-                            ->rows(3),
-
                         Forms\Components\Select::make('unit')
                             ->label('Единица измерения')
                             ->options([
@@ -71,6 +67,10 @@ class ProductTemplateResource extends Resource
                                 'грамм' => 'грамм',
                             ])
                             ->default('м³'),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label('Описание')
+                            ->rows(3),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('Активный')
