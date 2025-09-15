@@ -61,7 +61,9 @@ class ViewRequest extends ViewRecord
                         return false;
                     }
 
-                    if ($user->role === UserRole::SALES_MANAGER) {
+                    // Только администратор может менять статус
+                    $isAdmin = method_exists($user, 'isAdmin') ? $user->isAdmin() : ($user->role === UserRole::ADMIN);
+                    if (! $isAdmin) {
                         return false;
                     }
 
@@ -69,6 +71,12 @@ class ViewRequest extends ViewRecord
                 })
                 ->requiresConfirmation()
                 ->action(function (\App\Models\Request $record): void {
+                    $user = Auth::user();
+                    $isAdmin = $user && (method_exists($user, 'isAdmin') ? $user->isAdmin() : ($user->role === UserRole::ADMIN));
+                    if (! $isAdmin) {
+                        abort(403, 'Недостаточно прав для изменения статуса.');
+                    }
+
                     $record->approve();
                 })
                 ->successNotificationTitle('Статус изменён'),
