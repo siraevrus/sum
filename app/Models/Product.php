@@ -665,7 +665,6 @@ class Product extends Model
     public function clearCorrectionStatus(): bool
     {
         return $this->update([
-            'status' => self::STATUS_IN_STOCK,
             'correction' => null,
             'correction_status' => null,
         ]);

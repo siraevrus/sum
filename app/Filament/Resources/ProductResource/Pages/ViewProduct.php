@@ -24,7 +24,7 @@ class ViewProduct extends ViewRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn (): bool => $this->record->isCorrection())
+                ->visible(fn (): bool => $this->record->hasCorrection())
                 ->action(function (): void {
                     $this->record->clearCorrectionStatus();
                     
@@ -80,19 +80,29 @@ class ViewProduct extends ViewRecord
                             Infolists\Components\TextEntry::make('status')
                                 ->label('Статус')
                                 ->badge()
-                                ->color(fn (string $state): string => match ($state) {
-                                    'in_stock' => 'success',
-                                    'in_transit' => 'warning',
-                                    'for_receipt' => 'info',
-                                    'correction' => 'danger',
-                                    default => 'gray',
+                                ->color(function (): string {
+                                    if ($this->record->hasCorrection()) {
+                                        return 'danger';
+                                    }
+                                    
+                                    return match ($this->record->status) {
+                                        'in_stock' => 'success',
+                                        'in_transit' => 'warning',
+                                        'for_receipt' => 'info',
+                                        default => 'gray',
+                                    };
                                 })
-                                ->formatStateUsing(fn (string $state): string => match ($state) {
-                                    'in_stock' => 'На складе',
-                                    'in_transit' => 'В пути',
-                                    'for_receipt' => 'На приемку',
-                                    'correction' => 'Коррекция',
-                                    default => $state,
+                                ->formatStateUsing(function (): string {
+                                    if ($this->record->hasCorrection()) {
+                                        return 'Коррекция';
+                                    }
+                                    
+                                    return match ($this->record->status) {
+                                        'in_stock' => 'На складе',
+                                        'in_transit' => 'В пути',
+                                        'for_receipt' => 'На приемку',
+                                        default => $this->record->status,
+                                    };
                                 }),
                         ];
 
