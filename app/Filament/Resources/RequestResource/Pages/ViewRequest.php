@@ -135,7 +135,7 @@ class ViewRequest extends ViewRecord
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Шаблоны товара')
+                Section::make('Шаблоны товаров')
                     ->schema([
                         TextEntry::make('quantity')
                             ->label('Количество')

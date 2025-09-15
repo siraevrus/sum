@@ -23,7 +23,7 @@ class ProductTemplateResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Шаблоны товара';
+    protected static ?string $navigationLabel = 'Шаблоны товаров';
 
     protected static ?string $modelLabel = 'Шаблон товара';
 
