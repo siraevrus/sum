@@ -13,6 +13,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TextInput\Mask;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -59,8 +60,12 @@ class SaleResource extends Resource
      */
     private static function calculateTotalPrice(Set $set, Get $get): void
     {
-        $cashAmount = (float) ($get('cash_amount') ?? 0);
-        $nocashAmount = (float) ($get('nocash_amount') ?? 0);
+        $cashRaw = (string) ($get('cash_amount') ?? '0');
+        $nocashRaw = (string) ($get('nocash_amount') ?? '0');
+
+        // Нормализуем запятые к точкам для корректного приведения к float
+        $cashAmount = (float) str_replace(',', '.', $cashRaw);
+        $nocashAmount = (float) str_replace(',', '.', $nocashRaw);
         $totalPrice = $cashAmount + $nocashAmount;
 
         $set('total_price', $totalPrice);
@@ -260,10 +265,11 @@ class SaleResource extends Resource
                                     ->default(1)
                                     ->minValue(1)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(0)
+                                        ->thousandsSeparator(' ')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -366,10 +372,12 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(2)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -381,10 +389,12 @@ class SaleResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->required()
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(2)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->live()
                                     ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
@@ -404,10 +414,12 @@ class SaleResource extends Resource
                                 TextInput::make('exchange_rate')
                                     ->label('Курс валюты')
                                     ->default(1)
-                                    ->extraAttributes([
-                                        'x-on:input' => 'this.value = this.value.replace(/[^0-9\\.,]/g, "")',
-                                        'x-on:blur' => 'this.value = this.value.replace(/,/g, ".")',
-                                    ])
+                                    ->mask(fn (Mask $mask) => $mask
+                                        ->numeric()
+                                        ->decimalPlaces(4)
+                                        ->thousandsSeparator(' ')
+                                        ->decimalSeparator(',')
+                                    )
                                     ->helperText('Курс валюты к рублю'),
                             ]),
                     ]),

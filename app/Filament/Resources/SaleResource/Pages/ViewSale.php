@@ -24,7 +24,7 @@ class ViewSale extends ViewRecord
                 ->label('Корректировка')
                 ->icon('heroicon-o-pencil-square')
                 ->color('warning')
-                ->visible(function (Sale $record): bool {
+             а   ->visible(function (Sale $record): bool {
                     return $record->payment_status === Sale::PAYMENT_STATUS_PAID;
                 })
                 ->form([
