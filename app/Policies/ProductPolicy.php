@@ -38,7 +38,7 @@ class ProductPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, [UserRole::ADMIN, UserRole::OPERATOR, UserRole::WAREHOUSE_WORKER]);
+        return in_array($user->role, [UserRole::ADMIN, UserRole::OPERATOR, UserRole::WAREHOUSE_WORKER, UserRole::SALES_MANAGER]);
     }
 
     /**
