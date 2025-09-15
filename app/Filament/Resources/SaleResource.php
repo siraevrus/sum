@@ -117,17 +117,12 @@ class SaleResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Основная информация')
-                    ->schema([
-                        Forms\Components\Placeholder::make('sale_number_header')
-                            ->label('')
-                            ->content(function (Get $get) {
-                                $num = $get('sale_number');
-                                return $num ? ('№ '.$num) : '';
-                            })
-                            ->extraAttributes(['class' => 'text-right text-sm text-gray-600'])
-                            ->columnSpanFull(),
+                // Кастомный заголовок с номером справа
+                Forms\Components\View::make('filament.forms.components.sale-main-header')
+                    ->columnSpanFull(),
 
+                Section::make('')
+                    ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextInput::make('sale_number')
