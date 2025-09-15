@@ -23,6 +23,12 @@ class CreateRequest extends CreateRecord
         $data['attributes'] = [];
         $data['calculated_volume'] = null;
 
+        // Для не-админов проставляем склад пользователя независимо от скрытого поля
+        $user = Auth::user();
+        if ($user && (! method_exists($user, 'isAdmin') || ! $user->isAdmin())) {
+            $data['warehouse_id'] = $user->warehouse_id;
+        }
+
         return $data;
     }
 

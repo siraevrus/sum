@@ -74,7 +74,9 @@ class RequestResource extends Resource
                                         return method_exists($user, 'isAdmin') && $user->isAdmin() ? null : $user->warehouse_id;
                                     })
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->visible(fn () => (bool) (Auth::user()?->isAdmin() ?? false))
+                                    ->dehydrated(fn () => (bool) (Auth::user()?->isAdmin() ?? false)),
 
                                 Select::make('product_template_id')
                                     ->label('Шаблон товара')
