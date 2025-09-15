@@ -1,4 +1,4 @@
-http://93.189.230.65/admin/products/create<?php
+<?php
 
 namespace App\Filament\Resources;
 
