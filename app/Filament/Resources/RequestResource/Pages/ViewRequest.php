@@ -135,53 +135,7 @@ class ViewRequest extends ViewRecord
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Шаблоны товаров')
-                    ->schema([
-                        TextEntry::make('quantity')
-                            ->label('Количество')
-                            ->badge(),
-
-                        KeyValueEntry::make('attributes')
-                            ->label('Характеристики')
-                            ->keyLabel('')
-                            ->valueLabel('')
-                            ->state(function ($record) {
-                                $state = $record->getAttribute('attributes');
-                                if (is_string($state)) {
-                                    $decoded = json_decode($state, true);
-                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                        $state = $decoded;
-                                    }
-                                } elseif ($state instanceof \stdClass) {
-                                    $state = (array) $state;
-                                } elseif ($state instanceof \Illuminate\Support\Collection) {
-                                    $state = $state->toArray();
-                                }
-
-                                if (! is_array($state) || empty($state)) {
-                                    return [];
-                                }
-
-                                $templateId = $record->product_template_id ?? null;
-                                $labels = [];
-                                if ($templateId) {
-                                    $labels = \App\Models\ProductAttribute::query()
-                                        ->where('product_template_id', $templateId)
-                                        ->pluck('name', 'variable')
-                                        ->toArray();
-                                }
-
-                                $mapped = [];
-                                foreach ($state as $key => $value) {
-                                    $label = trim((string) ($labels[$key] ?? $key));
-                                    $mapped[$label] = is_scalar($value) ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE);
-                                }
-
-                                return $mapped;
-                            })
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
+                
 
             ]);
     }
