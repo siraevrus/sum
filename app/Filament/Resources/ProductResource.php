@@ -250,7 +250,7 @@ class ProductResource extends Resource
                                     }),
                             ]),
 
-                        // Характеристики товара
+                        // Шаблоны товара
                         Grid::make(3)
                             ->visible(fn (Get $get) => $get('product_template_id') !== null)
                             ->schema(function (Get $get) {
