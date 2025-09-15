@@ -132,7 +132,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->searchable()
                                     ->live()
-                                    ->debounce(50)
+                                    ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $set('calculated_volume', null);
                                         $set('name', '');
@@ -164,7 +164,7 @@ class ProductResource extends Resource
                                         'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                     ])
                                     ->live()
-                                    ->debounce(50)
+                                    ->debounce(1000)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Пересчитываем объем при изменении количества
                                         $templateId = $get('product_template_id');
@@ -281,7 +281,7 @@ class ProductResource extends Resource
                                                     'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                                 ])
                                                 ->live()
-                                                ->debounce(30)
+                                                ->debounce(1000)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
@@ -387,7 +387,7 @@ class ProductResource extends Resource
                                                 ->maxLength(255)
                                                 ->required($attribute->is_required)
                                                 ->live()
-                                                ->debounce(30)
+                                                ->debounce(1000)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
@@ -468,7 +468,7 @@ class ProductResource extends Resource
                                                 ->options($options)
                                                 ->required($attribute->is_required)
                                                 ->live()
-                                                ->debounce(30)
+                                                ->debounce(1000)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
