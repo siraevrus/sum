@@ -130,7 +130,7 @@ class ViewRequest extends ViewRecord
                             ->badge()
                             ->color('gray'),
                     ])
-                    ->columns(3),
+                    ->columns(4),
 
                 Section::make('Описание')
                     ->schema([
