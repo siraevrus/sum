@@ -26,6 +26,7 @@ class ListProductInTransit extends ListRecords
                         'admin',
                         'operator',
                         'warehouse_worker',
+                        'sales_manager',
                     ], true);
                 }),
         ];
