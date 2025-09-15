@@ -124,7 +124,7 @@ class RequestResource extends Resource
                     ->limit(50),
 
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Создатель')
+                    ->label('Сотрудник')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('warehouse.name')

@@ -36,7 +36,7 @@ class ViewProduct extends ViewRecord
                                 ->color('primary'),
 
                             Infolists\Components\TextEntry::make('creator.name')
-                                ->label('Создатель')
+                                ->label('Сотрудник')
                                 ->badge()
                                 ->color('info'),
 

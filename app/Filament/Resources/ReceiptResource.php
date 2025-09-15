@@ -141,7 +141,7 @@ class ReceiptResource extends Resource
                                     ->columnStart(2),
 
                                 \Filament\Forms\Components\Placeholder::make('creator_name')
-                                    ->label('Создатель')
+                                    ->label('Сотрудник')
                                     ->content(fn (?Product $record) => $record?->creator?->name ?? '—')
                                     ->columnSpan(1)
                                     ->columnStart(2),
@@ -756,7 +756,7 @@ class ReceiptResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('creator.name')
-                    ->label('Создатель')
+                    ->label('Сотрудник')
                     ->sortable(),
             ])
             ->emptyStateHeading('Нет товаров для приемки')

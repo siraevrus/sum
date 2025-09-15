@@ -698,7 +698,7 @@ class ProductInTransitResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('creator.name')
-                    ->label('Создатель')
+                    ->label('Сотрудник')
                     ->sortable(),
 
             ])

@@ -48,7 +48,7 @@ class ViewProductInTransit extends ViewRecord
                             ->badge()
                             ->color('primary'),
                         TextEntry::make('creator.name')
-                            ->label('Создатель')
+                            ->label('Сотрудник')
                             ->badge()
                             ->color('info'),
                         TextEntry::make('shipping_location')

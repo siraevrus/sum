@@ -812,7 +812,7 @@ class ProductResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('creator.name')
-                    ->label('Создатель')
+                    ->label('Сотрудник')
                     ->sortable(),
 
             ])

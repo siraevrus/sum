@@ -90,7 +90,7 @@ class ViewReceipt extends ViewRecord
                             ->badge()
                             ->color('primary'),
                         TextEntry::make('creator.name')
-                            ->label('Создатель')
+                            ->label('Сотрудник')
                             ->placeholder('—')
                             ->badge()
                             ->color('info'),

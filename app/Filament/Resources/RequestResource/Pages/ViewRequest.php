@@ -99,7 +99,7 @@ class ViewRequest extends ViewRecord
                             ->color('info'),
 
                         TextEntry::make('user.name')
-                            ->label('Создатель')
+                            ->label('Сотрудник')
                             ->badge()
                             ->color('success'),
 

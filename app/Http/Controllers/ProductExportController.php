@@ -62,7 +62,7 @@ class ProductExportController extends Controller
                 'Объем (м³)',
                 'Дата поступления',
                 'Статус',
-                'Создатель',
+                'Сотрудник',
                 'Дата создания'
             ]);
             
