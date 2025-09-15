@@ -159,11 +159,6 @@ class UserResource extends Resource
                         Forms\Components\Toggle::make('is_blocked')
                             ->label('Заблокирован')
                             ->default(false),
-
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Заметки')
-                            ->rows(3)
-                            ->columnSpanFull(),
                     ])
                     ->columns(4),
 
@@ -192,7 +187,7 @@ class UserResource extends Resource
                             ->preload()
                             ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
                     ])
-                    ->columns(2)
+                    ->columns(4)
                     ->visible(fn ($get) => $get('role') !== UserRole::ADMIN->value),
             ]);
     }
