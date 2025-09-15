@@ -117,7 +117,7 @@ class ViewProduct extends ViewRecord
 
                         return $components;
                     })
-                    ->columns(3),
+                    ->columns(4),
 
                 Infolists\Components\Section::make('Информация о товаре')
                     ->schema(function () {

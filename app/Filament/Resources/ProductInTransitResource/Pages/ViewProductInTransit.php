@@ -95,7 +95,7 @@ class ViewProductInTransit extends ViewRecord
                                 return 'success';
                             }),
                     ])
-                    ->columns(3),
+                    ->columns(4),
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
