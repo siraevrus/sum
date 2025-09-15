@@ -806,14 +806,34 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('document_path')
                     ->label('Документы')
                     ->formatStateUsing(function ($state) {
-                        if (empty($state) || ! is_array($state)) {
+                        if (empty($state)) {
+                            return '—';
+                        }
+
+                        // Приводим к массиву: поддержка массива, JSON-строки или одиночной строки
+                        $documents = [];
+                        if (is_array($state)) {
+                            $documents = $state;
+                        } elseif (is_string($state)) {
+                            $decoded = json_decode($state, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                $documents = $decoded;
+                            } elseif (trim($state) !== '') {
+                                $documents = [$state];
+                            }
+                        }
+
+                        // Оставляем только непустые строки
+                        $documents = array_values(array_filter($documents, fn ($p) => is_string($p) && trim($p) !== ''));
+                        if (empty($documents)) {
                             return '—';
                         }
 
                         $links = [];
-                        foreach ($state as $path) {
-                            $url = asset('storage/'.$path);
-                            $name = basename($path);
+                        foreach ($documents as $path) {
+                            $safePath = ltrim($path, '/');
+                            $url = asset('storage/'.$safePath);
+                            $name = basename($safePath);
                             $links[] = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener noreferrer\">".e($name)."</a>";
                         }
 
