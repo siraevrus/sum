@@ -30,7 +30,7 @@
                 $short = mb_substr($base, 0, 4);
                 $display = $short . '...' . ($ext ? $ext : '');
             @endphp
-            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">{{ $display }}</a>@if (!$loop->last), @endif
+            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline text-xs">{{ $display }}</a>@if (!$loop->last), @endif
         @endforeach
     </div>
 @endif
