@@ -65,6 +65,14 @@ class RequestResource extends Resource
                                 Select::make('warehouse_id')
                                     ->label('Склад')
                                     ->options(fn () => \App\Models\Warehouse::optionsForCurrentUser())
+                                    ->default(function () {
+                                        $user = Auth::user();
+                                        if (! $user) {
+                                            return null;
+                                        }
+
+                                        return method_exists($user, 'isAdmin') && $user->isAdmin() ? null : $user->warehouse_id;
+                                    })
                                     ->required()
                                     ->searchable(),
 
