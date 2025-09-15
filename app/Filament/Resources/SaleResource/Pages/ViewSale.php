@@ -103,7 +103,7 @@ class ViewSale extends ViewRecord
                         TextEntry::make('warehouse.name')
                             ->label('Склад'),
                     ])
-                    ->columns(2),
+                    ->columns(3),
 
                 Section::make('Информация о клиенте')
                     ->schema([
