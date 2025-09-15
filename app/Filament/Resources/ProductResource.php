@@ -63,7 +63,7 @@ class ProductResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        Grid::make(3)
+                        Grid::make(4)
                             ->schema([
                                 Select::make('warehouse_id')
                                     ->label('Склад')
