@@ -24,10 +24,14 @@
             @php
                 $safePath = ltrim($path, '/');
                 $url = asset('storage/' . $safePath);
-                $name = basename($safePath);
+                $fullName = basename($safePath);
+                $ext = pathinfo($fullName, PATHINFO_EXTENSION);
+                $base = pathinfo($fullName, PATHINFO_FILENAME);
+                $short = mb_substr($base, 0, 4);
+                $display = $short . '...' . ($ext ? $ext : '');
             @endphp
             <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">
-                {{ $name }}
+                {{ $display }}
             </a>
         @endforeach
     </div>
