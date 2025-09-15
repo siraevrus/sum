@@ -746,16 +746,7 @@ class ReceiptResource extends Resource
                     })
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Статус')
-                    ->colors([
-                        'warning' => Product::STATUS_FOR_RECEIPT,
-                        'success' => Product::STATUS_IN_STOCK,
-                    ])
-                    ->formatStateUsing(function (Product $record): string {
-                        return $record->isForReceipt() ? 'Для приемки' : 'На складе';
-                    })
-                    ->sortable(),
+                
 
                 // Ожидаемая дата скрыта
                 Tables\Columns\TextColumn::make('actual_arrival_date')
@@ -796,8 +787,6 @@ class ReceiptResource extends Resource
                 Tables\Actions\ViewAction::make()
                     ->label('')
                     ->url(fn (Product $record) => Pages\ViewReceipt::getUrl(['record' => $record])),
-                Tables\Actions\EditAction::make()
-                    ->label(''),
                 Tables\Actions\Action::make('confirm_receipt')
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')

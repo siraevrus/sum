@@ -22,8 +22,6 @@ class ViewReceipt extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
-                ->label('Изменить'),
             Action::make('correction')
                 ->label(fn (Product $record): string => $record->hasCorrection() ? 'Изменить уточнение' : 'Уточнение')
                 ->icon(fn (Product $record): string => $record->hasCorrection() ? 'heroicon-o-pencil-square' : 'heroicon-o-chat-bubble-left-right')

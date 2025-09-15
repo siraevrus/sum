@@ -771,11 +771,6 @@ class ProductResource extends Resource
                     ->label('Склад')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('producer.name')
-                    ->label('Производитель')
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Поступило')
                     ->sortable()
@@ -791,11 +786,7 @@ class ProductResource extends Resource
                         return 'danger';
                     }),
 
-                Tables\Columns\TextColumn::make('sold_quantity')
-                    ->label('Продано')
-                    ->sortable()
-                    ->badge()
-                    ->color('danger'),
+                
 
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
@@ -812,24 +803,7 @@ class ProductResource extends Resource
                     ->date()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Статус')
-                    ->badge()
-                    ->color(function (string $state): string {
-                        return match ($state) {
-                            Product::STATUS_IN_STOCK => 'success',
-                            Product::STATUS_IN_TRANSIT => 'warning',
-                            default => 'gray',
-                        };
-                    })
-                    ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            Product::STATUS_IN_STOCK => 'На складе',
-                            Product::STATUS_IN_TRANSIT => 'В пути',
-                            default => $state,
-                        };
-                    })
-                    ->sortable(),
+                
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Активен')

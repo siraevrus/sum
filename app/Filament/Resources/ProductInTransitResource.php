@@ -676,24 +676,7 @@ class ProductInTransitResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Статус')
-                    ->colors([
-                        'info' => Product::STATUS_IN_TRANSIT,
-                        'warning' => Product::STATUS_FOR_RECEIPT,
-                        'success' => Product::STATUS_IN_STOCK,
-                    ])
-                    ->formatStateUsing(function (Product $record): string {
-                        if ($record->isInTransit()) {
-                            return 'В пути';
-                        }
-                        if ($record->isForReceipt()) {
-                            return 'Для приемки';
-                        }
-
-                        return 'На складе';
-                    })
-                    ->sortable(),
+                
 
                 Tables\Columns\TextColumn::make('expected_arrival_date')
                     ->label('Ожидаемая дата')
