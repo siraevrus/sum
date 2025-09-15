@@ -260,7 +260,7 @@ class ProductInTransitResource extends Resource
                                     ]),
 
                                 // Динамические поля характеристик
-                                Grid::make(3)
+                                Grid::make(5)
                                     ->schema(function (Get $get) {
                                         $templateId = $get('product_template_id');
                                         if (! $templateId) {
