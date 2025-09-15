@@ -917,45 +917,7 @@ class ProductResource extends Resource
 
                 Tables\Actions\DeleteAction::make()->label(''),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('mark_in_transit')
-                        ->label('Перевести в путь')
-                        ->icon('heroicon-o-truck')
-                        ->color('warning')
-                        ->requiresConfirmation()
-                        ->action(function (Collection $records): void {
-                            $records->each(fn (\App\Models\Product $record) => $record->markInTransit());
-                            \Filament\Notifications\Notification::make()
-                                ->title("{$records->count()} товаров переведено в статус \"В пути\"")
-                                ->body('Товары теперь отображаются в разделе "Приемка"')
-                                ->success()
-                                ->send();
-                        })
-                        ->modalHeading('Перевести товары в статус "В пути"')
-                        ->modalDescription('Выбранные товары будут перемещены в раздел товаров в пути.')
-                        ->modalSubmitActionLabel('Перевести'),
-
-                    Tables\Actions\BulkAction::make('mark_in_stock')
-                        ->label('Перевести на склад')
-                        ->icon('heroicon-o-home')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->action(function (Collection $records): void {
-                            $records->each(fn (\App\Models\Product $record) => $record->markInStock());
-                            \Filament\Notifications\Notification::make()
-                                ->title("{$records->count()} товаров переведено в статус \"На складе\"")
-                                ->body('Товары убраны из раздела "Приемка"')
-                                ->success()
-                                ->send();
-                        })
-                        ->modalHeading('Перевести товары в статус "На складе"')
-                        ->modalDescription('Выбранные товары будут перемещены в раздел товаров на складе.')
-                        ->modalSubmitActionLabel('Перевести'),
-
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->headerActions([
                 // Tables\Actions\Action::make('export')
                 //     ->label('Экспорт')
