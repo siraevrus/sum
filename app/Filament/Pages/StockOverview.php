@@ -196,9 +196,7 @@ class StockOverview extends Page implements HasTable
                 'name' => $producer->name,
                 'total_products' => $producer->products->count(),
                 'total_quantity' => $producer->products->sum('quantity'),
-                'total_volume' => $producer->products->sum(function ($product) {
-                    return ($product->calculated_volume ?? 0) * $product->quantity;
-                }),
+                'total_volume' => $producer->products->sum('calculated_volume'),
             ];
         }
         return $result;
@@ -223,7 +221,7 @@ class StockOverview extends Page implements HasTable
         return $query->select('warehouse_id')
             ->selectRaw('COUNT(*) as total_products')
             ->selectRaw('SUM(quantity) as total_quantity')
-            ->selectRaw('SUM(calculated_volume * quantity) as total_volume')
+            ->selectRaw('SUM(calculated_volume) as total_volume')
             ->groupBy('warehouse_id')
             ->get()
             ->keyBy('warehouse_id')
