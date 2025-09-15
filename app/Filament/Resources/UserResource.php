@@ -143,7 +143,11 @@ class UserResource extends Resource
                             ->label('Телефон')
                             ->tel()
                             ->maxLength(20)
-                            ->helperText('Введите номер телефона'),
+                            ->helperText('Введите номер телефона')
+                            ->regex('/^[0-9\+\-\(\)\s]+$/')
+                            ->validationMessages([
+                                'regex' => 'Разрешены только цифры и символы: + - ( ) пробел'
+                            ]),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')

@@ -66,13 +66,11 @@ class ProductTemplateResource extends Resource
                                 'кг' => 'кг',
                                 'грамм' => 'грамм',
                             ])
-                            ->default('м³')
-                            ->columnSpan(1),
+                            ->default('м³'),
 
                         Forms\Components\Textarea::make('description')
                             ->label('Описание')
-                            ->rows(3)
-                            ->columnSpan(2),
+                            ->rows(3),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('Активный')
