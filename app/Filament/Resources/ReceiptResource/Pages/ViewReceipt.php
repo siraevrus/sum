@@ -126,7 +126,7 @@ class ViewReceipt extends ViewRecord
                             ->badge()
                             ->color(fn (Product $record) => $record->isForReceipt() ? 'warning' : 'success'),
                     ])
-                    ->columns(3),
+                    ->columns(4),
 
                 InfoSection::make('Информация о товаре')
                     ->schema([
