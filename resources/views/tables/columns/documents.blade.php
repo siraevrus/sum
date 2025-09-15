@@ -19,7 +19,7 @@
 @if (empty($documents))
     —
 @else
-    <div class="space-y-1">
+    <div>
         @foreach ($documents as $path)
             @php
                 $safePath = ltrim($path, '/');
@@ -30,9 +30,7 @@
                 $short = mb_substr($base, 0, 4);
                 $display = $short . '...' . ($ext ? $ext : '');
             @endphp
-            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">
-                {{ $display }}
-            </a>
+            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">{{ $display }}</a>@if (!$loop->last), @endif
         @endforeach
     </div>
 @endif
