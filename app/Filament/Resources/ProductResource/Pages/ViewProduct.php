@@ -18,6 +18,27 @@ class ViewProduct extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('Изменить'),
+            
+            Actions\Action::make('clear_correction')
+                ->label('Скорректировано')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn (): bool => $this->record->isCorrection())
+                ->action(function (): void {
+                    $this->record->clearCorrectionStatus();
+                    
+                    \Filament\Notifications\Notification::make()
+                        ->title('Статус коррекции сброшен')
+                        ->body('Товар возвращен к обычному статусу')
+                        ->success()
+                        ->send();
+                        
+                    $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
+                })
+                ->modalHeading('Сбросить статус коррекции')
+                ->modalDescription('Товар будет возвращен к обычному статусу "На складе". Это действие нельзя отменить.')
+                ->modalSubmitActionLabel('Скорректировано'),
         ];
     }
 
@@ -63,12 +84,14 @@ class ViewProduct extends ViewRecord
                                     'in_stock' => 'success',
                                     'in_transit' => 'warning',
                                     'for_receipt' => 'info',
+                                    'correction' => 'danger',
                                     default => 'gray',
                                 })
                                 ->formatStateUsing(fn (string $state): string => match ($state) {
                                     'in_stock' => 'На складе',
                                     'in_transit' => 'В пути',
                                     'for_receipt' => 'На приемку',
+                                    'correction' => 'Коррекция',
                                     default => $state,
                                 }),
                         ];

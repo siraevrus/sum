@@ -22,6 +22,8 @@ class Product extends Model
 
     public const STATUS_FOR_RECEIPT = 'for_receipt';
 
+    public const STATUS_CORRECTION = 'correction';
+
     protected $fillable = [
         'product_template_id',
         'warehouse_id',
@@ -517,6 +519,11 @@ class Product extends Model
         return $this->status === self::STATUS_FOR_RECEIPT;
     }
 
+    public function isCorrection(): bool
+    {
+        return $this->status === self::STATUS_CORRECTION;
+    }
+
     public function markInStock(): void
     {
         $this->status = self::STATUS_IN_STOCK;
@@ -647,6 +654,18 @@ class Product extends Model
     public function removeCorrection(): bool
     {
         return $this->update([
+            'correction' => null,
+            'correction_status' => null,
+        ]);
+    }
+
+    /**
+     * Сбросить статус коррекции и вернуть товар к обычному статусу
+     */
+    public function clearCorrectionStatus(): bool
+    {
+        return $this->update([
+            'status' => self::STATUS_IN_STOCK,
             'correction' => null,
             'correction_status' => null,
         ]);
