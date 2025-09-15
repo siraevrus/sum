@@ -101,7 +101,7 @@ class ViewSale extends ViewRecord
                             ->badge()
                             ->color(fn ($record) => $record->getPaymentStatusColor()),
                     ])
-                    ->columns(2),
+                    ->columns(4),
 
                 Section::make('Информация о клиенте')
                     ->schema([
