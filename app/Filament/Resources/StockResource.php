@@ -155,6 +155,21 @@ class StockResource extends Resource
                 Tables\Filters\SelectFilter::make('producer_id')
                     ->label('Производитель')
                     ->options(fn () => \App\Models\Producer::pluck('name', 'id')),
+                Tables\Filters\SelectFilter::make('product_template_id')
+                    ->label('Тип товара')
+                    ->multiple()
+                    ->options(function () {
+                        $templates = \App\Models\ProductTemplate::whereHas('products')->get();
+                        $options = [];
+                        foreach ($templates as $template) {
+                            $productCount = $template->products()->count();
+                            $options[$template->id] = $template->name.' ('.$productCount.')';
+                        }
+
+                        return $options;
+                    })
+                    ->searchable()
+                    ->placeholder('Все типы товаров'),
                 // Убраны фильтры 'in_stock' и 'low_stock'
             ])
             ->actions([

@@ -24,7 +24,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -111,15 +110,6 @@ class ProductResource extends Resource
                                     ->default(true),
                             ]),
 
-                        // Компактная сетка для заметок
-                        Grid::make(1)
-                            ->schema([
-                                Textarea::make('notes')
-                                    ->label('Заметки')
-                                    ->rows(3)
-                                    ->maxLength(1000)
-                                    ->columnSpanFull(),
-                            ]),
                     ]),
 
                 Section::make('Товары')
@@ -571,7 +561,7 @@ class ProductResource extends Resource
                                 $fields[] = TextInput::make('calculated_volume')
                                     ->label('Рассчитанный объем')
                                     ->disabled()
-                                    ->key(fn (Get $get) => "calculated_volume_" . ($get('product_template_id') ?? 'none'))
+                                    ->key(fn (Get $get) => 'calculated_volume_'.($get('product_template_id') ?? 'none'))
                                     ->columnSpanFull()
                                     ->formatStateUsing(function ($state) {
                                         // Если это число - форматируем, если строка - показываем как есть
@@ -613,22 +603,22 @@ class ProductResource extends Resource
 
                 Section::make('Информация о корректировке')
                     ->schema([
-                                Forms\Components\Placeholder::make('correction_info')
-                                    ->label('')
-                                    ->content(function (?Product $record): string {
-                                        if (! $record || ! $record->hasCorrection()) {
-                                            return '';
-                                        }
+                        Forms\Components\Placeholder::make('correction_info')
+                            ->label('')
+                            ->content(function (?Product $record): string {
+                                if (! $record || ! $record->hasCorrection()) {
+                                    return '';
+                                }
 
-                                        $correctionText = $record->correction ?? 'Нет текста уточнения';
-                                        $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
+                                $correctionText = $record->correction ?? 'Нет текста уточнения';
+                                $updatedAt = $record->updated_at?->format('d.m.Y H:i') ?? 'Неизвестно';
 
-                                        return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
-                                               "*Дата внесения:* {$updatedAt}";
-                                    })
-                                    ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
-                                    ->columnSpanFull(),
-                            ])
+                                return "⚠️ **У товара есть уточнение:** \"{$correctionText}\"\n\n".
+                                       "*Дата внесения:* {$updatedAt}";
+                            })
+                            ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
+                            ->columnSpanFull(),
+                    ])
                     ->visible(fn (?Product $record): bool => $record && $record->hasCorrection())
                     ->collapsible(false)
                     ->icon('heroicon-o-exclamation-triangle'),
@@ -657,6 +647,20 @@ class ProductResource extends Resource
                     ])
                     ->collapsible(false)
                     ->icon('heroicon-o-document'),
+
+                Section::make('Дополнительная информация')
+                    ->schema([
+                        Grid::make(1)
+                            ->schema([
+                                Textarea::make('notes')
+                                    ->label('Заметки')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->collapsible(false)
+                    ->icon('heroicon-o-information-circle'),
 
             ]);
     }
@@ -770,8 +774,6 @@ class ProductResource extends Resource
                         return 'danger';
                     }),
 
-                
-
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем')
                     ->formatStateUsing(function ($state) {
@@ -861,6 +863,7 @@ class ProductResource extends Resource
                         if (strlen($state) <= 50) {
                             return null;
                         }
+
                         return $state;
                     }),
 
@@ -873,6 +876,7 @@ class ProductResource extends Resource
                         if (strlen($state) <= 50) {
                             return null;
                         }
+
                         return $state;
                     }),
 
@@ -901,8 +905,6 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->dateTime()
                     ->sortable(),
-
-                
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Активен')
@@ -987,7 +989,6 @@ class ProductResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label(''),
                 Tables\Actions\EditAction::make()->label(''),
-
 
                 Tables\Actions\DeleteAction::make()->label(''),
             ])

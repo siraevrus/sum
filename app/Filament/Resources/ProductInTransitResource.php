@@ -102,10 +102,6 @@ class ProductInTransitResource extends Resource
                                     ->maxLength(255),
                             ]),
 
-                        Textarea::make('notes')
-                            ->label('Заметки')
-                            ->rows(3)
-                            ->maxLength(1000),
                     ]),
 
                 Section::make('Товары')
@@ -281,6 +277,18 @@ class ProductInTransitResource extends Resource
                             ->openable()
                             ->previewable()
                             ->imagePreviewHeight('250'),
+                    ]),
+
+                Section::make('Дополнительная информация')
+                    ->schema([
+                        Grid::make(1)
+                            ->schema([
+                                Textarea::make('notes')
+                                    ->label('Заметки')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
             ]);
     }

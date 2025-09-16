@@ -13,12 +13,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Support\RawJs;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -381,8 +381,7 @@ class SaleResource extends Resource
 
                                 TextInput::make('exchange_rate')
                                     ->label('Курс валюты')
-                                    ->default(1)
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 4, thousandsSeparator: " ", decimalSeparator: "," })')),
+                                    ->default(1),
 
                                 TextInput::make('total_price')
                                     ->label('Общая сумма')

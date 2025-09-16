@@ -13,6 +13,7 @@ class Producer extends Model
 
     protected $fillable = [
         'name',
+        'region',
     ];
 
     protected $casts = [

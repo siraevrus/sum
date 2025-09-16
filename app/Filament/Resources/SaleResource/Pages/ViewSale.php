@@ -92,7 +92,7 @@ class ViewSale extends ViewRecord
                             ->formatStateUsing(fn ($state) => number_format($state, 2, '.', ' ')),
                         TextEntry::make('exchange_rate')
                             ->label('Курс валюты')
-                            ->formatStateUsing(fn ($state) => number_format($state, 4, '.', ' ')),
+                            ->formatStateUsing(fn ($state) => $state === null ? null : rtrim(rtrim((string) $state, '0'), '.')),
                         TextEntry::make('user.name')
                             ->label('Продавец'),
                         TextEntry::make('payment_status')

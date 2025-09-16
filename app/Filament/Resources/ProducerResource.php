@@ -50,6 +50,11 @@ class ProducerResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
                             ->placeholder('Введите название производителя'),
+                        Forms\Components\TextInput::make('region')
+                            ->label('Регион')
+                            ->maxLength(255)
+                            ->placeholder('Введите регион производителя')
+                            ->helperText('Например: Москва, Татарстан, Краснодарский край'),
                     ]),
             ]);
     }
@@ -60,6 +65,10 @@ class ProducerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Название производителя')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('region')
+                    ->label('Регион')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('products_count')
