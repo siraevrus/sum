@@ -5,10 +5,10 @@ namespace App\Filament\Pages;
 use App\Models\Product;
 use App\Models\Warehouse;
 use Filament\Pages\Page;
+use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -30,7 +30,8 @@ class StockOverview extends Page implements HasTable
     {
         // Доступ открыт всем не заблокированным пользователям, чтобы был стартовый раздел
         $user = Auth::user();
-        return $user && !$user->isBlocked();
+
+        return $user && ! $user->isBlocked();
     }
 
     public function table(Table $table): Table
@@ -60,7 +61,7 @@ class StockOverview extends Page implements HasTable
                 Tables\Columns\TextColumn::make('calculated_volume')
                     ->label('Объем (м³)')
                     ->numeric(
-                        decimalPlaces: 2,
+                        decimalPlaces: 3,
                         decimalSeparator: '.',
                         thousandsSeparator: ' ',
                     )
@@ -69,7 +70,7 @@ class StockOverview extends Page implements HasTable
                         Tables\Columns\Summarizers\Sum::make()
                             ->label('Итого (м³)')
                             ->numeric(
-                                decimalPlaces: 2,
+                                decimalPlaces: 3,
                                 decimalSeparator: '.',
                                 thousandsSeparator: ' ',
                             )
@@ -101,10 +102,10 @@ class StockOverview extends Page implements HasTable
     protected function getTableQuery(): Builder
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return Product::query()->whereRaw('1 = 0');
         }
-        
+
         $query = Product::query()->with('producer');
 
         // Фильтрация по компании пользователя
@@ -162,6 +163,7 @@ class StockOverview extends Page implements HasTable
             ->groupBy('producer.id')
             ->map(function ($products) {
                 $producer = $products->first()->producer;
+
                 return $producer ? $producer->name : null;
             })
             ->filter() // Убираем null значения
@@ -199,6 +201,7 @@ class StockOverview extends Page implements HasTable
                 'total_volume' => $producer->products->sum('calculated_volume'),
             ];
         }
+
         return $result;
     }
 

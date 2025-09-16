@@ -30,7 +30,6 @@ class ProductTemplateResource extends Resource
     protected static ?string $pluralModelLabel = 'Шаблоны товаров';
 
     protected static ?int $navigationSort = 4;
-    
 
     public static function canViewAny(): bool
     {
@@ -271,7 +270,7 @@ class ProductTemplateResource extends Resource
                         TextEntry::make('description')->label('Описание'),
                         TextEntry::make('unit')->label('Единица измерения')->badge(),
                         IconEntry::make('is_active')->label('Активный')->boolean(),
-                    ])->columns(2),
+                    ])->columns(4),
 
                 InfoSection::make('Характеристики')
                     ->schema([
