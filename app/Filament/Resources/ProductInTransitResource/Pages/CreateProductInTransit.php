@@ -105,7 +105,7 @@ class CreateProductInTransit extends CreateRecord
                 if (! empty($nameParts)) {
                     // Добавляем название шаблона в начало
                     $templateName = $template->name ?? 'Товар';
-                    $recordData['name'] = $templateName.': '.implode(', ', $nameParts);
+                    $recordData['name'] = $templateName.': '.implode(' x ', $nameParts);
                 }
 
                 if (! empty($attrsForFormula)) {
@@ -210,7 +210,7 @@ class CreateProductInTransit extends CreateRecord
                         if (! empty($nameParts)) {
                             // Добавляем название шаблона в начало
                             $templateName = $template->name ?? 'Товар';
-                            $additionalProductData['name'] = $templateName.': '.implode(', ', $nameParts);
+                            $additionalProductData['name'] = $templateName.': '.implode(' x ', $nameParts);
                         }
 
                         if (! empty($attrsForFormula)) {
@@ -291,6 +291,6 @@ class CreateProductInTransit extends CreateRecord
         // Добавляем название шаблона в начало
         $templateName = $template->name ?? 'Товар';
 
-        return $templateName.': '.implode(', ', $nameParts);
+        return $templateName.': '.implode(' x ', $nameParts);
     }
 }

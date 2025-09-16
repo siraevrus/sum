@@ -131,8 +131,7 @@ class ProductResource extends Resource
                                     ->options(ProductTemplate::pluck('name', 'id'))
                                     ->required()
                                     ->searchable()
-                                    ->live()
-                                    ->debounce(1000)
+                                    ->live(onBlur: true)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         $set('calculated_volume', null);
                                         $set('name', '');
@@ -159,12 +158,11 @@ class ProductResource extends Resource
                                     ->default(1)
                                     ->maxLength(10)
                                     ->required()
-                                    ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                    ->rules(['regex:/^\d*([.,]\d*)?$/'])
                                     ->validationMessages([
                                         'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                     ])
-                                    ->live()
-                                    ->debounce(1000)
+                                    ->live(onBlur: true)
                                     ->afterStateUpdated(function (Set $set, Get $get) {
                                         // Пересчитываем объем при изменении количества
                                         $templateId = $get('product_template_id');
@@ -276,12 +274,12 @@ class ProductResource extends Resource
                                                 ->inputMode('decimal')
                                                 ->maxLength(10)
                                                 ->required($attribute->is_required)
-                                                ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                                ->rules(['regex:/^\d*([.,]\d*)?$/'])
                                                 ->validationMessages([
                                                     'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                                 ])
-                                                ->live()
-                                                ->debounce(1000)
+                                                ->key("number_attr_{$attribute->id}_{$attribute->variable}")
+                                                ->live(onBlur: true)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
@@ -386,8 +384,8 @@ class ProductResource extends Resource
                                                 ->label($attribute->full_name)
                                                 ->maxLength(255)
                                                 ->required($attribute->is_required)
-                                                ->live()
-                                                ->debounce(1000)
+                                                ->key("text_attr_{$attribute->id}_{$attribute->variable}")
+                                                ->live(onBlur: true)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
@@ -467,8 +465,8 @@ class ProductResource extends Resource
                                                 ->label($attribute->full_name)
                                                 ->options($options)
                                                 ->required($attribute->is_required)
-                                                ->live()
-                                                ->debounce(1000)
+                                                ->key("select_attr_{$attribute->id}_{$attribute->variable}")
+                                                ->live(onBlur: true)
                                                 ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                     // Рассчитываем объем при изменении характеристики
                                                     $attributes = [];
@@ -573,7 +571,7 @@ class ProductResource extends Resource
                                 $fields[] = TextInput::make('calculated_volume')
                                     ->label('Рассчитанный объем')
                                     ->disabled()
-                                    ->live()
+                                    ->key(fn (Get $get) => "calculated_volume_" . ($get('product_template_id') ?? 'none'))
                                     ->columnSpanFull()
                                     ->formatStateUsing(function ($state) {
                                         // Если это число - форматируем, если строка - показываем как есть

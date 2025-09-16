@@ -108,7 +108,7 @@ class EditProductInTransit extends EditRecord
                 if (! empty($nameParts)) {
                     // Добавляем название шаблона в начало
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName.': '.implode(', ', $nameParts);
+                    $data['name'] = $templateName.': '.implode(' x ', $nameParts);
                 }
 
                 $testResult = $template->testFormula($attributes);

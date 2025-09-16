@@ -153,12 +153,11 @@ class ProductInTransitResource extends Resource
                                             ->default(1)
                                             ->maxLength(10)
                                             ->required()
-                                            ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                            ->rules(['regex:/^\d*([.,]\d*)?$/'])
                                             ->validationMessages([
                                                 'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                             ])
-                                            ->live()
-                                            ->debounce(1000)
+                                            ->live(onBlur: true)
                                             ->afterStateUpdated(function (Set $set, Get $get) {
                                                 // Пересчитываем объем при изменении количества
                                                 $templateId = $get('product_template_id');
@@ -283,12 +282,12 @@ class ProductInTransitResource extends Resource
                                                         ->inputMode('decimal')
                                                         ->maxLength(10)
                                                         ->required($attribute->is_required)
-                                                        ->rules(['regex:/^\d+([.,]\d+)?$/'])
+                                                        ->rules(['regex:/^\d*([.,]\d*)?$/'])
                                                         ->validationMessages([
                                                             'regex' => 'Поле должно содержать только цифры и одну запятую или точку',
                                                         ])
-                                                        ->live()
-                                                        ->debounce(1000)
+                                                        ->key("number_attr_{$attribute->id}_{$attribute->variable}")
+                                                        ->live(onBlur: true)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -382,8 +381,8 @@ class ProductInTransitResource extends Resource
                                                         ->label($attribute->name)
                                                         ->maxLength(255)
                                                         ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->debounce(1000)
+                                                        ->key("text_attr_{$attribute->id}_{$attribute->variable}")
+                                                        ->live(onBlur: true)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -477,8 +476,8 @@ class ProductInTransitResource extends Resource
                                                         ->label($attribute->name)
                                                         ->options($options)
                                                         ->required($attribute->is_required)
-                                                        ->live()
-                                                        ->debounce(1000)
+                                                        ->key("select_attr_{$attribute->id}_{$attribute->variable}")
+                                                        ->live(onBlur: true)
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
                                                             // Рассчитываем объем при изменении характеристики
                                                             $attributes = [];
@@ -578,7 +577,7 @@ class ProductInTransitResource extends Resource
                                         TextInput::make('calculated_volume')
                                             ->label('Рассчитанный объем')
                                             ->disabled()
-                                            ->live()
+                                            ->key(fn (Get $get) => "calculated_volume_" . ($get('product_template_id') ?? 'none'))
                                             ->formatStateUsing(function ($state) {
                                                 // Если это число - форматируем, если строка - показываем как есть
                                                 if (is_numeric($state)) {
