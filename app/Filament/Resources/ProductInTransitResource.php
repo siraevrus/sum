@@ -701,11 +701,6 @@ class ProductInTransitResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('tracking_number')
-                    ->label('Номер отслеживания')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable()
-                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Статус')

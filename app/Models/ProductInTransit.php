@@ -31,7 +31,6 @@ class ProductInTransit extends Model
         'producer_id',
         'shipping_location',
         'shipping_date',
-        'tracking_number',
         'expected_arrival_date',
         'actual_arrival_date',
         'status',

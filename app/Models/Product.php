@@ -613,7 +613,6 @@ class Product extends Model
                 'shipping_location' => $this->shipping_location ?? 'Склад',
                 'shipping_date' => $this->shipping_date ?? now(),
                 'transport_number' => $this->transport_number,
-                'tracking_number' => $this->tracking_number,
                 'expected_arrival_date' => $this->expected_arrival_date ?? now()->addDays(7),
                 'status' => \App\Models\ProductInTransit::STATUS_IN_TRANSIT,
                 'notes' => $this->notes,
