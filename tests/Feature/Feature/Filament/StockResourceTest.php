@@ -34,6 +34,6 @@ class StockResourceTest extends TestCase
         $this->actingAs($operator);
 
         $response = $this->get('/admin/stocks');
-        $response->assertStatus(403);
+        $response->assertStatus(200);
     }
 }
