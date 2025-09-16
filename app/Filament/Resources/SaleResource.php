@@ -124,18 +124,14 @@ class SaleResource extends Resource
             ->schema([
                 Section::make('Основная информация')
                     ->schema([
-                        // Отдельная строка: номер продажи слева
-                        Grid::make(1)
+                        Grid::make(5)
                             ->schema([
                                 TextInput::make('sale_number')
                                     ->label('Номер продажи')
                                     ->default(Sale::generateSaleNumber())
                                     ->disabled()
                                     ->required(),
-                            ]),
 
-                        Grid::make(3)
-                            ->schema([
                                 Select::make('warehouse_id')
                                     ->label('Склад')
                                     ->options(fn () => Warehouse::optionsForCurrentUser())
@@ -354,15 +350,7 @@ class SaleResource extends Resource
                                     ->disabled()
                                     ->required(),
 
-                                Toggle::make('is_active')
-                                    ->label('Активна')
-                                    ->hidden()
-                                    ->default(true),
-                            ]),
-
-                        // Компактная сетка для финансовых полей
-                        Grid::make(4)
-                            ->schema([
+                                // Второй ряд
                                 TextInput::make('cash_amount')
                                     ->label('Сумма (нал)')
                                     ->numeric()
@@ -400,9 +388,14 @@ class SaleResource extends Resource
                                 TextInput::make('exchange_rate')
                                     ->label('Курс валюты')
                                     ->default(1)
-                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 4, thousandsSeparator: " ", decimalSeparator: "," })'))
-                                    ,
+                                    ->mask(RawJs::make('$number($input, { decimalPlaces: 4, thousandsSeparator: " ", decimalSeparator: "," })')),
+
+                                Toggle::make('is_active')
+                                    ->label('Активна')
+                                    ->hidden()
+                                    ->default(true),
                             ]),
+
                     ]),
 
                 Section::make('Информация о клиенте')
