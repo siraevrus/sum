@@ -344,12 +344,6 @@ class SaleResource extends Resource
                                         return 999999;
                                     }),
 
-                                TextInput::make('total_price')
-                                    ->label('Общая сумма')
-                                    ->numeric()
-                                    ->disabled()
-                                    ->required(),
-
                                 // Второй ряд
                                 TextInput::make('cash_amount')
                                     ->label('Сумма (нал)')
@@ -389,6 +383,12 @@ class SaleResource extends Resource
                                     ->label('Курс валюты')
                                     ->default(1)
                                     ->mask(RawJs::make('$number($input, { decimalPlaces: 4, thousandsSeparator: " ", decimalSeparator: "," })')),
+
+                                TextInput::make('total_price')
+                                    ->label('Общая сумма')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->required(),
 
                                 Toggle::make('is_active')
                                     ->label('Активна')
