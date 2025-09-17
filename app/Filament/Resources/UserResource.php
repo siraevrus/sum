@@ -66,72 +66,19 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true),
 
-                        Forms\Components\TextInput::make('name')
-                            ->label('Полное имя')
-                            ->maxLength(255)
-                            ->hidden()
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, $get) {
-                                // Автоматически формируем полное имя из ФИО
-                                $firstName = $get('first_name') ?? '';
-                                $lastName = $get('last_name') ?? '';
-                                $middleName = $get('middle_name') ?? '';
-
-                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (! empty($fullName)) {
-                                    $set('name', $fullName);
-                                }
-                            }),
-
                         Forms\Components\TextInput::make('first_name')
                             ->label('Имя')
                             ->required()
-                            ->maxLength(255)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, $get) {
-                                // Обновляем полное имя при изменении ФИО
-                                $firstName = $state ?? '';
-                                $lastName = $get('last_name') ?? '';
-                                $middleName = $get('middle_name') ?? '';
-
-                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (! empty($fullName)) {
-                                    $set('name', $fullName);
-                                }
-                            }),
+                            ->maxLength(255),
 
                         Forms\Components\TextInput::make('last_name')
                             ->label('Фамилия')
                             ->required()
-                            ->maxLength(255)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, $get) {
-                                // Обновляем полное имя при изменении ФИО
-                                $firstName = $get('first_name') ?? '';
-                                $lastName = $state ?? '';
-                                $middleName = $get('middle_name') ?? '';
-
-                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (! empty($fullName)) {
-                                    $set('name', $fullName);
-                                }
-                            }),
+                            ->maxLength(255),
 
                         Forms\Components\TextInput::make('middle_name')
                             ->label('Отчество')
-                            ->maxLength(255)
-                            ->reactive()
-                            ->afterStateUpdated(function ($state, callable $set, $get) {
-                                // Обновляем полное имя при изменении ФИО
-                                $firstName = $get('first_name') ?? '';
-                                $lastName = $get('last_name') ?? '';
-                                $middleName = $state ?? '';
-
-                                $fullName = trim(implode(' ', array_filter([$lastName, $firstName, $middleName])));
-                                if (! empty($fullName)) {
-                                    $set('name', $fullName);
-                                }
-                            }),
+                            ->maxLength(255),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -146,12 +93,11 @@ class UserResource extends Resource
                             ->helperText('Введите номер телефона')
                             ->regex('/^[0-9\+\-\(\)\s]+$/')
                             ->validationMessages([
-                                'regex' => 'Разрешены только цифры и символы: + - ( ) пробел'
+                                'regex' => 'Разрешены только цифры и символы: + - ( ) пробел',
                             ]),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')
-                            
                             ->required(fn (string $context): bool => $context === 'create')
                             ->dehydrated(fn ($state) => filled($state))
                             ->minLength(8),
