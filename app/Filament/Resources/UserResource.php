@@ -64,27 +64,32 @@ class UserResource extends Resource
                             ->label('Логин')
                             ->required()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            ->live(false),
 
                         Forms\Components\TextInput::make('first_name')
                             ->label('Имя')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(false),
 
                         Forms\Components\TextInput::make('last_name')
                             ->label('Фамилия')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(false),
 
                         Forms\Components\TextInput::make('middle_name')
                             ->label('Отчество')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->live(false),
 
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->email()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            ->live(false),
 
                         Forms\Components\TextInput::make('phone')
                             ->label('Телефон')
@@ -94,17 +99,20 @@ class UserResource extends Resource
                             ->regex('/^[0-9\+\-\(\)\s]+$/')
                             ->validationMessages([
                                 'regex' => 'Разрешены только цифры и символы: + - ( ) пробел',
-                            ]),
+                            ])
+                            ->live(false),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Пароль')
                             ->required(fn (string $context): bool => $context === 'create')
                             ->dehydrated(fn ($state) => filled($state))
-                            ->minLength(8),
+                            ->minLength(8)
+                            ->live(false),
 
                         Forms\Components\Toggle::make('is_blocked')
                             ->label('Заблокирован')
-                            ->default(false),
+                            ->default(false)
+                            ->live(false),
                     ])
                     ->columns(2),
 
@@ -242,8 +250,8 @@ class UserResource extends Resource
                     ->action(function (User $record): void {
                         $record->update([
                             'is_blocked' => false,
-                            'blocked_at' => null,
-                        ]);
+                            'blocked_at' => null],
+                        );
                     }),
             ])
             ->bulkActions([
