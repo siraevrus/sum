@@ -61,19 +61,38 @@ class CreateProduct extends CreateRecord
                     $formulaAttributes['quantity'] = $data['quantity'];
                 }
 
-                // Формируем наименование из характеристик
-                $nameParts = [];
+                // Формируем наименование из характеристик с правильным разделителем
+                $formulaParts = [];
+                $regularParts = [];
+
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
                     if ($templateAttribute->type !== 'text' && isset($data['attributes'][$attributeKey]) && $data['attributes'][$attributeKey] !== null) {
-                        $nameParts[] = $data['attributes'][$attributeKey];
+                        if ($templateAttribute->is_in_formula) {
+                            $formulaParts[] = $data['attributes'][$attributeKey];
+                        } else {
+                            $regularParts[] = $attributeKey.': '.$data['attributes'][$attributeKey];
+                        }
                     }
                 }
 
-                if (! empty($nameParts)) {
-                    // Добавляем название шаблона в начало
+                if (! empty($formulaParts) || ! empty($regularParts)) {
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName.': '.implode(', ', $nameParts);
+                    $generatedName = $templateName;
+
+                    if (! empty($formulaParts)) {
+                        $generatedName .= ': '.implode(' x ', $formulaParts);
+                    }
+
+                    if (! empty($regularParts)) {
+                        if (! empty($formulaParts)) {
+                            $generatedName .= ', '.implode(', ', $regularParts);
+                        } else {
+                            $generatedName .= ': '.implode(', ', $regularParts);
+                        }
+                    }
+
+                    $data['name'] = $generatedName;
                 } else {
                     // Если нет характеристик, используем только название шаблона
                     $data['name'] = $template->name ?? 'Товар';

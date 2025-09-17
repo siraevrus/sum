@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ProductInTransitResource\Pages;
 
 use App\Filament\Resources\ProductInTransitResource;
 use App\Models\Product;
-use App\Models\ProductInTransit;
 use App\Models\ProductTemplate;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -43,7 +42,7 @@ class CreateProductInTransit extends CreateRecord
 
         // Ensure warehouse_id is set for non-admin users
         $user = Auth::user();
-        $warehouseId = isset($data['warehouse_id']) ? $data['warehouse_id'] : ($user && !$user->isAdmin() ? $user->warehouse_id : null);
+        $warehouseId = isset($data['warehouse_id']) ? $data['warehouse_id'] : ($user && ! $user->isAdmin() ? $user->warehouse_id : null);
 
         $recordData = array_merge($firstProduct, [
             'warehouse_id' => $warehouseId,
@@ -62,7 +61,7 @@ class CreateProductInTransit extends CreateRecord
         ]);
 
         // Подставляем имя производителя по producer_id
-        if (!empty($firstProduct['producer_id'])) {
+        if (! empty($firstProduct['producer_id'])) {
             $producer = \App\Models\Producer::find($firstProduct['producer_id']);
             $recordData['producer_id'] = $firstProduct['producer_id'];
             $recordData['producer'] = $producer?->name;
@@ -93,25 +92,44 @@ class CreateProductInTransit extends CreateRecord
                     'formula' => $template->formula,
                 ]);
 
-                // Формируем наименование из характеристик
-                $nameParts = [];
+                // Формируем наименование из характеристик с правильным разделителем
+                $formulaParts = [];
+                $regularParts = [];
+
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
                     if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                        $nameParts[] = $attributes[$attributeKey];
+                        if ($templateAttribute->is_in_formula) {
+                            $formulaParts[] = $attributes[$attributeKey];
+                        } else {
+                            $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                        }
                     }
                 }
 
-                if (! empty($nameParts)) {
-                    // Добавляем название шаблона в начало
+                if (! empty($formulaParts) || ! empty($regularParts)) {
                     $templateName = $template->name ?? 'Товар';
-                    $recordData['name'] = $templateName.': '.implode(' x ', $nameParts);
+                    $generatedName = $templateName;
+
+                    if (! empty($formulaParts)) {
+                        $generatedName .= ': '.implode(' x ', $formulaParts);
+                    }
+
+                    if (! empty($regularParts)) {
+                        if (! empty($formulaParts)) {
+                            $generatedName .= ', '.implode(', ', $regularParts);
+                        } else {
+                            $generatedName .= ': '.implode(', ', $regularParts);
+                        }
+                    }
+
+                    $recordData['name'] = $generatedName;
                 }
 
                 if (! empty($attrsForFormula)) {
                     $testResult = $template->testFormula($attrsForFormula);
                     \Log::info('CreateProductInTransit: Formula result (main product)', $testResult);
-                    
+
                     if ($testResult['success']) {
                         $recordData['calculated_volume'] = (float) $testResult['result'];
                         \Log::info('CreateProductInTransit: Volume calculated and saved (main product)', [
@@ -167,7 +185,7 @@ class CreateProductInTransit extends CreateRecord
                 ]);
 
                 // Подставляем имя производителя по producer_id
-                if (!empty($additionalProductData['producer_id'])) {
+                if (! empty($additionalProductData['producer_id'])) {
                     $producer = \App\Models\Producer::find($additionalProductData['producer_id']);
                     $additionalProductData['producer_id'] = $additionalProductData['producer_id'];
                     $additionalProductData['producer'] = $producer?->name;
@@ -198,25 +216,44 @@ class CreateProductInTransit extends CreateRecord
                             'formula' => $template->formula,
                         ]);
 
-                        // Формируем наименование из характеристик
-                        $nameParts = [];
+                        // Формируем наименование из характеристик с правильным разделителем
+                        $formulaParts = [];
+                        $regularParts = [];
+
                         foreach ($template->attributes as $templateAttribute) {
                             $attributeKey = $templateAttribute->variable;
                             if ($templateAttribute->type !== 'text' && isset($productAttributes[$attributeKey]) && $productAttributes[$attributeKey] !== null) {
-                                $nameParts[] = $productAttributes[$attributeKey];
+                                if ($templateAttribute->is_in_formula) {
+                                    $formulaParts[] = $productAttributes[$attributeKey];
+                                } else {
+                                    $regularParts[] = $attributeKey.': '.$productAttributes[$attributeKey];
+                                }
                             }
                         }
 
-                        if (! empty($nameParts)) {
-                            // Добавляем название шаблона в начало
+                        if (! empty($formulaParts) || ! empty($regularParts)) {
                             $templateName = $template->name ?? 'Товар';
-                            $additionalProductData['name'] = $templateName.': '.implode(' x ', $nameParts);
+                            $generatedName = $templateName;
+
+                            if (! empty($formulaParts)) {
+                                $generatedName .= ': '.implode(' x ', $formulaParts);
+                            }
+
+                            if (! empty($regularParts)) {
+                                if (! empty($formulaParts)) {
+                                    $generatedName .= ', '.implode(', ', $regularParts);
+                                } else {
+                                    $generatedName .= ': '.implode(', ', $regularParts);
+                                }
+                            }
+
+                            $additionalProductData['name'] = $generatedName;
                         }
 
                         if (! empty($attrsForFormula)) {
                             $testResult = $template->testFormula($attrsForFormula);
                             \Log::info('CreateProductInTransit: Formula result (additional product)', $testResult);
-                            
+
                             if ($testResult['success']) {
                                 $additionalProductData['calculated_volume'] = (float) $testResult['result'];
                                 \Log::info('CreateProductInTransit: Volume calculated and saved (additional product)', [
@@ -275,22 +312,41 @@ class CreateProductInTransit extends CreateRecord
             return $template->name ?? 'Товар';
         }
 
-        // Формируем наименование из характеристик
-        $nameParts = [];
+        // Формируем наименование из характеристик с правильным разделителем
+        $formulaParts = [];
+        $regularParts = [];
+
         foreach ($template->attributes as $templateAttribute) {
             $attributeKey = $templateAttribute->variable;
             if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                $nameParts[] = $attributes[$attributeKey];
+                if ($templateAttribute->is_in_formula) {
+                    $formulaParts[] = $attributes[$attributeKey];
+                } else {
+                    $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                }
             }
         }
 
-        if (empty($nameParts)) {
+        if (empty($formulaParts) && empty($regularParts)) {
             return $template->name ?? 'Товар';
         }
 
         // Добавляем название шаблона в начало
         $templateName = $template->name ?? 'Товар';
+        $generatedName = $templateName;
 
-        return $templateName.': '.implode(' x ', $nameParts);
+        if (! empty($formulaParts)) {
+            $generatedName .= ': '.implode(' x ', $formulaParts);
+        }
+
+        if (! empty($regularParts)) {
+            if (! empty($formulaParts)) {
+                $generatedName .= ', '.implode(', ', $regularParts);
+            } else {
+                $generatedName .= ': '.implode(', ', $regularParts);
+            }
+        }
+
+        return $generatedName;
     }
 }

@@ -333,6 +333,93 @@ class Product extends Model
     }
 
     /**
+     * Получить характеристики товара для наименования с разделителем "x" для полей формулы
+     */
+    public function getAttributesForName(): array
+    {
+        if (empty($this->attributes)) {
+            return [];
+        }
+
+        // Загружаем шаблон, если не загружен
+        if (! $this->relationLoaded('productTemplate')) {
+            $this->load('productTemplate');
+        }
+
+        if (! $this->productTemplate) {
+            return [];
+        }
+
+        $formulaAttributes = $this->productTemplate->formulaAttributes->pluck('variable')->toArray();
+        $parts = [];
+
+        foreach ($this->attributes as $key => $value) {
+            if ($value !== null && $value !== '') {
+                // Если поле участвует в формуле, используем "x" как разделитель
+                if (in_array($key, $formulaAttributes)) {
+                    $parts[] = $value;
+                } else {
+                    // Для остальных полей используем обычный формат
+                    $parts[] = "{$key}: {$value}";
+                }
+            }
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Получить наименование товара с правильным разделителем
+     */
+    public function getFormattedName(): string
+    {
+        $nameParts = $this->getAttributesForName();
+
+        if (empty($nameParts)) {
+            return $this->name;
+        }
+
+        // Загружаем шаблон, если не загружен
+        if (! $this->relationLoaded('productTemplate')) {
+            $this->load('productTemplate');
+        }
+
+        $templateName = $this->productTemplate->name ?? 'Товар';
+
+        // Разделяем части на формульные и обычные
+        $formulaParts = [];
+        $regularParts = [];
+
+        foreach ($nameParts as $part) {
+            if (strpos($part, ': ') === false) {
+                // Это формульная часть (без "ключ: ")
+                $formulaParts[] = $part;
+            } else {
+                // Это обычная часть (с "ключ: ")
+                $regularParts[] = $part;
+            }
+        }
+
+        $result = $templateName;
+
+        // Добавляем формульные части с разделителем "x"
+        if (! empty($formulaParts)) {
+            $result .= ': '.implode(' x ', $formulaParts);
+        }
+
+        // Добавляем обычные части с разделителем ", "
+        if (! empty($regularParts)) {
+            if (! empty($formulaParts)) {
+                $result .= ', '.implode(', ', $regularParts);
+            } else {
+                $result .= ': '.implode(', ', $regularParts);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Получить полное название товара с производителем
      */
     public function getFullName(): string

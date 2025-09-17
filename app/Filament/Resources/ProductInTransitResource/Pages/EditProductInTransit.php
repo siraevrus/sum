@@ -96,19 +96,38 @@ class EditProductInTransit extends EditRecord
                 $attributes = $data['attributes'];
                 $attributes['quantity'] = $data['quantity'] ?? 1;
 
-                // Формируем наименование из характеристик
-                $nameParts = [];
+                // Формируем наименование из характеристик с правильным разделителем
+                $formulaParts = [];
+                $regularParts = [];
+
                 foreach ($template->attributes as $templateAttribute) {
                     $attributeKey = $templateAttribute->variable;
                     if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null) {
-                        $nameParts[] = $attributes[$attributeKey];
+                        if ($templateAttribute->is_in_formula) {
+                            $formulaParts[] = $attributes[$attributeKey];
+                        } else {
+                            $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                        }
                     }
                 }
 
-                if (! empty($nameParts)) {
-                    // Добавляем название шаблона в начало
+                if (! empty($formulaParts) || ! empty($regularParts)) {
                     $templateName = $template->name ?? 'Товар';
-                    $data['name'] = $templateName.': '.implode(' x ', $nameParts);
+                    $generatedName = $templateName;
+
+                    if (! empty($formulaParts)) {
+                        $generatedName .= ': '.implode(' x ', $formulaParts);
+                    }
+
+                    if (! empty($regularParts)) {
+                        if (! empty($formulaParts)) {
+                            $generatedName .= ', '.implode(', ', $regularParts);
+                        } else {
+                            $generatedName .= ': '.implode(', ', $regularParts);
+                        }
+                    }
+
+                    $data['name'] = $generatedName;
                 }
 
                 $testResult = $template->testFormula($attributes);

@@ -350,18 +350,37 @@ class ProductResource extends Resource
                                                         }
                                                     }
 
-                                                    // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
-                                                    $nameParts = [];
+                                                    // Формируем наименование из заполненных характеристик с правильным разделителем
+                                                    $formulaParts = [];
+                                                    $regularParts = [];
+
                                                     foreach ($template->attributes as $templateAttribute) {
                                                         $attributeKey = $templateAttribute->variable;
                                                         if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
-                                                            $nameParts[] = $attributes[$attributeKey];
+                                                            if ($templateAttribute->is_in_formula) {
+                                                                $formulaParts[] = $attributes[$attributeKey];
+                                                            } else {
+                                                                $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                                                            }
                                                         }
                                                     }
 
-                                                    if (! empty($nameParts)) {
+                                                    if (! empty($formulaParts) || ! empty($regularParts)) {
                                                         $templateName = $template->name ?? 'Товар';
-                                                        $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                        $generatedName = $templateName;
+
+                                                        if (! empty($formulaParts)) {
+                                                            $generatedName .= ': '.implode(' x ', $formulaParts);
+                                                        }
+
+                                                        if (! empty($regularParts)) {
+                                                            if (! empty($formulaParts)) {
+                                                                $generatedName .= ', '.implode(', ', $regularParts);
+                                                            } else {
+                                                                $generatedName .= ': '.implode(', ', $regularParts);
+                                                            }
+                                                        }
+
                                                         $set('name', $generatedName);
                                                     } else {
                                                         $set('name', $template->name ?? 'Товар');
@@ -528,18 +547,37 @@ class ProductResource extends Resource
                                                         }
                                                     }
 
-                                                    // Формируем наименование из заполненных характеристик, исключая текстовые атрибуты
-                                                    $nameParts = [];
+                                                    // Формируем наименование из заполненных характеристик с правильным разделителем
+                                                    $formulaParts = [];
+                                                    $regularParts = [];
+
                                                     foreach ($template->attributes as $templateAttribute) {
                                                         $attributeKey = $templateAttribute->variable;
                                                         if ($templateAttribute->type !== 'text' && isset($attributes[$attributeKey]) && $attributes[$attributeKey] !== null && $attributes[$attributeKey] !== '') {
-                                                            $nameParts[] = $attributes[$attributeKey];
+                                                            if ($templateAttribute->is_in_formula) {
+                                                                $formulaParts[] = $attributes[$attributeKey];
+                                                            } else {
+                                                                $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                                                            }
                                                         }
                                                     }
 
-                                                    if (! empty($nameParts)) {
+                                                    if (! empty($formulaParts) || ! empty($regularParts)) {
                                                         $templateName = $template->name ?? 'Товар';
-                                                        $generatedName = $templateName.': '.implode(', ', $nameParts);
+                                                        $generatedName = $templateName;
+
+                                                        if (! empty($formulaParts)) {
+                                                            $generatedName .= ': '.implode(' x ', $formulaParts);
+                                                        }
+
+                                                        if (! empty($regularParts)) {
+                                                            if (! empty($formulaParts)) {
+                                                                $generatedName .= ', '.implode(', ', $regularParts);
+                                                            } else {
+                                                                $generatedName .= ': '.implode(', ', $regularParts);
+                                                            }
+                                                        }
+
                                                         $set('name', $generatedName);
                                                     } else {
                                                         $set('name', $template->name ?? 'Товар');
