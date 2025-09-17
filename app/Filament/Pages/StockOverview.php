@@ -111,6 +111,14 @@ class StockOverview extends Page implements HasTable
             });
         }
 
+        // Применяем фильтр по компании из URL параметра (для просмотра складов компании)
+        $companyId = request()->get('company_id');
+        if ($companyId) {
+            $query->whereHas('warehouse', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId);
+            });
+        }
+
         // Применяем фильтр по производителю, если он установлен
         $producerId = request()->get('tableFilters.producer_id.value');
         if ($producerId) {
@@ -216,6 +224,14 @@ class StockOverview extends Page implements HasTable
             });
         }
 
+        // Применяем фильтр по компании из URL параметра (для просмотра складов компании)
+        $companyId = request()->get('company_id');
+        if ($companyId) {
+            $query->whereHas('warehouse', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId);
+            });
+        }
+
         // Группируем по складу, не учитывая наименование и характеристики
         return $query->select('warehouse_id')
             ->selectRaw('COUNT(*) as total_products')
@@ -224,6 +240,33 @@ class StockOverview extends Page implements HasTable
             ->groupBy('warehouse_id')
             ->get()
             ->keyBy('warehouse_id')
+            ->toArray();
+    }
+
+    /**
+     * Получить агрегированные данные по компаниям
+     */
+    public function getCompanyStats(): array
+    {
+        $user = Auth::user();
+        $query = Product::query();
+
+        // Фильтрация по компании пользователя (если не админ)
+        if ($user->company_id) {
+            $query->whereHas('warehouse', function ($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
+
+        // Группируем по компании через склад
+        return $query->join('warehouses', 'products.warehouse_id', '=', 'warehouses.id')
+            ->select('warehouses.company_id')
+            ->selectRaw('COUNT(*) as total_products')
+            ->selectRaw('SUM(products.quantity) as total_quantity')
+            ->selectRaw('SUM(products.calculated_volume) as total_volume')
+            ->groupBy('warehouses.company_id')
+            ->get()
+            ->keyBy('company_id')
             ->toArray();
     }
 }
