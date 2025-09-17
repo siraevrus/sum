@@ -834,6 +834,7 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('transport_number')
                     ->label('Номер транспорта')
+                    ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
 
