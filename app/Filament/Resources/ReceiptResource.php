@@ -365,8 +365,10 @@ class ReceiptResource extends Resource
                                                             // Принудительно загружаем значение из записи, если пустое
                                                             if (empty($state) && $record && $record->attributes) {
                                                                 $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+
                                                                 return $attributes[$attribute->variable] ?? $state;
                                                             }
+
                                                             return $state;
                                                         })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -466,8 +468,10 @@ class ReceiptResource extends Resource
                                                             // Принудительно загружаем значение из записи, если пустое
                                                             if (empty($state) && $record && $record->attributes) {
                                                                 $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+
                                                                 return $attributes[$attribute->variable] ?? $state;
                                                             }
+
                                                             return $state;
                                                         })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -569,8 +573,10 @@ class ReceiptResource extends Resource
                                                             // Принудительно загружаем значение из записи, если пустое
                                                             if (empty($state) && $record && $record->attributes) {
                                                                 $attributes = is_array($record->attributes) ? $record->attributes : json_decode($record->attributes, true) ?? [];
+
                                                                 return $attributes[$attribute->variable] ?? $state;
                                                             }
+
                                                             return $state;
                                                         })
                                                         ->afterStateUpdated(function (Set $set, Get $get) use ($template) {
@@ -746,8 +752,6 @@ class ReceiptResource extends Resource
                     })
                     ->sortable(),
 
-                
-
                 // Ожидаемая дата скрыта
                 Tables\Columns\TextColumn::make('actual_arrival_date')
                     ->label('Фактическая дата')
@@ -788,7 +792,7 @@ class ReceiptResource extends Resource
                     ->label('')
                     ->url(fn (Product $record) => Pages\ViewReceipt::getUrl(['record' => $record])),
                 Tables\Actions\Action::make('confirm_receipt')
-                    ->label('Подтвердить')
+                    ->label('Принять товар')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (Product $record): bool => $record->status === Product::STATUS_FOR_RECEIPT)
