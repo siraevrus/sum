@@ -359,8 +359,8 @@ class Product extends Model
                 if (in_array($key, $formulaAttributes)) {
                     $parts[] = $value;
                 } else {
-                    // Для остальных полей используем обычный формат
-                    $parts[] = "{$key}: {$value}";
+                    // Для остальных полей используем только значение
+                    $parts[] = $value;
                 }
             }
         }
@@ -373,15 +373,13 @@ class Product extends Model
      */
     public function getFormattedName(): string
     {
-        $nameParts = $this->getAttributesForName();
-
-        if (empty($nameParts)) {
-            return $this->name;
-        }
-
         // Загружаем шаблон, если не загружен
         if (! $this->relationLoaded('productTemplate')) {
             $this->load('productTemplate');
+        }
+
+        if (! $this->productTemplate) {
+            return $this->name;
         }
 
         $templateName = $this->productTemplate->name ?? 'Товар';
@@ -389,15 +387,20 @@ class Product extends Model
         // Разделяем части на формульные и обычные
         $formulaParts = [];
         $regularParts = [];
+        $formulaAttributes = $this->productTemplate->formulaAttributes->pluck('variable')->toArray();
 
-        foreach ($nameParts as $part) {
-            if (strpos($part, ': ') === false) {
-                // Это формульная часть (без "ключ: ")
-                $formulaParts[] = $part;
-            } else {
-                // Это обычная часть (с "ключ: ")
-                $regularParts[] = $part;
+        foreach ($this->attributes as $key => $value) {
+            if ($value !== null && $value !== '') {
+                if (in_array($key, $formulaAttributes)) {
+                    $formulaParts[] = $value;
+                } else {
+                    $regularParts[] = $value;
+                }
             }
+        }
+
+        if (empty($formulaParts) && empty($regularParts)) {
+            return $this->name;
         }
 
         $result = $templateName;

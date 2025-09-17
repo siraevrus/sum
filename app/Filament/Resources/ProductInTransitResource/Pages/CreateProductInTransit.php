@@ -102,7 +102,7 @@ class CreateProductInTransit extends CreateRecord
                         if ($templateAttribute->is_in_formula) {
                             $formulaParts[] = $attributes[$attributeKey];
                         } else {
-                            $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                            $regularParts[] = $attributes[$attributeKey];
                         }
                     }
                 }
@@ -322,7 +322,7 @@ class CreateProductInTransit extends CreateRecord
                 if ($templateAttribute->is_in_formula) {
                     $formulaParts[] = $attributes[$attributeKey];
                 } else {
-                    $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                    $regularParts[] = $attributes[$attributeKey];
                 }
             }
         }

@@ -71,7 +71,7 @@ class CreateProduct extends CreateRecord
                         if ($templateAttribute->is_in_formula) {
                             $formulaParts[] = $data['attributes'][$attributeKey];
                         } else {
-                            $regularParts[] = $attributeKey.': '.$data['attributes'][$attributeKey];
+                            $regularParts[] = $data['attributes'][$attributeKey];
                         }
                     }
                 }

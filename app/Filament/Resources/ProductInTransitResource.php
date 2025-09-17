@@ -510,7 +510,7 @@ class ProductInTransitResource extends Resource
                 if ($templateAttribute->is_in_formula) {
                     $formulaParts[] = $attributes[$attributeKey];
                 } else {
-                    $regularParts[] = $attributeKey.': '.$attributes[$attributeKey];
+                    $regularParts[] = $attributes[$attributeKey];
                 }
             }
         }
