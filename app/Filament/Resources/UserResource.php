@@ -114,7 +114,7 @@ class UserResource extends Resource
                             ->default(false)
                             ->live(false),
                     ])
-                    ->columns(2),
+                    ->columns(4),
 
                 Forms\Components\Section::make('Компания и склад')
                     ->schema([
