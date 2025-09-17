@@ -7,7 +7,7 @@
                     <button 
                         x-data="{ active: '{{ request()->get('company_id') ? 'false' : 'true' }}' }"
                         @click="active = true; $dispatch('tab-changed', { tab: 'producers' })"
-                        :class="{ 'border-blue-500 text-blue-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
                         x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'producers' }) })"
                     >
@@ -16,7 +16,7 @@
                     <button 
                         x-data="{ active: '{{ request()->get('company_id') ? 'true' : 'false' }}' }"
                         @click="active = true; $dispatch('tab-changed', { tab: 'warehouses' })"
-                        :class="{ 'border-blue-500 text-blue-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
                         x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'warehouses' }) })"
                     >
@@ -25,7 +25,7 @@
                     <button 
                         x-data="{ active: false }"
                         @click="active = true; $dispatch('tab-changed', { tab: 'companies' })"
-                        :class="{ 'border-blue-500 text-blue-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
                         x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'companies' }) })"
                     >
