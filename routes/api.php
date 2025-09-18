@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductTemplateController;
 use App\Http\Controllers\Api\RequestController;
@@ -156,4 +157,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [StockController::class, 'index']);
         Route::get('/{stock}', [StockController::class, 'show']);
     });
+
+    // Инфопанель (агрегированные данные для мобильного клиента)
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 });

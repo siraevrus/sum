@@ -55,6 +55,10 @@
     {
       "name": "Stocks",
       "description": "Остатки товаров"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Агрегированные данные Инфопанели"
     }
   ],
   "security": [
@@ -2240,6 +2244,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Stock"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Сводные данные для Инфопанели",
+        "description": "Возвращает агрегированные показатели и последние продажи одним ответом",
+        "responses": {
+          "200": {
+            "description": "Сводные данные Инфопанели",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "companies_active": { "type": "integer", "example": 12 },
+                    "employees_active": { "type": "integer", "example": 57 },
+                    "warehouses_active": { "type": "integer", "example": 4 },
+                    "products_total": { "type": "integer", "example": 7890 },
+                    "products_in_transit": { "type": "integer", "example": 34 },
+                    "requests_pending": { "type": "integer", "example": 7 },
+                    "latest_sales": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer", "example": 123 },
+                          "product_name": { "type": "string", "example": "Лист стальной 10x2000x6000" },
+                          "client_name": { "type": "string", "example": "ООО Клиент" },
+                          "quantity": { "type": "integer", "example": 10 },
+                          "total_amount": { "type": "number", "format": "float", "example": 15005.0 },
+                          "sale_date": { "type": "string", "format": "date-time", "example": "2025-09-17T13:45:00Z" }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
