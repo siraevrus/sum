@@ -43,6 +43,8 @@ tags:
     description: Остатки товаров
   - name: Dashboard
     description: Агрегированные данные Инфопанели
+  - name: Producers
+    description: Управление производителями
 
 security:
   - bearerAuth: []
@@ -1429,6 +1431,80 @@ paths:
                           format: date-time
                           example: "2025-09-17T13:45:00Z"
 
+  # === PRODUCERS ===
+  /producers:
+    get:
+      tags: [Producers]
+      summary: Получение списка производителей
+      responses:
+        '200':
+          description: Список производителей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producer'
+    post:
+      tags: [Producers]
+      summary: Создание производителя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProducerInput'
+      responses:
+        '201':
+          description: Производитель создан
+    /producers/{id}:
+      get:
+        tags: [Producers]
+        summary: Получение производителя по ID
+        parameters:
+          - name: id
+            in: path
+            required: true
+            schema:
+              type: integer
+        responses:
+          '200':
+            description: Информация о производителе
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Producer'
+      put:
+        tags: [Producers]
+        summary: Обновление производителя
+        parameters:
+          - name: id
+            in: path
+            required: true
+            schema:
+              type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProducerInput'
+        responses:
+          '200':
+            description: Производитель обновлен
+      delete:
+        tags: [Producers]
+        summary: Удаление производителя
+        parameters:
+          - name: id
+            in: path
+            required: true
+            schema:
+              type: integer
+        responses:
+          '200':
+            description: Производитель удален
+
 # === COMPONENTS ===
 components:
   securitySchemes:
@@ -2230,6 +2306,14 @@ components:
           $ref: '#/components/schemas/Product'
         warehouse:
           $ref: '#/components/schemas/Warehouse'
+
+    ProducerInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 255
 
     # Paginated responses
     PaginatedUsers:
