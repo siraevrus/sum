@@ -72,8 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [RequestController::class, 'store']);
         Route::put('/{request}', [RequestController::class, 'update']);
         Route::delete('/{request}', [RequestController::class, 'destroy']);
-        Route::post('/{request}/process', [RequestController::class, 'process']);
-        Route::post('/{request}/reject', [RequestController::class, 'reject']);
+        Route::post('/{request}/approve', [RequestController::class, 'approve']);
     });
 
     // Пользователи

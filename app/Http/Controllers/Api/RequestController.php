@@ -93,7 +93,7 @@ class RequestController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'quantity' => 'required|integer|min:1',
-            'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
+            'status' => 'sometimes|in:pending,approved',
             'attributes' => 'nullable|array',
         ]);
 
@@ -133,7 +133,7 @@ class RequestController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'quantity' => 'sometimes|integer|min:1',
-            'status' => 'sometimes|in:pending,approved,rejected,in_progress,completed,cancelled',
+            'status' => 'sometimes|in:pending,approved',
             'admin_notes' => 'sometimes|string',
             'attributes' => 'sometimes|array',
         ]);
@@ -162,37 +162,19 @@ class RequestController extends Controller
     }
 
     /**
-     * Обработать запрос (изменить статус)
+     * Одобрить запрос
      */
-    public function process(Request $request): JsonResponse
+    public function approve(Request $request): JsonResponse
     {
         $request->update([
-            'status' => 'completed',
-            'processed_by' => Auth::id(),
-            'processed_at' => now(),
+            'status' => 'approved',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Запрос обработан',
-            'data' => $request->load(['user', 'warehouse', 'productTemplate']),
-        ]);
-    }
-
-    /**
-     * Отклонить запрос
-     */
-    public function reject(Request $request): JsonResponse
-    {
-        $request->update([
-            'status' => 'rejected',
-            'processed_by' => Auth::id(),
-            'processed_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Запрос отклонен',
+            'message' => 'Запрос одобрен',
             'data' => $request->load(['user', 'warehouse', 'productTemplate']),
         ]);
     }
@@ -216,10 +198,6 @@ class RequestController extends Controller
             'total' => $query->count(),
             'pending' => $query->where('status', 'pending')->count(),
             'approved' => $query->where('status', 'approved')->count(),
-            'completed' => $query->where('status', 'completed')->count(),
-            'rejected' => $query->where('status', 'rejected')->count(),
-            'in_progress' => $query->where('status', 'in_progress')->count(),
-            'cancelled' => $query->where('status', 'cancelled')->count(),
         ];
 
         return response()->json([

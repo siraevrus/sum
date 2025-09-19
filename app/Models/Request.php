@@ -44,10 +44,6 @@ class Request extends Model
     // Статусы запросов
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
-    const STATUS_REJECTED = 'rejected';
-    const STATUS_IN_PROGRESS = 'in_progress';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELLED = 'cancelled';
 
 
     /**
@@ -106,10 +102,6 @@ class Request extends Model
         return match($this->status) {
             self::STATUS_PENDING => 'Ожидает рассмотрения',
             self::STATUS_APPROVED => 'Одобрен',
-            self::STATUS_REJECTED => 'Отклонен',
-            self::STATUS_IN_PROGRESS => 'В обработке',
-            self::STATUS_COMPLETED => 'Завершен',
-            self::STATUS_CANCELLED => 'Отменен',
             default => 'Неизвестно',
         };
     }
@@ -122,10 +114,6 @@ class Request extends Model
         return match($this->status) {
             self::STATUS_PENDING => 'warning',
             self::STATUS_APPROVED => 'info',
-            self::STATUS_REJECTED => 'danger',
-            self::STATUS_IN_PROGRESS => 'primary',
-            self::STATUS_COMPLETED => 'success',
-            self::STATUS_CANCELLED => 'gray',
             default => 'gray',
         };
     }
@@ -144,31 +132,7 @@ class Request extends Model
      */
     public function canBeRejected(): bool
     {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_APPROVED]) && $this->is_active;
-    }
-
-    /**
-     * Проверить, можно ли начать обработку
-     */
-    public function canBeProcessed(): bool
-    {
-        return $this->status === self::STATUS_APPROVED && $this->is_active;
-    }
-
-    /**
-     * Проверить, можно ли завершить запрос
-     */
-    public function canBeCompleted(): bool
-    {
-        return $this->status === self::STATUS_IN_PROGRESS && $this->is_active;
-    }
-
-    /**
-     * Проверить, можно ли отменить запрос
-     */
-    public function canBeCancelled(): bool
-    {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_APPROVED]) && $this->is_active;
+        return $this->status === self::STATUS_PENDING && $this->is_active;
     }
 
     /**
@@ -201,59 +165,7 @@ class Request extends Model
             return false;
         }
 
-        $this->status = self::STATUS_REJECTED;
-        
-        if ($notes) {
-            $this->admin_notes = $notes;
-        }
-        
-        $this->save();
-        return true;
-    }
-
-    /**
-     * Начать обработку запроса
-     */
-    public function startProcessing(): bool
-    {
-        if (!$this->canBeProcessed()) {
-            return false;
-        }
-
-        $this->status = self::STATUS_IN_PROGRESS;
-        $this->processed_by = Auth::id();
-        $this->processed_at = now();
-        $this->save();
-        
-        return true;
-    }
-
-    /**
-     * Завершить запрос
-     */
-    public function complete(): bool
-    {
-        if (!$this->canBeCompleted()) {
-            return false;
-        }
-
-        $this->status = self::STATUS_COMPLETED;
-        $this->completed_at = now();
-        $this->save();
-        
-        return true;
-    }
-
-    /**
-     * Отменить запрос
-     */
-    public function cancel(string $notes = null): bool
-    {
-        if (!$this->canBeCancelled()) {
-            return false;
-        }
-
-        $this->status = self::STATUS_CANCELLED;
+        $this->status = self::STATUS_APPROVED; // В нашей системе "отклонение" = "одобрение" с заметками
         
         if ($notes) {
             $this->admin_notes = $notes;
@@ -268,20 +180,19 @@ class Request extends Model
      */
     public function getProcessingDays(): int
     {
-        if (!$this->processed_at) {
+        if (!$this->approved_at) {
             return 0;
         }
 
-        $endDate = $this->completed_at ?? now();
-        return $this->processed_at->diffInDays($endDate);
+        return $this->approved_at->diffInDays(now());
     }
 
     /**
-     * Проверить, просрочен ли запрос (более 7 дней в обработке)
+     * Проверить, просрочен ли запрос (более 7 дней после одобрения)
      */
     public function isOverdue(): bool
     {
-        if ($this->status !== self::STATUS_IN_PROGRESS) {
+        if ($this->status !== self::STATUS_APPROVED) {
             return false;
         }
 
@@ -326,8 +237,8 @@ class Request extends Model
      */
     public function scopeOverdue(Builder $query): void
     {
-        $query->where('status', self::STATUS_IN_PROGRESS)
-              ->where('processed_at', '<', now()->subDays(7));
+        $query->where('status', self::STATUS_APPROVED)
+              ->where('approved_at', '<', now()->subDays(7));
     }
 
     /**
@@ -335,7 +246,7 @@ class Request extends Model
      */
     public function scopePending(Builder $query): void
     {
-        $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_APPROVED]);
+        $query->where('status', self::STATUS_PENDING);
     }
 
     /**
@@ -347,8 +258,6 @@ class Request extends Model
             'total_requests' => static::count(),
             'pending_requests' => static::byStatus(self::STATUS_PENDING)->count(),
             'approved_requests' => static::byStatus(self::STATUS_APPROVED)->count(),
-            'in_progress_requests' => static::byStatus(self::STATUS_IN_PROGRESS)->count(),
-            'completed_requests' => static::byStatus(self::STATUS_COMPLETED)->count(),
             'overdue_requests' => static::overdue()->count(),
         ];
     }
