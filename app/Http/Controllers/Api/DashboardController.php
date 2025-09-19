@@ -54,6 +54,7 @@ class DashboardController extends Controller
             ->map(function (Sale $sale) {
                 $total = $sale->total_amount ?? $sale->total_price ?? null;
                 $client = $sale->client_name ?? $sale->customer_name ?? null;
+
                 return [
                     'id' => $sale->id,
                     'product_name' => optional($sale->product)->name,
@@ -89,5 +90,3 @@ if (! function_exists('schema_has_column')) {
         }
     }
 }
-
-
