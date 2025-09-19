@@ -1,0 +1,95 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, dom, fileinfo, mysql, pdo_mysql, sqlite3, pdo_sqlite
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install Dependencies
+      run: |
+        composer install --no-dev --optimize-autoloader --no-interaction
+        npm ci --production
+        npm run build
+    
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract changelog for this version
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANGELOG=$(awk "/^## \[$VERSION\]/{flag=1;next}/^## \[/{flag=0}flag" CHANGELOG.md || echo "No changelog found for version $VERSION")
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "changelog=No changelog available" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        release_name: Release ${{ steps.version.outputs.version }}
+        body: |
+          ## What's Changed
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ## Installation
+          ```bash
+          git clone https://github.com/${{ github.repository }}.git
+          cd sklad
+          composer install
+          npm install
+          npm run build
+          ```
+          
+          ## Deployment
+          This release is automatically deployed to production.
+        draft: false
+        prerelease: false
+    
+    - name: Notify Deployment
+      run: |
+        echo "🚀 Release ${{ steps.version.outputs.version }} has been created and will be automatically deployed to production."
+        echo "📋 Changelog:"
+        echo "${{ steps.changelog.outputs.changelog }}"

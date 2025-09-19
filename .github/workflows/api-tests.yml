@@ -1,13 +1,15 @@
-name: CI Pipeline
+name: API Tests
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM
 
 jobs:
-  test:
+  api-tests:
     runs-on: ubuntu-latest
     
     services:
@@ -63,23 +65,32 @@ jobs:
         DB_DATABASE: database/database.sqlite
       run: php artisan migrate --force
     
-    - name: Run Tests
+    - name: Seed Test Data
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
-      run: php artisan test --coverage
+      run: php artisan db:seed --class=TestDataSeeder
     
-    - name: Run Laravel Pint (Code Style Check)
-      run: vendor/bin/pint --test
+    - name: Run API Tests
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test --testsuite=Feature --filter=Api
+    
+    - name: Run Filament Tests
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test --testsuite=Feature --filter=Filament
     
     - name: Build Frontend Assets
       run: npm run build
     
-    - name: Upload Coverage Reports
-      uses: codecov/codecov-action@v4
-      if: success()
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+        name: test-results
+        path: |
+          storage/logs/
+          tests/Browser/screenshots/

@@ -1,0 +1,122 @@
+name: Dependency Update
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Every Monday at 2 AM
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, dom, fileinfo, mysql, pdo_mysql, sqlite3, pdo_sqlite
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install Dependencies
+      run: |
+        composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        npm ci
+    
+    - name: Update PHP Dependencies
+      run: |
+        UPDATE_TYPE="${{ github.event.inputs.update_type || 'minor' }}"
+        
+        case $UPDATE_TYPE in
+          "patch")
+            composer update --with-dependencies --prefer-stable --no-interaction
+            ;;
+          "minor")
+            composer update --with-dependencies --prefer-stable --no-interaction
+            ;;
+          "major")
+            composer update --with-dependencies --prefer-stable --no-interaction --with-all-dependencies
+            ;;
+        esac
+        
+        # Check for security updates
+        composer audit --format=json > security-audit.json || true
+        
+        # Check for outdated packages
+        composer outdated --direct --format=json > outdated-packages.json || true
+    
+    - name: Update Node Dependencies
+      run: |
+        # Update npm packages
+        npm update
+        
+        # Check for security vulnerabilities
+        npm audit --json > npm-audit.json || true
+        
+        # Check for outdated packages
+        npm outdated --json > npm-outdated.json || true
+    
+    - name: Run Tests After Update
+      run: |
+        php artisan test --parallel
+    
+    - name: Check Code Style
+      run: vendor/bin/pint --test
+    
+    - name: Create Pull Request
+      if: github.event_name == 'schedule'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update dependencies'
+        title: '🔄 Automated Dependency Update'
+        body: |
+          ## 📦 Dependency Updates
+          
+          This PR contains automated dependency updates.
+          
+          ### PHP Dependencies
+          - Updated via Composer
+          - Security audit results: [View](security-audit.json)
+          - Outdated packages: [View](outdated-packages.json)
+          
+          ### Node Dependencies
+          - Updated via npm
+          - Security audit results: [View](npm-audit.json)
+          - Outdated packages: [View](npm-outdated.json)
+          
+          ### ✅ Checks Passed
+          - [x] Tests passed
+          - [x] Code style check passed
+          - [x] Security audit completed
+          
+          ### 🔍 Review Required
+          Please review the changes and test thoroughly before merging.
+          
+          **Note:** This is an automated update. Please verify compatibility before merging.
+        branch: dependency-update-$(date +%Y%m%d)
+        delete-branch: true
+        labels: |
+          dependencies
+          automated
+          needs-review

@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Deploy to server
@@ -18,34 +20,89 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.PORT }}
         script: |
+          set -e
+          echo "🚀 Starting deployment process..."
+          
           # Navigate to project directory
           cd /var/www/sklad
+          echo "📁 Changed to project directory: $(pwd)"
+          
+          # Create backup before deployment
+          echo "💾 Creating backup..."
+          BACKUP_DIR="/var/backups/sklad/$(date +%Y%m%d_%H%M%S)"
+          mkdir -p "$BACKUP_DIR"
+          cp -r /var/www/sklad "$BACKUP_DIR/"
+          echo "✅ Backup created at: $BACKUP_DIR"
           
           # Pull latest changes
-          git pull origin main
+          echo "📥 Pulling latest changes from main branch..."
+          git fetch origin
+          git reset --hard origin/main
+          echo "✅ Code updated successfully"
           
-          # Install/update dependencies
-          composer install --no-dev --optimize-autoloader
+          # Install/update PHP dependencies
+          echo "📦 Installing PHP dependencies..."
+          composer install --no-dev --optimize-autoloader --no-interaction
+          echo "✅ PHP dependencies installed"
+          
+          # Install/update Node dependencies and build assets
+          echo "🎨 Building frontend assets..."
+          npm ci --production
+          npm run build
+          echo "✅ Frontend assets built"
           
           # Run database migrations
+          echo "🗄️ Running database migrations..."
           php artisan migrate --force
+          echo "✅ Database migrations completed"
           
           # Clear and cache configuration
+          echo "🧹 Clearing and caching configuration..."
+          php artisan config:clear
+          php artisan route:clear
+          php artisan view:clear
+          php artisan cache:clear
+          
           php artisan config:cache
           php artisan route:cache
           php artisan view:cache
-          
-          # Build frontend assets
-          npm install
-          npm run build
+          echo "✅ Configuration cached"
           
           # Set proper permissions
+          echo "🔐 Setting proper permissions..."
           chown -R www-data:www-data /var/www/sklad
           chmod -R 755 /var/www/sklad
+          chmod -R 775 /var/www/sklad/storage
+          chmod -R 775 /var/www/sklad/bootstrap/cache
+          echo "✅ Permissions set"
           
-          # Restart web server
+          # Restart services
+          echo "🔄 Restarting services..."
           systemctl restart nginx
+          systemctl restart php8.4-fpm
+          echo "✅ Services restarted"
           
           # Verify deployment
+          echo "✅ Verifying deployment..."
           php artisan --version
-          echo "Deployment completed successfully!"
+          php artisan config:show app.name
+          
+          # Health check
+          echo "🏥 Running health check..."
+          if curl -f http://localhost > /dev/null 2>&1; then
+            echo "✅ Health check passed - application is running"
+          else
+            echo "❌ Health check failed - application may not be running properly"
+            exit 1
+          fi
+          
+          echo "🎉 Deployment completed successfully!"
+          echo "📊 Deployment summary:"
+          echo "   - Code updated from main branch"
+          echo "   - Dependencies installed and optimized"
+          echo "   - Database migrated"
+          echo "   - Configuration cached"
+          echo "   - Frontend assets built"
+          echo "   - Permissions set"
+          echo "   - Services restarted"
+          echo "   - Health check passed"

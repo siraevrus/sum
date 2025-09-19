@@ -1,0 +1,108 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Type of backup'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - schema
+          - data
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, dom, fileinfo, mysql, pdo_mysql
+    
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    
+    - name: Create Database Backup
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          set -e
+          echo "🗄️ Starting database backup process..."
+          
+          # Set variables
+          BACKUP_DIR="/var/backups/sklad/database"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_TYPE="${{ github.event.inputs.backup_type || 'full' }}"
+          
+          # Create backup directory
+          mkdir -p "$BACKUP_DIR"
+          
+          # Get database credentials from .env
+          cd /var/www/sklad
+          DB_HOST=$(grep DB_HOST .env | cut -d '=' -f2)
+          DB_DATABASE=$(grep DB_DATABASE .env | cut -d '=' -f2)
+          DB_USERNAME=$(grep DB_USERNAME .env | cut -d '=' -f2)
+          DB_PASSWORD=$(grep DB_PASSWORD .env | cut -d '=' -f2)
+          
+          echo "📊 Database: $DB_DATABASE"
+          echo "🏠 Host: $DB_HOST"
+          echo "👤 User: $DB_USERNAME"
+          
+          # Create backup based on type
+          case $BACKUP_TYPE in
+            "full")
+              BACKUP_FILE="$BACKUP_DIR/sklad_full_$TIMESTAMP.sql"
+              mysqldump -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" > "$BACKUP_FILE"
+              echo "✅ Full backup created: $BACKUP_FILE"
+              ;;
+            "schema")
+              BACKUP_FILE="$BACKUP_DIR/sklad_schema_$TIMESTAMP.sql"
+              mysqldump -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --no-data "$DB_DATABASE" > "$BACKUP_FILE"
+              echo "✅ Schema backup created: $BACKUP_FILE"
+              ;;
+            "data")
+              BACKUP_FILE="$BACKUP_DIR/sklad_data_$TIMESTAMP.sql"
+              mysqldump -h"$DB_HOST" -u"$DB_USERNAME" -p"$DB_PASSWORD" --no-create-info "$DB_DATABASE" > "$BACKUP_FILE"
+              echo "✅ Data backup created: $BACKUP_FILE"
+              ;;
+          esac
+          
+          # Compress backup
+          gzip "$BACKUP_FILE"
+          echo "📦 Backup compressed: ${BACKUP_FILE}.gz"
+          
+          # Get file size
+          FILE_SIZE=$(du -h "${BACKUP_FILE}.gz" | cut -f1)
+          echo "📏 Backup size: $FILE_SIZE"
+          
+          # Clean old backups (keep last 30 days)
+          find "$BACKUP_DIR" -name "sklad_*.sql.gz" -mtime +30 -delete
+          echo "🧹 Old backups cleaned (kept last 30 days)"
+          
+          # List current backups
+          echo "📋 Current backups:"
+          ls -lah "$BACKUP_DIR" | grep sklad
+          
+          echo "🎉 Database backup completed successfully!"
+    
+    - name: Upload Backup to GitHub
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v4
+      with:
+        name: database-backup-${{ github.event.inputs.backup_type }}-${{ github.run_number }}
+        path: /tmp/backup.sql.gz
+        retention-days: 7
