@@ -51,25 +51,34 @@ jobs:
           npm run build
           echo "✅ Frontend assets built"
           
-          # Generate application key if not exists
-          echo "🔑 Generating application key..."
-          if [ ! -f .env ]; then
-            cp .env.example .env
-          fi
-          # Temporarily disable database connection for key generation
-          sed -i 's/DB_CONNECTION=mysql/DB_CONNECTION=sqlite/' .env
-          php artisan key:generate --force
-          echo "✅ Application key generated"
-          
-          # Configure MySQL database
-          echo "🗄️ Configuring MySQL database..."
-          sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
-          sed -i 's/DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/' .env
-          sed -i 's/DB_PORT=3306/DB_PORT=3306/' .env
-          sed -i 's/DB_DATABASE=laravel/DB_DATABASE=sklad/' .env
-          sed -i 's/DB_USERNAME=root/DB_USERNAME=sklad/' .env
-          sed -i 's/DB_PASSWORD=/DB_PASSWORD=sklad123/' .env
-          echo "✅ MySQL database configured"
+    # Configure environment file
+    echo "⚙️ Configuring environment file..."
+    if [ ! -f .env ]; then
+      cp .env.example .env
+    fi
+    
+    # Create MySQL database and user if not exists
+    echo "🗄️ Setting up MySQL database..."
+    mysql -u root -e "CREATE DATABASE IF NOT EXISTS sklad;"
+    mysql -u root -e "CREATE USER IF NOT EXISTS 'sklad'@'localhost' IDENTIFIED BY 'sklad123';"
+    mysql -u root -e "GRANT ALL PRIVILEGES ON sklad.* TO 'sklad'@'localhost';"
+    mysql -u root -e "FLUSH PRIVILEGES;"
+    echo "✅ MySQL database and user created"
+
+    # Configure MySQL database
+    echo "⚙️ Configuring database connection..."
+    sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
+    sed -i 's/DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/' .env
+    sed -i 's/DB_PORT=3306/DB_PORT=3306/' .env
+    sed -i 's/DB_DATABASE=laravel/DB_DATABASE=sklad/' .env
+    sed -i 's/DB_USERNAME=root/DB_USERNAME=sklad/' .env
+    sed -i 's/DB_PASSWORD=/DB_PASSWORD=sklad123/' .env
+    echo "✅ Database connection configured"
+
+    # Generate application key
+    echo "🔑 Generating application key..."
+    php artisan key:generate --force
+    echo "✅ Application key generated"
           
           # Run database migrations
           echo "🗄️ Running database migrations..."
