@@ -12,7 +12,7 @@ jobs:
     
     steps:
     - name: Notify Slack on Success
-      if: github.event.workflow_run.conclusion == 'success'
+      if: github.event.workflow_run.conclusion == 'success' && secrets.SLACK_WEBHOOK_URL != ''
       uses: 8398a7/action-slack@v3
       with:
         status: success
@@ -31,7 +31,7 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     
     - name: Notify Slack on Failure
-      if: github.event.workflow_run.conclusion == 'failure'
+      if: github.event.workflow_run.conclusion == 'failure' && secrets.SLACK_WEBHOOK_URL != ''
       uses: 8398a7/action-slack@v3
       with:
         status: failure
@@ -50,7 +50,7 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     
     - name: Notify Discord on Success
-      if: github.event.workflow_run.conclusion == 'success'
+      if: github.event.workflow_run.conclusion == 'success' && secrets.DISCORD_WEBHOOK != ''
       uses: Ilshidur/action-discord@master
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -66,7 +66,7 @@ jobs:
           [View Details](${{ github.event.workflow_run.html_url }})
     
     - name: Notify Discord on Failure
-      if: github.event.workflow_run.conclusion == 'failure'
+      if: github.event.workflow_run.conclusion == 'failure' && secrets.DISCORD_WEBHOOK != ''
       uses: Ilshidur/action-discord@master
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -80,3 +80,16 @@ jobs:
           **Author:** ${{ github.event.workflow_run.head_commit.author.name }}
           
           [View Details](${{ github.event.workflow_run.html_url }})
+    
+    - name: Log Notification Status
+      run: |
+        echo "📊 Notification Status:"
+        echo "Slack Webhook: ${{ secrets.SLACK_WEBHOOK_URL != '' && 'Configured' || 'Not configured' }}"
+        echo "Discord Webhook: ${{ secrets.DISCORD_WEBHOOK != '' && 'Configured' || 'Not configured' }}"
+        echo "Workflow: ${{ github.event.workflow_run.name }}"
+        echo "Status: ${{ github.event.workflow_run.conclusion }}"
+        echo "Branch: ${{ github.event.workflow_run.head_branch }}"
+        echo "Commit: ${{ github.event.workflow_run.head_commit.message }}"
+        echo "Author: ${{ github.event.workflow_run.head_commit.author.name }}"
+        echo "Duration: ${{ github.event.workflow_run.run_duration_ms }}ms"
+        echo "View Details: ${{ github.event.workflow_run.html_url }}"
