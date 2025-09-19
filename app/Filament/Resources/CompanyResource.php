@@ -160,18 +160,6 @@ class CompanyResource extends Resource
 
                         return $query;
                     }),
-                Tables\Filters\TernaryFilter::make('trashed')
-                    ->label('Удаленные')
-                    ->query(function (Builder $query, array $data): Builder {
-                        if ($data['value'] === true) {
-                            return $query->onlyTrashed();
-                        }
-                        if ($data['value'] === false) {
-                            return $query->whereNull('deleted_at');
-                        }
-
-                        return $query;
-                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label(''),
