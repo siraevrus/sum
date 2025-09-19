@@ -37,7 +37,7 @@ class ProductWebController extends Controller
         ]);
 
         // Рассчитать объем, если у шаблона есть формула
-        if (!empty($data['product_template_id']) && !empty($attributes)) {
+        if (! empty($data['product_template_id']) && ! empty($attributes)) {
             $template = ProductTemplate::find($data['product_template_id']);
             if ($template && $template->formula) {
                 $attrsForFormula = $attributes;
@@ -54,5 +54,3 @@ class ProductWebController extends Controller
         return redirect('/admin/products');
     }
 }
-
-

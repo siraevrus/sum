@@ -136,5 +136,4 @@ class Company extends Model
             }
         });
     }
-
 }

@@ -16,10 +16,11 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        if (!$request->user()) {
+        if (! $request->user()) {
             if ($request->is('api') || $request->is('api/*')) {
                 return response()->json(['message' => 'Не авторизован'], 401);
             }
+
             return redirect('/admin/login');
         }
 
@@ -28,13 +29,14 @@ class CheckRole
             if ($request->is('api') || $request->is('api/*')) {
                 return response()->json(['message' => 'Ваш аккаунт заблокирован'], 401);
             }
+
             return redirect('/admin/login')->withErrors([
-                'email' => 'Ваш аккаунт заблокирован'
+                'email' => 'Ваш аккаунт заблокирован',
             ]);
         }
 
         $userRole = $request->user()->role;
-        
+
         // Администратор имеет доступ ко всему
         if ($userRole === UserRole::ADMIN) {
             return $next($request);

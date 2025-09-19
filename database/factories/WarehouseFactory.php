@@ -26,7 +26,7 @@ class WarehouseFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company() . ' Warehouse',
+            'name' => $this->faker->company().' Warehouse',
             'address' => $this->faker->address(),
             'is_active' => true,
             'company_id' => Company::factory(),
@@ -42,4 +42,4 @@ class WarehouseFactory extends Factory
             'is_active' => false,
         ]);
     }
-} 
+}

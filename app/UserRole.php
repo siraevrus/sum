@@ -11,7 +11,7 @@ enum UserRole: string
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ADMIN => 'Администратор',
             self::OPERATOR => 'Оператор ПК',
             self::WAREHOUSE_WORKER => 'Работник склада',
@@ -21,7 +21,7 @@ enum UserRole: string
 
     public function permissions(): array
     {
-        return match($this) {
+        return match ($this) {
             self::ADMIN => [
                 'dashboard',
                 'companies',
@@ -32,24 +32,24 @@ enum UserRole: string
                 'products_in_transit',
                 'sales',
                 'product_receipt',
-                'product_templates'
+                'product_templates',
             ],
             self::OPERATOR => [
                 'products',
                 'inventory',
-                'products_in_transit'
+                'products_in_transit',
             ],
             self::WAREHOUSE_WORKER => [
                 'requests',
                 'inventory',
                 'products_in_transit',
                 'sales',
-                'product_receipt'
+                'product_receipt',
             ],
             self::SALES_MANAGER => [
                 'requests',
                 'inventory',
-                'products_in_transit'
+                'products_in_transit',
             ],
         };
     }

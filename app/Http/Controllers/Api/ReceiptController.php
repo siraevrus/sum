@@ -137,6 +137,7 @@ class ReceiptController extends Controller
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при создании товара(ов) в пути',
@@ -150,6 +151,7 @@ class ReceiptController extends Controller
             'data' => count($created) === 1 ? $created[0] : $created,
         ], 201);
     }
+
     /**
      * Список приемок (товары со статусом «Прибыл»)
      */

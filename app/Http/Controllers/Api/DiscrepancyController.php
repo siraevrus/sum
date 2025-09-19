@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Discrepancy;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DiscrepancyController extends Controller
@@ -36,6 +36,7 @@ class DiscrepancyController extends Controller
         ]);
         $data['user_id'] = Auth::id();
         $discrepancy = Discrepancy::create($data);
+
         return response()->json($discrepancy->load(['productInTransit', 'user']), 201);
     }
 

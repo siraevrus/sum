@@ -18,7 +18,7 @@ class ViewProduct extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('Изменить'),
-            
+
             Actions\Action::make('clear_correction')
                 ->label('Скорректировано')
                 ->icon('heroicon-o-check-circle')
@@ -27,13 +27,13 @@ class ViewProduct extends ViewRecord
                 ->visible(fn (): bool => $this->record->hasCorrection())
                 ->action(function (): void {
                     $this->record->clearCorrectionStatus();
-                    
+
                     \Filament\Notifications\Notification::make()
                         ->title('Статус коррекции сброшен')
                         ->body('Товар возвращен к обычному статусу')
                         ->success()
                         ->send();
-                        
+
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
                 })
                 ->modalHeading('Подтверждение о внесении изменения')
@@ -84,7 +84,7 @@ class ViewProduct extends ViewRecord
                                     if ($this->record->hasCorrection()) {
                                         return 'danger';
                                     }
-                                    
+
                                     return match ($this->record->status) {
                                         'in_stock' => 'success',
                                         'in_transit' => 'warning',
@@ -96,7 +96,7 @@ class ViewProduct extends ViewRecord
                                     if ($this->record->hasCorrection()) {
                                         return 'Коррекция';
                                     }
-                                    
+
                                     return match ($this->record->status) {
                                         'in_stock' => 'На складе',
                                         'in_transit' => 'В пути',

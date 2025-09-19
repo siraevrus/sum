@@ -17,4 +17,4 @@ class ViewProductTemplate extends ViewRecord
                 ->label('Изменить'),
         ];
     }
-} 
+}

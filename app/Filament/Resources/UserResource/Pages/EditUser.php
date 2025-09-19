@@ -17,5 +17,4 @@ class EditUser extends EditRecord
                 ->label('Удалить'),
         ];
     }
-
 }

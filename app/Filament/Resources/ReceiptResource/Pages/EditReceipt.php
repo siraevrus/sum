@@ -89,14 +89,14 @@ class EditReceipt extends EditRecord
             'description' => $data['description'] ?? null,
             'actual_arrival_date' => $data['actual_arrival_date'] ?? null,
         ];
-        
+
         if (isset($data['attributes']) && is_array($data['attributes'])) {
             foreach ($data['attributes'] as $key => $value) {
                 $item["attribute_{$key}"] = $value;
-                \Log::info("EditReceipt: Adding attribute", [
+                \Log::info('EditReceipt: Adding attribute', [
                     'key' => $key,
                     'value' => $value,
-                    'field_name' => "attribute_{$key}"
+                    'field_name' => "attribute_{$key}",
                 ]);
             }
         } elseif (isset($data['attributes']) && is_string($data['attributes'])) {
@@ -105,15 +105,15 @@ class EditReceipt extends EditRecord
             if (is_array($attributes)) {
                 foreach ($attributes as $key => $value) {
                     $item["attribute_{$key}"] = $value;
-                    \Log::info("EditReceipt: Adding attribute from JSON", [
+                    \Log::info('EditReceipt: Adding attribute from JSON', [
                         'key' => $key,
                         'value' => $value,
-                        'field_name' => "attribute_{$key}"
+                        'field_name' => "attribute_{$key}",
                     ]);
                 }
             }
         }
-        
+
         $data['products'] = [$item];
 
         \Log::info('EditReceipt: mutateFormDataBeforeFill output', [
@@ -124,7 +124,6 @@ class EditReceipt extends EditRecord
 
         return $data;
     }
-
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
@@ -165,18 +164,18 @@ class EditReceipt extends EditRecord
             $data['calculated_volume'] = $firstProduct['calculated_volume'] ?? null;
 
             // Генерируем имя, если оно пустое
-            if (empty($data['name']) && !empty($data['product_template_id'])) {
+            if (empty($data['name']) && ! empty($data['product_template_id'])) {
                 $template = \App\Models\ProductTemplate::find($data['product_template_id']);
-                if ($template && !empty($existingAttributes)) {
+                if ($template && ! empty($existingAttributes)) {
                     $nameParts = [];
                     foreach ($template->attributes as $attribute) {
-                        if (isset($existingAttributes[$attribute->variable]) && !empty($existingAttributes[$attribute->variable])) {
+                        if (isset($existingAttributes[$attribute->variable]) && ! empty($existingAttributes[$attribute->variable])) {
                             $nameParts[] = $existingAttributes[$attribute->variable];
                         }
                     }
-                    
-                    if (!empty($nameParts)) {
-                        $data['name'] = $template->name . ': ' . implode(', ', $nameParts);
+
+                    if (! empty($nameParts)) {
+                        $data['name'] = $template->name.': '.implode(', ', $nameParts);
                     } else {
                         $data['name'] = $template->name ?? 'Товар';
                     }

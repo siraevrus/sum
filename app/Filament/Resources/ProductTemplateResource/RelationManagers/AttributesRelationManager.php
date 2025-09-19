@@ -31,10 +31,11 @@ class AttributesRelationManager extends RelationManager
                     ->rules(['regex:/^[a-zA-Z_][a-zA-Z0-9_]*$/'])
                     ->unique(ignorable: fn ($record) => $record, modifyRuleUsing: function ($rule, $get) {
                         $parentId = $this->getOwnerRecord()->id;
+
                         return $rule->where('product_template_id', $parentId);
                     })
                     ->validationMessages([
-                        'unique' => 'Переменная должна быть уникальной для данного шаблона.'
+                        'unique' => 'Переменная должна быть уникальной для данного шаблона.',
                     ]),
 
                 Forms\Components\Select::make('type')
@@ -96,13 +97,14 @@ class AttributesRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Полностью исключаем sort_order из данных формы
                         unset($data['sort_order']);
+
                         return $data;
                     })
                     ->using(function (array $data): \App\Models\ProductAttribute {
                         // Создаем атрибут вручную, чтобы контролировать sort_order
                         $template = $this->getOwnerRecord();
                         $maxSortOrder = $template->attributes()->max('sort_order') ?? -1;
-                        
+
                         $attribute = new \App\Models\ProductAttribute;
                         $attribute->product_template_id = $template->id;
                         $attribute->name = $data['name'];
@@ -113,9 +115,9 @@ class AttributesRelationManager extends RelationManager
                         $attribute->is_required = $data['is_required'] ?? false;
                         $attribute->is_in_formula = $data['is_in_formula'] ?? false;
                         $attribute->sort_order = $maxSortOrder + 1; // Принудительно устанавливаем целое число
-                        
+
                         $attribute->save();
-                        
+
                         return $attribute;
                     }),
             ])
@@ -125,6 +127,7 @@ class AttributesRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Полностью исключаем sort_order из данных формы
                         unset($data['sort_order']);
+
                         return $data;
                     })
                     ->using(function (\App\Models\ProductAttribute $record, array $data): \App\Models\ProductAttribute {
@@ -137,9 +140,9 @@ class AttributesRelationManager extends RelationManager
                         $record->is_required = $data['is_required'] ?? false;
                         $record->is_in_formula = $data['is_in_formula'] ?? false;
                         // sort_order не изменяем при редактировании
-                        
+
                         $record->save();
-                        
+
                         return $record;
                     }),
                 Tables\Actions\DeleteAction::make()->label(''),

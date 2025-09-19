@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('company_id');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->index(['company_id', 'is_active']);
         });

@@ -15,12 +15,12 @@ return new class extends Migration
             // Обновляем ограничения для названия и ФИО
             $table->string('name', 60)->change();
             $table->string('general_director', 255)->change();
-            
+
             // Обновляем ограничения для реквизитов
             $table->string('inn', 10)->change();
             $table->string('kpp', 9)->change();
             $table->string('ogrn', 13)->change();
-            
+
             // Обновляем ограничения для банковских реквизитов
             $table->string('account_number', 20)->change();
             $table->string('correspondent_account', 20)->change();
@@ -37,11 +37,11 @@ return new class extends Migration
             // Возвращаем старые ограничения
             $table->string('name', 100)->change();
             $table->string('general_director', 255)->change();
-            
+
             $table->string('inn', 255)->change();
             $table->string('kpp', 255)->change();
             $table->string('ogrn', 255)->change();
-            
+
             $table->string('account_number', 255)->change();
             $table->string('correspondent_account', 255)->change();
             $table->string('bik', 255)->change();

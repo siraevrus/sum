@@ -5,7 +5,6 @@ namespace App\Filament\Resources\BuyerResource\Pages;
 use App\Filament\Resources\BuyerResource;
 use Filament\Resources\Pages\Page;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Contracts\View\View as ViewContract;
 
 class PurchasesByBuyer extends Page
 {
@@ -14,7 +13,9 @@ class PurchasesByBuyer extends Page
     protected static string $view = 'filament.resources.buyer-resource.pages.purchases-by-buyer';
 
     protected $phone;
+
     protected $customer_name;
+
     protected $purchases;
 
     public function mount(): void

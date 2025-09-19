@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Feature\Filament;
 
-use App\Models\User;
 use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Resources\UserResource\Pages\EditUser;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Livewire\Livewire;
+use Tests\TestCase;
 
 class UserResourceTest extends TestCase
 {

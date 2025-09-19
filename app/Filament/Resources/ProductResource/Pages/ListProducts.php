@@ -17,4 +17,4 @@ class ListProducts extends ListRecords
                 ->label('Добавить'),
         ];
     }
-} 
+}

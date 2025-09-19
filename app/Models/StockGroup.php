@@ -74,11 +74,11 @@ class StockGroup extends Model
     {
         $name = $this->name ?? '';
         $attributesText = $this->getAttributesText();
-        
+
         if ($attributesText) {
             $name .= " ({$attributesText})";
         }
-        
+
         return $name;
     }
 
@@ -93,6 +93,7 @@ class StockGroup extends Model
         if ($this->total_quantity > 0) {
             return 'warning';
         }
+
         return 'danger';
     }
 
@@ -101,7 +102,7 @@ class StockGroup extends Model
      */
     public function getLastArrivalInfo(): string
     {
-        if (!$this->last_arrival_date) {
+        if (! $this->last_arrival_date) {
             return 'Нет данных';
         }
 

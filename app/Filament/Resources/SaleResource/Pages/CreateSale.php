@@ -122,14 +122,14 @@ class CreateSale extends CreateRecord
 
                 // Получаем доступное количество в этой позиции
                 $availableInPosition = $candidate->quantity - ($candidate->sold_quantity ?? 0);
-                
+
                 if ($availableInPosition <= 0) {
                     continue; // Пропускаем позиции без доступного товара
                 }
 
                 // Списываем с позиции (либо все доступное, либо оставшееся количество)
                 $decrement = min($remaining, $availableInPosition);
-                
+
                 if ($decrement <= 0) {
                     continue;
                 }
@@ -144,7 +144,7 @@ class CreateSale extends CreateRecord
                     'sold_quantity_before' => $candidate->sold_quantity ?? 0,
                     'available_before' => $availableInPosition,
                     'decrement' => $decrement,
-                    'remaining' => $remaining
+                    'remaining' => $remaining,
                 ]);
             }
 

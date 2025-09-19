@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -14,10 +12,10 @@ return new class extends Migration
     {
         // Обрезаем данные в полях companies до нужной длины
         $companies = DB::table('companies')->get();
-        
+
         foreach ($companies as $company) {
             $updates = [];
-            
+
             if (strlen($company->name) > 60) {
                 $updates['name'] = substr($company->name, 0, 60);
             }
@@ -42,8 +40,8 @@ return new class extends Migration
             if (strlen($company->bik) > 9) {
                 $updates['bik'] = substr($company->bik, 0, 9);
             }
-            
-            if (!empty($updates)) {
+
+            if (! empty($updates)) {
                 DB::table('companies')->where('id', $company->id)->update($updates);
             }
         }

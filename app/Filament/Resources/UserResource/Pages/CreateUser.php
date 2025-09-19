@@ -3,10 +3,7 @@
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
-use Filament\Forms\Get;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Str;
 
 class CreateUser extends CreateRecord
 {
@@ -29,5 +26,4 @@ class CreateUser extends CreateRecord
 
         return $data;
     }
-
 }

@@ -32,10 +32,10 @@ return new class extends Migration
         }
 
         Schema::table('product_in_transit', function (Blueprint $table) {
-            if (!Schema::hasColumn('product_in_transit', 'shipping_location')) {
+            if (! Schema::hasColumn('product_in_transit', 'shipping_location')) {
                 $table->string('shipping_location')->nullable();
             }
-            if (!Schema::hasColumn('product_in_transit', 'shipping_date')) {
+            if (! Schema::hasColumn('product_in_transit', 'shipping_date')) {
                 $table->date('shipping_date')->nullable();
             }
             if (Schema::hasColumn('product_in_transit', 'supplier')) {
@@ -50,7 +50,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('product_in_transit', function (Blueprint $table) {
-            if (!Schema::hasColumn('product_in_transit', 'supplier')) {
+            if (! Schema::hasColumn('product_in_transit', 'supplier')) {
                 $table->string('supplier')->nullable();
             }
             if (Schema::hasColumn('product_in_transit', 'shipping_location')) {

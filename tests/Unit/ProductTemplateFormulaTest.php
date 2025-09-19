@@ -7,7 +7,7 @@ use Tests\TestCase;
 
 class ProductTemplateFormulaTest extends TestCase
 {
-    public function test_testFormula_handles_quantity_and_numeric_attributes(): void
+    public function test_test_formula_handles_quantity_and_numeric_attributes(): void
     {
         $template = new ProductTemplate([
             'formula' => 'length * width * height * quantity',
@@ -24,5 +24,3 @@ class ProductTemplateFormulaTest extends TestCase
         $this->assertSame(120.0, (float) $result['result']);
     }
 }
-
-

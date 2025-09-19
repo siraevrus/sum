@@ -4,8 +4,8 @@ namespace Database\Factories;
 
 use App\Models\Product;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -127,4 +127,4 @@ class ProductFactory extends Factory
             'status' => Product::STATUS_IN_TRANSIT,
         ]);
     }
-} 
+}

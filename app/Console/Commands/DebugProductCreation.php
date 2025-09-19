@@ -2,12 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
-use App\Models\Company;
 use App\Models\User;
-use App\UserRole;
+use App\Models\Warehouse;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +37,8 @@ class DebugProductCreation extends Command
         try {
             $this->info('✓ Database connection: OK');
         } catch (\Exception $e) {
-            $this->error('✗ Database connection failed: ' . $e->getMessage());
+            $this->error('✗ Database connection failed: '.$e->getMessage());
+
             return 1;
         }
 
@@ -66,6 +66,7 @@ class DebugProductCreation extends Command
         $this->testProductCreation();
 
         $this->info('=== Debug Complete ===');
+
         return 0;
     }
 
@@ -73,7 +74,7 @@ class DebugProductCreation extends Command
     {
         if (DB::getSchemaBuilder()->hasTable($table)) {
             $this->info("✓ Table {$table}: exists");
-            
+
             // Проверяем важные колонки
             $columns = ['id'];
             if ($table === 'products') {
@@ -81,7 +82,7 @@ class DebugProductCreation extends Command
             } elseif ($table === 'users') {
                 $columns = ['id', 'name', 'email', 'role', 'company_id'];
             }
-            
+
             foreach ($columns as $column) {
                 if (DB::getSchemaBuilder()->hasColumn($table, $column)) {
                     $this->info("  ✓ Column {$table}.{$column}: exists");
@@ -112,18 +113,19 @@ class DebugProductCreation extends Command
     private function checkUser(int $userId): void
     {
         $user = User::find($userId);
-        if (!$user) {
+        if (! $user) {
             $this->error("✗ User with ID {$userId} not found");
+
             return;
         }
 
         $this->info("✓ User found: {$user->name} ({$user->email})");
         $this->info("  Role: {$user->role->value}");
         $this->info("  Company ID: {$user->company_id}");
-        
+
         // Проверяем права доступа
         $canViewProducts = in_array($user->role->value, ['admin', 'operator']);
-        $this->info("  Can view products: " . ($canViewProducts ? 'Yes' : 'No'));
+        $this->info('  Can view products: '.($canViewProducts ? 'Yes' : 'No'));
     }
 
     private function testProductCreation(): void
@@ -134,8 +136,9 @@ class DebugProductCreation extends Command
             $warehouse = Warehouse::first();
             $user = User::first();
 
-            if (!$template || !$warehouse || !$user) {
+            if (! $template || ! $warehouse || ! $user) {
                 $this->error('✗ Missing required data for test creation');
+
                 return;
             }
 
@@ -147,7 +150,7 @@ class DebugProductCreation extends Command
             $productData = [
                 'product_template_id' => $template->id,
                 'warehouse_id' => $warehouse->id,
-                'name' => 'Debug Test Product ' . time(),
+                'name' => 'Debug Test Product '.time(),
                 'quantity' => 1,
                 'arrival_date' => now(),
                 'is_active' => true,
@@ -156,17 +159,17 @@ class DebugProductCreation extends Command
             ];
 
             $product = Product::create($productData);
-            
-            $this->info("✓ Test product created successfully!");
+
+            $this->info('✓ Test product created successfully!');
             $this->info("  ID: {$product->id}");
             $this->info("  Name: {$product->name}");
-            
+
             // Удаляем тестовый товар
             $product->delete();
-            $this->info("✓ Test product deleted");
+            $this->info('✓ Test product deleted');
 
         } catch (\Exception $e) {
-            $this->error('✗ Product creation failed: ' . $e->getMessage());
+            $this->error('✗ Product creation failed: '.$e->getMessage());
         }
     }
 }

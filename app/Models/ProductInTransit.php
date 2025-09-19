@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Livewire\TestFormula;
 
 class ProductInTransit extends Model
 {
@@ -52,9 +51,13 @@ class ProductInTransit extends Model
 
     // Статусы товаров в пути
     const STATUS_ORDERED = 'ordered';
+
     const STATUS_IN_TRANSIT = 'in_transit';
+
     const STATUS_ARRIVED = 'arrived';
+
     const STATUS_RECEIVED = 'received';
+
     const STATUS_CANCELLED = 'cancelled';
 
     /**
@@ -120,7 +123,7 @@ class ProductInTransit extends Model
      */
     public function calculateVolume(): ?float
     {
-        if (!$this->template || !$this->template->formula) {
+        if (! $this->template || ! $this->template->formula) {
             return null;
         }
 
@@ -128,13 +131,13 @@ class ProductInTransit extends Model
             // Добавляем количество в атрибуты для использования в формуле
             $attributes = $this->attributes;
             $attributes['quantity'] = $this->quantity;
-            
+
             $testResult = $this->template->testFormula($attributes);
-            
+
             if ($testResult['success']) {
                 return (float) $testResult['result'];
             }
-            
+
             return null;
         } catch (\Exception $e) {
             return null;
@@ -158,7 +161,7 @@ class ProductInTransit extends Model
         if ($this->calculated_volume === null) {
             return null;
         }
-        
+
         return $this->calculated_volume * $this->quantity;
     }
 
@@ -171,7 +174,7 @@ class ProductInTransit extends Model
         if ($this->producer_id) { // Используем producer_id
             $producer = \App\Models\Producer::find($this->producer_id);
             if ($producer) {
-                $name .= ' (' . $producer->name . ')';
+                $name .= ' ('.$producer->name.')';
             }
         }
 
@@ -191,7 +194,7 @@ class ProductInTransit extends Model
      */
     public function receive(): bool
     {
-        if (!$this->canBeReceived()) {
+        if (! $this->canBeReceived()) {
             return false;
         }
 
@@ -222,20 +225,23 @@ class ProductInTransit extends Model
 
                 // Подтверждаем транзакцию
                 DB::commit();
+
                 return true;
             }
 
             // Откатываем транзакцию в случае ошибки
             DB::rollBack();
+
             return false;
 
         } catch (\Exception $e) {
             // Откатываем транзакцию в случае исключения
             DB::rollBack();
-            Log::error('Ошибка при приемке товара: ' . $e->getMessage(), [
+            Log::error('Ошибка при приемке товара: '.$e->getMessage(), [
                 'product_in_transit_id' => $this->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -247,15 +253,16 @@ class ProductInTransit extends Model
     {
         if (in_array($status, [self::STATUS_ORDERED, self::STATUS_IN_TRANSIT, self::STATUS_ARRIVED, self::STATUS_RECEIVED, self::STATUS_CANCELLED])) {
             $this->status = $status;
-            
+
             if ($status === self::STATUS_ARRIVED) {
                 $this->actual_arrival_date = now();
             }
-            
+
             $this->save();
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -264,7 +271,7 @@ class ProductInTransit extends Model
      */
     public function getStatusLabel(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_ORDERED => 'Заказан',
             self::STATUS_IN_TRANSIT => 'В пути',
             self::STATUS_ARRIVED => 'Прибыл',
@@ -279,7 +286,7 @@ class ProductInTransit extends Model
      */
     public function getStatusColor(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_ORDERED => 'warning',
             self::STATUS_IN_TRANSIT => 'info',
             self::STATUS_ARRIVED => 'success',
@@ -294,7 +301,7 @@ class ProductInTransit extends Model
      */
     public function isOverdue(): bool
     {
-        return $this->expected_arrival_date < now() && !in_array($this->status, [self::STATUS_RECEIVED, self::STATUS_CANCELLED]);
+        return $this->expected_arrival_date < now() && ! in_array($this->status, [self::STATUS_RECEIVED, self::STATUS_CANCELLED]);
     }
 
     /**
@@ -343,7 +350,7 @@ class ProductInTransit extends Model
     public function scopeOverdue(Builder $query): void
     {
         $query->where('expected_arrival_date', '<', now())
-              ->whereNotIn('status', [self::STATUS_RECEIVED, self::STATUS_CANCELLED]);
+            ->whereNotIn('status', [self::STATUS_RECEIVED, self::STATUS_CANCELLED]);
     }
 
     /**
@@ -397,4 +404,4 @@ class ProductInTransit extends Model
             'total_volume' => static::inTransit()->sum('calculated_volume'),
         ];
     }
-} 
+}

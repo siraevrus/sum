@@ -17,4 +17,4 @@ class ListSales extends ListRecords
                 ->label('Создать продажу'),
         ];
     }
-} 
+}

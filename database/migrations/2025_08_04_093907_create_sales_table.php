@@ -36,11 +36,11 @@ return new class extends Migration
             $table->date('sale_date'); // дата продажи
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            
+
             $table->index(['warehouse_id', 'sale_date']);
             $table->index(['user_id', 'sale_date']);
             $table->index(['product_id', 'sale_date']);

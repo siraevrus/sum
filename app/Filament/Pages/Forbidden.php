@@ -28,5 +28,3 @@ class Forbidden extends Page
         $this->message = (string) request()->query('message', 'У вас нет прав для выполнения этого действия.');
     }
 }
-
-

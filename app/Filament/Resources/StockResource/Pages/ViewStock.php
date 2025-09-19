@@ -17,4 +17,4 @@ class ViewStock extends ViewRecord
                 ->label('Изменить'),
         ];
     }
-} 
+}

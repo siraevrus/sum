@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Producer;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Producer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProducerController extends Controller
 {
     public function index(): JsonResponse
     {
         $producers = Producer::all();
+
         return response()->json($producers);
     }
 
@@ -24,6 +25,7 @@ class ProducerController extends Controller
         ]);
 
         $producer = Producer::create($validated);
+
         return response()->json($producer, 201);
     }
 
@@ -40,12 +42,14 @@ class ProducerController extends Controller
         ]);
 
         $producer->update($validated);
+
         return response()->json($producer);
     }
 
     public function destroy(Producer $producer): JsonResponse
     {
         $producer->delete();
+
         return response()->json(null, 204);
     }
 }

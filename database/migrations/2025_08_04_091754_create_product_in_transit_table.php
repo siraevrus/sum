@@ -32,11 +32,11 @@ return new class extends Migration
             $table->string('document_path')->nullable(); // путь к документам
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('product_template_id')->references('id')->on('product_templates')->onDelete('cascade');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
-            
+
             $table->index(['warehouse_id', 'status']);
             $table->index(['product_template_id', 'status']);
             $table->index('producer');

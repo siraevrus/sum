@@ -1,9 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductExportController;
-use App\Http\Controllers\SaleExportController;
 use App\Http\Controllers\ProductWebController;
+use App\Http\Controllers\SaleExportController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/admin/login');

@@ -4,16 +4,19 @@ namespace App\Filament\Widgets;
 
 use App\Models\Sale;
 use Filament\Widgets\Widget;
+
 class RevenueWidget extends Widget
 {
     protected static string $view = 'filament.widgets.revenue-widget';
-    
+
     protected static ?int $sort = 3; // Перед PopularProducts (у которого sort = 4)
-    
+
     protected int|string|array $columnSpan = 'full';
-    
+
     public string $period = 'day';
+
     public ?string $dateFrom = null;
+
     public ?string $dateTo = null;
 
     public function getViewData(): array
@@ -29,7 +32,7 @@ class RevenueWidget extends Widget
     public function getRevenueData(): array
     {
         $dateRange = $this->getDateRange();
-        
+
         $salesQuery = Sale::query()
             ->where('payment_status', Sale::PAYMENT_STATUS_PAID)
             ->where('is_active', true);
@@ -39,8 +42,8 @@ class RevenueWidget extends Widget
             $salesQuery->whereDate('sale_date', $dateRange[0]);
         } else {
             $salesQuery->whereBetween('sale_date', [
-                $dateRange[0] . ' 00:00:00',
-                $dateRange[1] . ' 23:59:59'
+                $dateRange[0].' 00:00:00',
+                $dateRange[1].' 23:59:59',
             ]);
         }
 
@@ -59,7 +62,7 @@ class RevenueWidget extends Widget
             $amount = $results->get($currency)?->total ?? 0;
             $revenueData[$currency] = [
                 'amount' => $amount,
-                'formatted' => $this->formatCurrency($amount, $currency)
+                'formatted' => $this->formatCurrency($amount, $currency),
             ];
         }
 
@@ -69,14 +72,14 @@ class RevenueWidget extends Widget
     private function getDateRange(): array
     {
         $today = now()->format('Y-m-d');
-        
+
         return match ($this->period) {
             'day' => [$today, $today],
             'week' => [now()->subDays(6)->format('Y-m-d'), $today],
             'month' => [now()->subDays(29)->format('Y-m-d'), $today],
             'custom' => [
                 $this->dateFrom ?? $today,
-                $this->dateTo ?? $today
+                $this->dateTo ?? $today,
             ],
             default => [$today, $today]
         };
@@ -85,11 +88,11 @@ class RevenueWidget extends Widget
     private function formatCurrency(float $amount, string $currency): string
     {
         $formatted = number_format($amount, 0, '.', ' ');
-        
+
         return match ($currency) {
-            'USD' => $formatted . '$',
-            'RUB' => $formatted . ' ₽',
-            'UZS' => $formatted . ' Сум',
+            'USD' => $formatted.'$',
+            'RUB' => $formatted.' ₽',
+            'UZS' => $formatted.' Сум',
             default => $formatted
         };
     }

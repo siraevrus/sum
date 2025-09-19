@@ -4,8 +4,8 @@ namespace App\Filament\Resources\ProducerResource\Pages;
 
 use App\Filament\Resources\ProducerResource;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\EditRecord;
 
 class EditProducer extends EditRecord
 {

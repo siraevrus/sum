@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Request;
 use App\Models\ProductTemplate;
-use App\Models\Warehouse;
+use App\Models\Request;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -167,4 +167,4 @@ class RequestFactory extends Factory
             ];
         });
     }
-} 
+}

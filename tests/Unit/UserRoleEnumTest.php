@@ -17,5 +17,3 @@ class UserRoleEnumTest extends TestCase
         $this->assertContains('sales_manager', $values);
     }
 }
-
-

@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Feature\Filament;
 
-use App\Models\Company;
-use App\Models\User;
 use App\Filament\Resources\CompanyResource\Pages\CreateCompany;
 use App\Filament\Resources\CompanyResource\Pages\EditCompany;
+use App\Models\Company;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Livewire\Livewire;
+use Tests\TestCase;
 
 class CompanyResourceTest extends TestCase
 {
@@ -50,7 +50,7 @@ class CompanyResourceTest extends TestCase
         $this->assertDatabaseHas('companies', [
             'name' => 'Test Company',
         ]);
-        
+
         // Проверяем, что INN правильно сохраняется
         $company = \App\Models\Company::where('name', 'Test Company')->first();
         $this->assertEquals('1234567890', $company->inn); // Проверяем, что значение правильное

@@ -55,4 +55,4 @@ class CompanyFactory extends Factory
             'archived_at' => now(),
         ]);
     }
-} 
+}

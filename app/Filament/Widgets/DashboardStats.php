@@ -6,7 +6,6 @@ use App\Models\Company;
 use App\Models\Product;
 use App\Models\Product as ProductModel;
 use App\Models\Request;
-use App\Models\Sale;
 use App\Models\User;
 use App\Models\Warehouse;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;

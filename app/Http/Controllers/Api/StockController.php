@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Models\StockGroup;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
@@ -26,7 +25,7 @@ class StockController extends Controller
                 DB::raw('SUM(calculated_volume * quantity) as total_volume'),
                 DB::raw('MIN(name) as name'),
                 DB::raw('MIN(status) as status'),
-                DB::raw('MIN(is_active) as is_active')
+                DB::raw('MIN(is_active) as is_active'),
             ])
             ->where('is_active', 1)
             ->groupBy('product_template_id', 'warehouse_id', 'producer')
@@ -54,7 +53,7 @@ class StockController extends Controller
                 'last_page' => $stocks->lastPage(),
                 'per_page' => $stocks->perPage(),
                 'total' => $stocks->total(),
-            ]
+            ],
         ]);
     }
 
@@ -68,7 +67,7 @@ class StockController extends Controller
         if (count($parts) !== 3) {
             return response()->json([
                 'success' => false,
-                'message' => 'Неверный формат ID'
+                'message' => 'Неверный формат ID',
             ], 400);
         }
 
@@ -86,7 +85,7 @@ class StockController extends Controller
                 DB::raw('SUM(calculated_volume * quantity) as total_volume'),
                 DB::raw('MIN(name) as name'),
                 DB::raw('MIN(status) as status'),
-                DB::raw('MIN(is_active) as is_active')
+                DB::raw('MIN(is_active) as is_active'),
             ])
             ->where('product_template_id', $productTemplateId)
             ->where('warehouse_id', $warehouseId)
@@ -96,10 +95,10 @@ class StockController extends Controller
             ->with(['productTemplate', 'warehouse'])
             ->first();
 
-        if (!$stock) {
+        if (! $stock) {
             return response()->json([
                 'success' => false,
-                'message' => 'Остаток не найден'
+                'message' => 'Остаток не найден',
             ], 404);
         }
 
@@ -116,8 +115,8 @@ class StockController extends Controller
             'success' => true,
             'data' => [
                 'stock' => $stock,
-                'products' => $products
-            ]
+                'products' => $products,
+            ],
         ]);
     }
 }

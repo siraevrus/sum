@@ -17,5 +17,3 @@ class Authenticate extends Middleware
         return '/admin/login';
     }
 }
-
-

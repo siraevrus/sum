@@ -5,7 +5,6 @@ namespace App\Filament\Resources\RequestResource\Pages;
 use App\Filament\Resources\RequestResource;
 use App\UserRole;
 use Filament\Actions;
-use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
@@ -100,7 +99,6 @@ class ViewRequest extends ViewRecord
                             ->badge()
                             ->color(fn ($record) => $record->getStatusColor()),
 
-
                         TextEntry::make('warehouse.name')
                             ->label('Склад')
                             ->badge()
@@ -122,8 +120,6 @@ class ViewRequest extends ViewRecord
                             ->badge()
                             ->color('danger'),
 
-                        
-
                         TextEntry::make('created_at')
                             ->label('Создан')
                             ->dateTime()
@@ -138,8 +134,6 @@ class ViewRequest extends ViewRecord
                             ->label('Описание')
                             ->columnSpanFull(),
                     ]),
-
-                
 
             ]);
     }

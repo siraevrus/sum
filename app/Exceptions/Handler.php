@@ -75,5 +75,3 @@ class Handler extends ExceptionHandler
         return redirect()->guest('/admin/login');
     }
 }
-
-

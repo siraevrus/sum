@@ -12,44 +12,44 @@ class SaleExportController extends Controller
     public function export(Request $request)
     {
         $user = Auth::user();
-        
+
         // Получаем продажи с учетом прав доступа
         $query = Sale::with(['product', 'warehouse', 'user']);
-        
+
         if ($user->role !== 'admin') {
             $query->whereHas('warehouse', function ($q) use ($user) {
                 $q->where('company_id', $user->company_id);
             });
         }
-        
+
         // Применяем фильтры
         if ($request->has('warehouse_id')) {
             $query->where('warehouse_id', $request->warehouse_id);
         }
-        
+
         if ($request->has('payment_status')) {
             $query->where('payment_status', $request->payment_status);
         }
-        
+
         if ($request->has('date_from')) {
             $query->where('sale_date', '>=', $request->date_from);
         }
-        
+
         if ($request->has('date_to')) {
             $query->where('sale_date', '<=', $request->date_to);
         }
-        
+
         $sales = $query->get();
-        
+
         // Формируем CSV
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="sales_' . date('Y-m-d') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="sales_'.date('Y-m-d').'.csv"',
         ];
-        
-        $callback = function() use ($sales) {
+
+        $callback = function () use ($sales) {
             $file = fopen('php://output', 'w');
-            
+
             // Заголовки
             fputcsv($file, [
                 'ID',
@@ -67,9 +67,9 @@ class SaleExportController extends Controller
                 'Дата продажи',
                 'Дата доставки',
                 'Продавец',
-                'Заметки'
+                'Заметки',
             ]);
-            
+
             // Данные
             foreach ($sales as $sale) {
                 fputcsv($file, [
@@ -88,13 +88,13 @@ class SaleExportController extends Controller
                     $sale->sale_date->format('Y-m-d'),
                     $sale->delivery_date?->format('Y-m-d') ?? 'Не указана',
                     $sale->user?->name ?? 'Не указан',
-                    $sale->notes ?? ''
+                    $sale->notes ?? '',
                 ]);
             }
-            
+
             fclose($file);
         };
-        
+
         return Response::stream($callback, 200, $headers);
     }
-} 
+}

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('is_in_formula')->default(false);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
-            
+
             $table->foreign('product_template_id')->references('id')->on('product_templates')->onDelete('cascade');
             $table->index(['product_template_id', 'sort_order']);
             $table->unique(['product_template_id', 'variable']);

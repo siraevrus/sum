@@ -8,8 +8,11 @@ use Livewire\Component;
 class TestFormula extends Component
 {
     public ProductTemplate $template;
+
     public array $testValues = [];
+
     public ?string $result = null;
+
     public ?string $error = null;
 
     public function mount(ProductTemplate $template)
@@ -32,26 +35,28 @@ class TestFormula extends Component
         $this->error = null;
 
         // Проверяем, что все значения заполнены
-        $emptyValues = array_filter($this->testValues, function($value) {
+        $emptyValues = array_filter($this->testValues, function ($value) {
             return empty($value);
         });
 
-        if (!empty($emptyValues)) {
+        if (! empty($emptyValues)) {
             $this->error = 'Пожалуйста, заполните все значения';
+
             return;
         }
 
         // Проверяем, что все значения числовые
         foreach ($this->testValues as $variable => $value) {
-            if (!is_numeric($value)) {
+            if (! is_numeric($value)) {
                 $this->error = "Значение для переменной '{$variable}' должно быть числом";
+
                 return;
             }
         }
 
         // Тестируем формулу
         $testResult = $this->template->testFormula($this->testValues);
-        
+
         if ($testResult['success']) {
             $this->result = "Результат: {$testResult['result']} {$this->template->unit}";
         } else {

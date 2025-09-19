@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('unit')->default('м³'); // единица измерения
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index('name');
             $table->index('is_active');
         });

@@ -17,4 +17,4 @@ class EditStock extends EditRecord
                 ->label('Удалить'),
         ];
     }
-} 
+}

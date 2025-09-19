@@ -34,29 +34,29 @@ class SecurityHeaders
         // CSP заголовки в зависимости от типа запроса
         if ($request->is('api/*')) {
             // Строгий CSP для API
-            $csp = "default-src 'none'; " .
-                   "connect-src 'self'; " .
-                   "frame-ancestors 'none'; " .
+            $csp = "default-src 'none'; ".
+                   "connect-src 'self'; ".
+                   "frame-ancestors 'none'; ".
                    "base-uri 'none';";
         } elseif ($request->is('admin*')) {
             // CSP для админ-панели (уже обрабатывается FilamentSecurityHeaders)
             return $response;
         } else {
             // CSP для основного приложения
-            $csp = "default-src 'self'; " .
-                   "script-src 'self' 'unsafe-inline'; " .
-                   "style-src 'self' 'unsafe-inline'; " .
-                   "img-src 'self' data: blob: https:; " .
-                   "font-src 'self' data:; " .
-                   "connect-src 'self'; " .
-                   "media-src 'self'; " .
-                   "object-src 'none'; " .
-                   "child-src 'none'; " .
-                   "worker-src 'self'; " .
-                   "frame-ancestors 'none'; " .
-                   "form-action 'self'; " .
-                   "base-uri 'self'; " .
-                   "upgrade-insecure-requests;";
+            $csp = "default-src 'self'; ".
+                   "script-src 'self' 'unsafe-inline'; ".
+                   "style-src 'self' 'unsafe-inline'; ".
+                   "img-src 'self' data: blob: https:; ".
+                   "font-src 'self' data:; ".
+                   "connect-src 'self'; ".
+                   "media-src 'self'; ".
+                   "object-src 'none'; ".
+                   "child-src 'none'; ".
+                   "worker-src 'self'; ".
+                   "frame-ancestors 'none'; ".
+                   "form-action 'self'; ".
+                   "base-uri 'self'; ".
+                   'upgrade-insecure-requests;';
         }
 
         $response->headers->set('Content-Security-Policy', $csp);

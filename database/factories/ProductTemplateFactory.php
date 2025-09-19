@@ -42,4 +42,4 @@ class ProductTemplateFactory extends Factory
             'is_active' => false,
         ]);
     }
-} 
+}

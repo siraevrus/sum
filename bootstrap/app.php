@@ -1,12 +1,13 @@
 <?php
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use Illuminate\Http\Request;
+
 // use Throwable; // не требуется в новых версиях, т.к. FQCN указан в сигнатуре
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -21,11 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
-        
+
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
-        
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'compress' => \App\Http\Middleware\CompressResponse::class,
@@ -35,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Throwable $e, Request $request) {
             $isAdmin = $request->is('admin') || $request->is('admin/*');
-            if (!$isAdmin) {
+            if (! $isAdmin) {
                 return null;
             }
 

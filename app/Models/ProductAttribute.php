@@ -37,7 +37,7 @@ class ProductAttribute extends Model
     {
         // Удаляем sort_order из атрибутов, если он есть
         unset($attributes['sort_order']);
-        
+
         return parent::fill($attributes);
     }
 
@@ -54,7 +54,7 @@ class ProductAttribute extends Model
      */
     public function getOptionsArrayAttribute(): array
     {
-        if ($this->type !== 'select' || !$this->options) {
+        if ($this->type !== 'select' || ! $this->options) {
             return [];
         }
 
@@ -64,6 +64,7 @@ class ProductAttribute extends Model
         foreach ($options as $option) {
             $assoc[$option] = $option;
         }
+
         return $assoc;
     }
 
@@ -76,6 +77,7 @@ class ProductAttribute extends Model
         if ($this->unit) {
             $name .= " ({$this->unit})";
         }
+
         return $name;
     }
 

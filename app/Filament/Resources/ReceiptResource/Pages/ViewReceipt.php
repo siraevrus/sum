@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ReceiptResource\Pages;
 
 use App\Filament\Resources\ReceiptResource;
 use App\Models\Product;
-use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section as InfoSection;

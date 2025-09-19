@@ -3,9 +3,6 @@
 namespace Tests\Unit;
 
 use App\Models\Product;
-use App\Models\ProductFactory;
-use App\Models\User;
-use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

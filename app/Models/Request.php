@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class Request extends Model
@@ -34,8 +34,8 @@ class Request extends Model
 
     // Статусы запросов
     const STATUS_PENDING = 'pending';
-    const STATUS_APPROVED = 'approved';
 
+    const STATUS_APPROVED = 'approved';
 
     /**
      * Связь с пользователем, создавшим запрос
@@ -90,7 +90,7 @@ class Request extends Model
      */
     public function getStatusLabel(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING => 'Ожидает рассмотрения',
             self::STATUS_APPROVED => 'Одобрен',
             default => 'Неизвестно',
@@ -102,13 +102,12 @@ class Request extends Model
      */
     public function getStatusColor(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING => 'warning',
             self::STATUS_APPROVED => 'info',
             default => 'gray',
         };
     }
-
 
     /**
      * Проверить, можно ли одобрить запрос
@@ -129,40 +128,42 @@ class Request extends Model
     /**
      * Одобрить запрос
      */
-    public function approve(string $notes = null): bool
+    public function approve(?string $notes = null): bool
     {
-        if (!$this->canBeApproved()) {
+        if (! $this->canBeApproved()) {
             return false;
         }
 
         $this->status = self::STATUS_APPROVED;
         $this->approved_by = Auth::id();
         $this->approved_at = now();
-        
+
         if ($notes) {
             $this->admin_notes = $notes;
         }
-        
+
         $this->save();
+
         return true;
     }
 
     /**
      * Отклонить запрос
      */
-    public function reject(string $notes = null): bool
+    public function reject(?string $notes = null): bool
     {
-        if (!$this->canBeRejected()) {
+        if (! $this->canBeRejected()) {
             return false;
         }
 
         $this->status = self::STATUS_APPROVED; // В нашей системе "отклонение" = "одобрение" с заметками
-        
+
         if ($notes) {
             $this->admin_notes = $notes;
         }
-        
+
         $this->save();
+
         return true;
     }
 
@@ -171,7 +172,7 @@ class Request extends Model
      */
     public function getProcessingDays(): int
     {
-        if (!$this->approved_at) {
+        if (! $this->approved_at) {
             return 0;
         }
 
@@ -206,7 +207,6 @@ class Request extends Model
         $query->where('status', $status);
     }
 
-
     /**
      * Scope для фильтрации по складу
      */
@@ -229,7 +229,7 @@ class Request extends Model
     public function scopeOverdue(Builder $query): void
     {
         $query->where('status', self::STATUS_APPROVED)
-              ->where('approved_at', '<', now()->subDays(7));
+            ->where('approved_at', '<', now()->subDays(7));
     }
 
     /**
@@ -252,4 +252,4 @@ class Request extends Model
             'overdue_requests' => static::overdue()->count(),
         ];
     }
-} 
+}

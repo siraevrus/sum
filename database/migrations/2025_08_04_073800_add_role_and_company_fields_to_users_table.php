@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('warehouse_id')->nullable();
             $table->boolean('is_blocked')->default(false);
             $table->timestamp('blocked_at')->nullable();
-            
+
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('set null');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('set null');
         });
@@ -38,13 +38,13 @@ return new class extends Migration
             $table->dropColumn([
                 'role',
                 'first_name',
-                'last_name', 
+                'last_name',
                 'middle_name',
                 'phone',
                 'company_id',
                 'warehouse_id',
                 'is_blocked',
-                'blocked_at'
+                'blocked_at',
             ]);
         });
     }

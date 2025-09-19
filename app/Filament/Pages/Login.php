@@ -6,8 +6,6 @@ use App\Models\User;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\Auth\Login as BaseLogin;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class Login extends BaseLogin
 {
@@ -34,7 +32,7 @@ class Login extends BaseLogin
     protected function getCredentialsFromFormData(array $data): array
     {
         $login = $data['login'];
-        
+
         // Пытаемся найти пользователя по email или username
         $user = User::where('email', $login)
             ->orWhere('username', $login)
@@ -52,4 +50,4 @@ class Login extends BaseLogin
             'password' => $data['password'],
         ];
     }
-} 
+}

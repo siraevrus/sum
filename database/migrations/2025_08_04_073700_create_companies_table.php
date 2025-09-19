@@ -29,7 +29,7 @@ return new class extends Migration
             $table->boolean('is_archived')->default(false);
             $table->timestamp('archived_at')->nullable();
             $table->timestamps();
-            
+
             $table->index('name');
             $table->index('is_archived');
         });

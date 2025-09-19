@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductTemplate;
 use App\Models\ProductAttribute;
-use Illuminate\Http\Request;
+use App\Models\ProductTemplate;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class ProductTemplateController extends Controller
 {
@@ -331,4 +330,4 @@ class ProductTemplateController extends Controller
             'data' => $units,
         ]);
     }
-} 
+}

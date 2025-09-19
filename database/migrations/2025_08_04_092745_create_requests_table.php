@@ -29,13 +29,13 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable(); // когда завершено
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('cascade');
             $table->foreign('product_template_id')->references('id')->on('product_templates')->onDelete('set null');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('processed_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['warehouse_id', 'status']);
             $table->index(['user_id', 'status']);
             $table->index(['product_template_id', 'status']);

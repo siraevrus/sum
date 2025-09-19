@@ -3,15 +3,15 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Sale;
-use Filament\Widgets\TableWidget as BaseWidget;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Widgets\TableWidget as BaseWidget;
 
 class LatestSales extends BaseWidget
 {
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'Последние продажи';
 
@@ -75,4 +75,4 @@ class LatestSales extends BaseWidget
             ])
             ->paginated(false);
     }
-} 
+}

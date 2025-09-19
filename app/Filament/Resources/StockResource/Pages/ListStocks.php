@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\StockResource\Pages;
 
 use App\Filament\Resources\StockResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListStocks extends ListRecords
@@ -34,5 +33,4 @@ class ListStocks extends ListRecords
         // Fallback - всегда возвращаем строку
         return md5(serialize($record) ?: 'empty_record');
     }
-
-} 
+}
