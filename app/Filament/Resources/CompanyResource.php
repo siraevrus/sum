@@ -271,6 +271,21 @@ class CompanyResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery();
+        $query = parent::getEloquentQuery();
+
+        // Показываем неархивированные по умолчанию.
+        // Если в запросе явно включен фильтр "Архивированные = Да",
+        // оставляем полный набор (без дополнительного условия).
+        $filterPath = 'tableFilters.is_archived.value';
+        $filterValue = request()->input($filterPath);
+
+        if ($filterValue === 'true') {
+            return $query;
+        }
+
+        // При значении false или при его отсутствии скрываем архивированные.
+        return $query->where(function (Builder $q) {
+            $q->where('is_archived', false)->orWhereNull('is_archived');
+        });
     }
 }
