@@ -150,6 +150,7 @@ class CompanyResource extends Resource
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_archived')
                     ->label('Архивированные')
+                    ->default(false)
                     ->query(function (Builder $query, array $data): Builder {
                         if ($data['value'] === true) {
                             return $query->where('is_archived', true);
