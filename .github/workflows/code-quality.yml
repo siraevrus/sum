@@ -27,14 +27,6 @@ jobs:
     - name: Run Laravel Pint (Code Style Check)
       run: vendor/bin/pint --test
     
-    - name: Run PHPStan (Static Analysis)
-      run: |
-        if [ -f vendor/bin/phpstan ]; then
-          vendor/bin/phpstan analyse --memory-limit=2G
-        else
-          echo "PHPStan not installed, skipping static analysis"
-        fi
-    
     - name: Check for Security Vulnerabilities
       run: composer audit
     

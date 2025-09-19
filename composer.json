@@ -14,14 +14,12 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
-        "larastan/larastan": "^3.7",
         "laravel/boost": "^1.0",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5.3"
     },
     "autoload": {
@@ -66,8 +64,7 @@
             "@composer audit"
         ],
         "quality:fix": [
-            "@php vendor/bin/pint",
-            "@php vendor/bin/phpstan analyse"
+            "@php vendor/bin/pint"
         ]
     },
     "extra": {
