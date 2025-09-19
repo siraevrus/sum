@@ -20,9 +20,14 @@ class DatabaseConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Отключаем ONLY_FULL_GROUP_BY для MySQL
+        // Отключаем ONLY_FULL_GROUP_BY для MySQL только если БД доступна
         if (config('database.default') === 'mysql') {
-            DB::statement("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
+            try {
+                DB::statement("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
+            } catch (\Exception $e) {
+                // Игнорируем ошибки подключения к БД при загрузке приложения
+                // Это позволяет выполнять команды типа key:generate без БД
+            }
         }
     }
 }
