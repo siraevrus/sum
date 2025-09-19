@@ -56,8 +56,20 @@ jobs:
           if [ ! -f .env ]; then
             cp .env.example .env
           fi
+          # Temporarily disable database connection for key generation
+          sed -i 's/DB_CONNECTION=mysql/DB_CONNECTION=sqlite/' .env
           php artisan key:generate --force
           echo "✅ Application key generated"
+          
+          # Configure MySQL database
+          echo "🗄️ Configuring MySQL database..."
+          sed -i 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
+          sed -i 's/DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/' .env
+          sed -i 's/DB_PORT=3306/DB_PORT=3306/' .env
+          sed -i 's/DB_DATABASE=laravel/DB_DATABASE=sklad/' .env
+          sed -i 's/DB_USERNAME=root/DB_USERNAME=sklad/' .env
+          sed -i 's/DB_PASSWORD=/DB_PASSWORD=sklad123/' .env
+          echo "✅ MySQL database configured"
           
           # Run database migrations
           echo "🗄️ Running database migrations..."
