@@ -24,14 +24,14 @@ jobs:
           echo "🚀 Starting deployment process..."
           
           # Navigate to project directory
-          cd /var/www/sklad
+          cd /var/www/html
           echo "📁 Changed to project directory: $(pwd)"
           
           # Create backup before deployment
           echo "💾 Creating backup..."
           BACKUP_DIR="/var/backups/sklad/$(date +%Y%m%d_%H%M%S)"
           mkdir -p "$BACKUP_DIR"
-          cp -r /var/www/sklad "$BACKUP_DIR/"
+          cp -r /var/www/html "$BACKUP_DIR/"
           echo "✅ Backup created at: $BACKUP_DIR"
           
           # Pull latest changes
@@ -70,10 +70,10 @@ jobs:
           
           # Set proper permissions
           echo "🔐 Setting proper permissions..."
-          chown -R www-data:www-data /var/www/sklad
-          chmod -R 755 /var/www/sklad
-          chmod -R 775 /var/www/sklad/storage
-          chmod -R 775 /var/www/sklad/bootstrap/cache
+          chown -R www-data:www-data /var/www/html
+          chmod -R 755 /var/www/html
+          chmod -R 775 /var/www/html/storage
+          chmod -R 775 /var/www/html/bootstrap/cache
           echo "✅ Permissions set"
           
           # Restart services
