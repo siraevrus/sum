@@ -51,6 +51,14 @@ jobs:
           npm run build
           echo "✅ Frontend assets built"
           
+          # Generate application key if not exists
+          echo "🔑 Generating application key..."
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+          php artisan key:generate --force
+          echo "✅ Application key generated"
+          
           # Run database migrations
           echo "🗄️ Running database migrations..."
           php artisan migrate --force
