@@ -41,6 +41,8 @@ tags:
     description: Приемка товаров
   - name: Stocks
     description: Остатки товаров
+  - name: Dashboard
+    description: Агрегированные данные Инфопанели
 
 security:
   - bearerAuth: []
@@ -645,7 +647,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [pending, processed, rejected]
+            enum: [pending, approved]
       responses:
         '200':
           description: Список запросов
@@ -685,24 +687,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Request'
 
-  /requests/{request}/process:
+  /requests/{request}/approve:
     post:
       tags: [Requests]
-      summary: Обработка запроса
-      parameters:
-        - name: request
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Запрос обработан
-
-  /requests/{request}/reject:
-    post:
-      tags: [Requests]
-      summary: Отклонение запроса
+      summary: Одобрение запроса
       parameters:
         - name: request
           in: path
@@ -715,12 +703,23 @@ paths:
             schema:
               type: object
               properties:
-                reason:
+                admin_notes:
                   type: string
-                  description: Причина отклонения
+                  description: Заметки администратора
       responses:
         '200':
-          description: Запрос отклонен
+          description: Запрос одобрен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Request'
 
   # === USERS ===
   /users:
@@ -1372,6 +1371,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/Stock'
 
+  # === DASHBOARD ===
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Сводные данные для Инфопанели
+      description: Возвращает агрегированные показатели и последние продажи одним ответом
+      responses:
+        '200':
+          description: Сводные данные Инфопанели
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  companies_active:
+                    type: integer
+                    example: 12
+                  employees_active:
+                    type: integer
+                    example: 57
+                  warehouses_active:
+                    type: integer
+                    example: 4
+                  products_total:
+                    type: integer
+                    example: 7890
+                  products_in_transit:
+                    type: integer
+                    example: 34
+                  requests_pending:
+                    type: integer
+                    example: 7
+                  latest_sales:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 123
+                        product_name:
+                          type: string
+                          example: "Лист стальной 10x2000x6000"
+                        client_name:
+                          type: string
+                          example: "ООО Клиент"
+                        quantity:
+                          type: integer
+                          example: 10
+                        total_amount:
+                          type: number
+                          format: float
+                          example: 15005.0
+                        sale_date:
+                          type: string
+                          format: date-time
+                          example: "2025-09-17T13:45:00Z"
+
 # === COMPONENTS ===
 components:
   securitySchemes:
@@ -1995,30 +2052,36 @@ components:
         id:
           type: integer
           example: 1
-        type:
-          type: string
-          example: "product_request"
         title:
           type: string
-          example: "Запрос на товар"
+          example: "Запрос на брус 100x50"
         description:
           type: string
-          example: "Описание запроса"
+          example: "Нужен брус для строительства"
         status:
           type: string
-          enum: [pending, processed, rejected]
+          enum: [pending, approved]
           example: "pending"
-        priority:
-          type: string
-          enum: [low, medium, high]
-          example: "medium"
-        requested_by:
+        quantity:
+          type: integer
+          example: 10
+        warehouse_id:
           type: integer
           example: 1
-        assigned_to:
+        product_template_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        admin_notes:
+          type: string
+          nullable: true
+          example: "Заметки администратора"
+        approved_by:
           type: integer
           nullable: true
-        processed_at:
+        approved_at:
           type: string
           format: date-time
           nullable: true
@@ -2028,29 +2091,33 @@ components:
         updated_at:
           type: string
           format: date-time
-        requester:
+        user:
           $ref: '#/components/schemas/User'
-        assignee:
-          $ref: '#/components/schemas/User'
+        warehouse:
+          $ref: '#/components/schemas/Warehouse'
+        product_template:
+          $ref: '#/components/schemas/ProductTemplate'
 
     RequestInput:
       type: object
-      required: [type, title, description]
+      required: [warehouse_id, product_template_id, title, quantity]
       properties:
-        type:
-          type: string
+        warehouse_id:
+          type: integer
+        product_template_id:
+          type: integer
         title:
           type: string
           maxLength: 255
         description:
           type: string
-        priority:
-          type: string
-          enum: [low, medium, high]
-          default: medium
-        assigned_to:
+        quantity:
           type: integer
-          nullable: true
+          minimum: 1
+        attributes:
+          type: array
+          items:
+            type: object
 
     Receipt:
       type: object
