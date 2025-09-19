@@ -126,7 +126,7 @@ class UserController extends Controller
             'username' => 'nullable|string|max:255|unique:users,username',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
-            'role' => ['required', Rule::in(array_merge(UserRole::cases(), ['manager']))],
+            'role' => ['required', Rule::in(UserRole::cases())],
             'company_id' => 'nullable|exists:companies,id',
             'warehouse_id' => 'nullable|exists:warehouses,id',
             'phone' => 'nullable|string|max:20',
@@ -152,11 +152,6 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_blocked'] = $validated['is_blocked'] ?? false;
-
-        // Преобразуем 'manager' в 'sales_manager' для совместимости с Flutter
-        if ($validated['role'] === 'manager') {
-            $validated['role'] = 'sales_manager';
-        }
 
         $user = User::create($validated);
         $user->load(['company', 'warehouse']);
@@ -189,7 +184,7 @@ class UserController extends Controller
             'username' => ['sometimes', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'sometimes|string|min:8',
-            'role' => ['sometimes', Rule::in(array_merge(UserRole::cases(), ['manager']))],
+            'role' => ['sometimes', Rule::in(UserRole::cases())],
             'company_id' => 'sometimes|exists:companies,id',
             'warehouse_id' => 'sometimes|exists:warehouses,id',
             'phone' => 'sometimes|string|max:20',
@@ -198,11 +193,6 @@ class UserController extends Controller
 
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
-        }
-
-        // Преобразуем 'manager' в 'sales_manager' для совместимости с Flutter
-        if (isset($validated['role']) && $validated['role'] === 'manager') {
-            $validated['role'] = 'sales_manager';
         }
 
         // Если name не передан, но меняются части ФИО — пересобираем name
