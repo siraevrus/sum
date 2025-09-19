@@ -2114,10 +2114,6 @@ components:
         quantity:
           type: integer
           minimum: 1
-        attributes:
-          type: array
-          items:
-            type: object
 
     Receipt:
       type: object

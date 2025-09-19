@@ -16,28 +16,19 @@ class Request extends Model
         'user_id',
         'warehouse_id',
         'product_template_id',
-        'attributes',
-        'calculated_volume',
         'title',
         'description',
         'quantity',
         'status',
         'admin_notes',
         'approved_by',
-        'processed_by',
         'approved_at',
-        'processed_at',
-        'completed_at',
         'is_active',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
-        'attributes' => 'array',
-        'calculated_volume' => 'decimal:4',
         'approved_at' => 'datetime',
-        'processed_at' => 'datetime',
-        'completed_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 

@@ -94,7 +94,6 @@ class RequestController extends Controller
             'description' => 'nullable|string',
             'quantity' => 'required|integer|min:1',
             'status' => 'sometimes|in:pending,approved',
-            'attributes' => 'nullable|array',
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -135,7 +134,6 @@ class RequestController extends Controller
             'quantity' => 'sometimes|integer|min:1',
             'status' => 'sometimes|in:pending,approved',
             'admin_notes' => 'sometimes|string',
-            'attributes' => 'sometimes|array',
         ]);
 
         $request->update($validated);

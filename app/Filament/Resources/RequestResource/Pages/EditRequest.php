@@ -17,10 +17,6 @@ class EditRequest extends EditRecord
             $data['description'] = '';
         }
 
-        // Устанавливаем пустые атрибуты, так как характеристики больше не используются
-        $data['attributes'] = [];
-        $data['calculated_volume'] = null;
-
         return $data;
     }
 
