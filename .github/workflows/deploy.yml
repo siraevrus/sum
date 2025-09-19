@@ -1,0 +1,51 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Navigate to project directory
+          cd /var/www/sklad
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Install/update dependencies
+          composer install --no-dev --optimize-autoloader
+          
+          # Run database migrations
+          php artisan migrate --force
+          
+          # Clear and cache configuration
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          
+          # Build frontend assets
+          npm install
+          npm run build
+          
+          # Set proper permissions
+          chown -R www-data:www-data /var/www/sklad
+          chmod -R 755 /var/www/sklad
+          
+          # Restart web server
+          systemctl restart nginx
+          
+          # Verify deployment
+          php artisan --version
+          echo "Deployment completed successfully!"
