@@ -2390,6 +2390,121 @@
         }
       }
     },
+    "/dashboard/revenue": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Выручка по валютам за период",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "custom"
+              ],
+              "default": "day"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Выручка по валютам",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "string",
+                      "example": "week"
+                    },
+                    "date_from": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2025-09-16"
+                    },
+                    "date_to": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2025-09-22"
+                    },
+                    "revenue": {
+                      "type": "object",
+                      "properties": {
+                        "USD": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "example": 444
+                            },
+                            "formatted": {
+                              "type": "string",
+                              "example": "444$"
+                            }
+                          }
+                        },
+                        "RUB": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "example": 244
+                            },
+                            "formatted": {
+                              "type": "string",
+                              "example": "244 ₽"
+                            }
+                          }
+                        },
+                        "UZS": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "example": 0
+                            },
+                            "formatted": {
+                              "type": "string",
+                              "example": "0 Сум"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/discrepancies/{discrepancy}": {
       "get": {
         "tags": [
