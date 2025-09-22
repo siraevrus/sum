@@ -610,7 +610,7 @@ class ProductResource extends Resource
                                     ->label('Рассчитанный объем')
                                     ->disabled()
                                     ->key(fn (Get $get) => 'calculated_volume_'.($get('product_template_id') ?? 'none'))
-                                    ->columnSpanFull()
+                                    ->columnSpan(1)
                                     ->formatStateUsing(function ($state) {
                                         // Если это число - форматируем, если строка - показываем как есть
                                         if (is_numeric($state)) {
