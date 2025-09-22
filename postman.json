@@ -1,0 +1,1119 @@
+{
+  "info": {
+    "name": "Sklad API Collection",
+    "description": "API коллекция для системы управления складом",
+    "version": "1.2.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Иван Иванов\",\n  \"username\": \"ivan_ivanov\",\n  \"email\": \"ivan@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"admin\",\n  \"company_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"ivan@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('auth_token', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Иван Иванов Обновленный\",\n  \"email\": \"ivan.updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/stats",
+              "host": ["{{base_url}}"],
+              "path": ["products", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Popular Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/popular?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["products", "popular"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_template_id\": 1,\n  \"warehouse_id\": 1,\n  \"producer_id\": 1,\n  \"attributes\": {\n    \"length\": 6000,\n    \"width\": 2000,\n    \"thickness\": 10\n  },\n  \"quantity\": 100,\n  \"transport_number\": \"А123БВ77\",\n  \"arrival_date\": \"2024-01-15\",\n  \"shipping_location\": \"Завод №1\",\n  \"shipping_date\": \"2024-01-10\",\n  \"expected_arrival_date\": \"2024-01-15\",\n  \"notes\": \"Заметки о товаре\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 150,\n  \"notes\": \"Обновленные заметки\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Export Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products/export?format=csv",
+              "host": ["{{base_url}}"],
+              "path": ["products", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "item": [
+        {
+          "name": "Get Sales",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/sales?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["sales"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Sales Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/sales/stats",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Create Sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 10,\n  \"price\": 1500.50,\n  \"client_name\": \"ООО Клиент\",\n  \"client_contact\": \"+7 (495) 123-45-67\",\n  \"notes\": \"Заметки о продаже\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sales",
+              "host": ["{{base_url}}"],
+              "path": ["sales"]
+            }
+          }
+        },
+        {
+          "name": "Get Sale by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/sales/1",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Sale",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 15,\n  \"price\": 1600.00,\n  \"notes\": \"Обновленные заметки\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sales/1",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "1"]
+            }
+          }
+        },
+        {
+          "name": "Process Sale",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/sales/1/process",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "1", "process"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Sale",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/sales/1/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "1", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Delete Sale",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/sales/1",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "1"]
+            }
+          }
+        },
+        {
+          "name": "Export Sales",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/sales/export?format=csv",
+              "host": ["{{base_url}}"],
+              "path": ["sales", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Companies",
+      "item": [
+        {
+          "name": "Get Companies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/companies?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["companies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ООО Новая Компания\",\n  \"inn\": \"1234567890\",\n  \"kpp\": \"123456789\",\n  \"ogrn\": \"1234567890123\",\n  \"legal_address\": \"г. Москва, ул. Примерная, д. 1\",\n  \"phone\": \"+7 (495) 123-45-67\",\n  \"email\": \"info@newcompany.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/companies",
+              "host": ["{{base_url}}"],
+              "path": ["companies"]
+            }
+          }
+        },
+        {
+          "name": "Get Company by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/companies/1",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ООО Обновленная Компания\",\n  \"phone\": \"+7 (495) 987-65-43\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/companies/1",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1"]
+            }
+          }
+        },
+        {
+          "name": "Archive Company",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/companies/1/archive",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1", "archive"]
+            }
+          }
+        },
+        {
+          "name": "Restore Company",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/companies/1/restore",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1", "restore"]
+            }
+          }
+        },
+        {
+          "name": "Get Company Warehouses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/companies/1/warehouses",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1", "warehouses"]
+            }
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/companies/1",
+              "host": ["{{base_url}}"],
+              "path": ["companies", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Warehouses",
+      "item": [
+        {
+          "name": "Get Warehouses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses"]
+            }
+          }
+        },
+        {
+          "name": "Get Warehouses Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses/stats",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Create Warehouse",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Склад №2\",\n  \"address\": \"г. Москва, ул. Складская, д. 2\",\n  \"company_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/warehouses",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses"]
+            }
+          }
+        },
+        {
+          "name": "Get Warehouse by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Warehouse Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1/stats",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Warehouse Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1/products",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1", "products"]
+            }
+          }
+        },
+        {
+          "name": "Get Warehouse Employees",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1/employees",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1", "employees"]
+            }
+          }
+        },
+        {
+          "name": "Update Warehouse",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Обновленный Склад №1\",\n  \"address\": \"г. Москва, ул. Новая Складская, д. 1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/warehouses/1",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Activate Warehouse",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1/activate",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Warehouse",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Warehouse",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/warehouses/1",
+              "host": ["{{base_url}}"],
+              "path": ["warehouses", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Templates",
+      "item": [
+        {
+          "name": "Get Product Templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product Templates Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates/stats",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Units",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates/units",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "units"]
+            }
+          }
+        },
+        {
+          "name": "Create Product Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Новый шаблон товара\",\n  \"unit\": \"kg\",\n  \"formula\": \"length * width * height * density\",\n  \"attributes\": [\n    {\n      \"variable\": \"length\",\n      \"full_name\": \"Длина\",\n      \"data_type\": \"number\"\n    },\n    {\n      \"variable\": \"width\",\n      \"full_name\": \"Ширина\",\n      \"data_type\": \"number\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/product-templates",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Template by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Attributes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/attributes",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "Get Template Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/products",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "products"]
+            }
+          }
+        },
+        {
+          "name": "Test Formula",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attributes\": {\n    \"length\": 6000,\n    \"width\": 2000,\n    \"height\": 10,\n    \"density\": 7.85\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/test-formula",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "test-formula"]
+            }
+          }
+        },
+        {
+          "name": "Add Attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variable\": \"thickness\",\n  \"full_name\": \"Толщина\",\n  \"data_type\": \"number\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/attributes",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "Update Attribute",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variable\": \"thickness\",\n  \"full_name\": \"Толщина (мм)\",\n  \"data_type\": \"number\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/attributes/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "attributes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Attribute",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/attributes/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "attributes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Activate Template",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/activate",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Template",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Update Product Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Обновленный шаблон товара\",\n  \"formula\": \"length * width * height * density * 0.001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/product-templates/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product Template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/product-templates/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-templates", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Producers",
+      "item": [
+        {
+          "name": "Get Producers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/producers",
+              "host": ["{{base_url}}"],
+              "path": ["producers"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/producers",
+                  "host": ["{{base_url}}"],
+                  "path": ["producers"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Металлургический завод\",\n    \"region\": \"Московская область\",\n    \"products_count\": 15,\n    \"created_at\": \"2025-09-16T17:11:51.000000Z\",\n    \"updated_at\": \"2025-09-16T17:11:51.000000Z\"\n  },\n  {\n    \"id\": 2,\n    \"name\": \"ООО Лесопилка\",\n    \"region\": \"Ленинградская область\",\n    \"products_count\": 8,\n    \"created_at\": \"2025-09-16T17:12:15.000000Z\",\n    \"updated_at\": \"2025-09-16T17:12:15.000000Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create Producer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Новый Производитель\",\n  \"region\": \"Московская область\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/producers",
+              "host": ["{{base_url}}"],
+              "path": ["producers"]
+            }
+          }
+        },
+        {
+          "name": "Get Producer by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/producers/1",
+              "host": ["{{base_url}}"],
+              "path": ["producers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Producer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Обновленный Производитель\",\n  \"region\": \"Санкт-Петербург\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/producers/1",
+              "host": ["{{base_url}}"],
+              "path": ["producers", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Producer",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/producers/1",
+              "host": ["{{base_url}}"],
+              "path": ["producers", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Discrepancies",
+      "item": [
+        {
+          "name": "Get Discrepancies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/discrepancies?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["discrepancies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "15"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Discrepancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_in_transit_id\": 1,\n  \"reason\": \"Повреждение при транспортировке\",\n  \"old_quantity\": 100,\n  \"new_quantity\": 95,\n  \"old_color\": \"Красный\",\n  \"new_color\": \"Синий\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discrepancies",
+              "host": ["{{base_url}}"],
+              "path": ["discrepancies"]
+            }
+          }
+        },
+        {
+          "name": "Get Discrepancy by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/discrepancies/1",
+              "host": ["{{base_url}}"],
+              "path": ["discrepancies", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Discrepancy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Обновленная причина расхождения\",\n  \"new_quantity\": 90\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/discrepancies/1",
+              "host": ["{{base_url}}"],
+              "path": ["discrepancies", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Discrepancy",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/discrepancies/1",
+              "host": ["{{base_url}}"],
+              "path": ["discrepancies", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/summary",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

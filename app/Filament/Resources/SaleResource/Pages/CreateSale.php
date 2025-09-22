@@ -14,7 +14,9 @@ class CreateSale extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        Log::info('Начало создания продажи', $data);
+        if (config('app.debug')) {
+            Log::debug('Начало создания продажи', $data);
+        }
         $data['user_id'] = Auth::id();
         $data['sale_number'] = \App\Models\Sale::generateSaleNumber();
 
@@ -48,7 +50,9 @@ class CreateSale extends CreateRecord
 
                 if ($product) {
                     $data['product_id'] = $product->id;
-                    Log::info('Найден товар для продажи', ['product_id' => $product->id]);
+                    if (config('app.debug')) {
+                        Log::debug('Найден товар для продажи', ['product_id' => $product->id]);
+                    }
                 } else {
                     throw new \Exception('Товар не найден или отсутствует на складе');
                 }
@@ -138,14 +142,16 @@ class CreateSale extends CreateRecord
                 $candidate->decreaseQuantity($decrement);
                 $remaining -= $decrement;
 
-                Log::info('Списание с позиции', [
-                    'product_id' => $candidate->id,
-                    'quantity' => $candidate->quantity,
-                    'sold_quantity_before' => $candidate->sold_quantity ?? 0,
-                    'available_before' => $availableInPosition,
-                    'decrement' => $decrement,
-                    'remaining' => $remaining,
-                ]);
+                if (config('app.debug')) {
+                    Log::debug('Списание с позиции', [
+                        'product_id' => $candidate->id,
+                        'quantity' => $candidate->quantity,
+                        'sold_quantity_before' => $candidate->sold_quantity ?? 0,
+                        'available_before' => $availableInPosition,
+                        'decrement' => $decrement,
+                        'remaining' => $remaining,
+                    ]);
+                }
             }
 
             if ($remaining > 0) {
@@ -157,12 +163,16 @@ class CreateSale extends CreateRecord
             $sale->save();
         });
 
-        Log::info('Продажа создана и товар списан', ['sale_id' => $sale->id]);
+        if (config('app.debug')) {
+            Log::debug('Продажа создана и товар списан', ['sale_id' => $sale->id]);
+        }
     }
 
     protected function getRedirectUrl(): string
     {
-        Log::info('Редирект после создания продажи');
+        if (config('app.debug')) {
+            Log::debug('Редирект после создания продажи');
+        }
 
         return $this->getResource()::getUrl('index');
     }

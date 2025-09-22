@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DiscrepancyController;
+use App\Http\Controllers\Api\ProducerController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductTemplateController;
 use App\Http\Controllers\Api\RequestController;
@@ -155,6 +157,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('stocks')->group(function () {
         Route::get('/', [StockController::class, 'index']);
         Route::get('/{stock}', [StockController::class, 'show']);
+    });
+
+    // Производители
+    Route::prefix('producers')->group(function () {
+        Route::get('/', [ProducerController::class, 'index']);
+        Route::post('/', [ProducerController::class, 'store']);
+        Route::get('/{producer}', [ProducerController::class, 'show']);
+        Route::put('/{producer}', [ProducerController::class, 'update']);
+        Route::delete('/{producer}', [ProducerController::class, 'destroy']);
+    });
+
+    // Расхождения
+    Route::prefix('discrepancies')->group(function () {
+        Route::get('/', [DiscrepancyController::class, 'index']);
+        Route::post('/', [DiscrepancyController::class, 'store']);
+        Route::get('/{discrepancy}', [DiscrepancyController::class, 'show']);
+        Route::put('/{discrepancy}', [DiscrepancyController::class, 'update']);
+        Route::delete('/{discrepancy}', [DiscrepancyController::class, 'destroy']);
     });
 
     // Инфопанель (агрегированные данные для мобильного клиента)

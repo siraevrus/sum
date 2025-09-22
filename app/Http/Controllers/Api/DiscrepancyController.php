@@ -43,24 +43,40 @@ class DiscrepancyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Discrepancy $discrepancy)
     {
-        return Discrepancy::with(['productInTransit', 'user'])->findOrFail($id);
+        return response()->json($discrepancy->load(['productInTransit', 'user']));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Discrepancy $discrepancy)
     {
-        //
+        $data = $request->validate([
+            'reason' => 'sometimes|string|max:255',
+            'old_quantity' => 'sometimes|nullable|integer',
+            'new_quantity' => 'sometimes|nullable|integer',
+            'old_color' => 'sometimes|nullable|string|max:255',
+            'new_color' => 'sometimes|nullable|string|max:255',
+            'old_size' => 'sometimes|nullable|string|max:255',
+            'new_size' => 'sometimes|nullable|string|max:255',
+            'old_weight' => 'sometimes|nullable|numeric',
+            'new_weight' => 'sometimes|nullable|numeric',
+        ]);
+
+        $discrepancy->update($data);
+
+        return response()->json($discrepancy->load(['productInTransit', 'user']));
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Discrepancy $discrepancy)
     {
-        //
+        $discrepancy->delete();
+
+        return response()->json(null, 204);
     }
 }

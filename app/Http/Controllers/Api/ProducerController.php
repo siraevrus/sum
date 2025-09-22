@@ -11,7 +11,7 @@ class ProducerController extends Controller
 {
     public function index(): JsonResponse
     {
-        $producers = Producer::all();
+        $producers = Producer::withCount('products')->get();
 
         return response()->json($producers);
     }
@@ -21,7 +21,7 @@ class ProducerController extends Controller
         // Validate and create a new producer
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            // Add other fields as needed, based on the Producer model
+            'region' => 'nullable|string|max:255',
         ]);
 
         $producer = Producer::create($validated);
@@ -31,6 +31,8 @@ class ProducerController extends Controller
 
     public function show(Producer $producer): JsonResponse
     {
+        $producer->loadCount('products');
+
         return response()->json($producer);
     }
 
@@ -38,7 +40,7 @@ class ProducerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            // Add other fields as needed
+            'region' => 'sometimes|nullable|string|max:255',
         ]);
 
         $producer->update($validated);

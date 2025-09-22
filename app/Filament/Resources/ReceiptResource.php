@@ -229,13 +229,15 @@ class ReceiptResource extends Resource
                                                 }
 
                                                 // Логируем атрибуты для отладки
-                                                \Log::info('Attributes for volume calculation (quantity - ReceiptResource)', [
-                                                    'template' => $template->name,
-                                                    'all_attributes' => $attributes,
-                                                    'numeric_attributes' => $numericAttributes,
-                                                    'quantity' => $quantity,
-                                                    'formula' => $template->formula,
-                                                ]);
+                                                if (config('app.debug')) {
+                                                    \Log::debug('Attributes for volume calculation (quantity - ReceiptResource)', [
+                                                        'template' => $template->name,
+                                                        'all_attributes' => $attributes,
+                                                        'numeric_attributes' => $numericAttributes,
+                                                        'quantity' => $quantity,
+                                                        'formula' => $template->formula,
+                                                    ]);
+                                                }
 
                                                 // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                                 if (! empty($numericAttributes) && $template->formula) {
@@ -245,11 +247,13 @@ class ReceiptResource extends Resource
                                                         $set('calculated_volume', $result);
 
                                                         // Логируем для отладки
-                                                        \Log::info('Volume calculated from quantity change (ReceiptResource)', [
-                                                            'template' => $template->name,
-                                                            'attributes' => $numericAttributes,
-                                                            'result' => $result,
-                                                        ]);
+                                                        if (config('app.debug')) {
+                                                            \Log::debug('Volume calculated from quantity change (ReceiptResource)', [
+                                                                'template' => $template->name,
+                                                                'attributes' => $numericAttributes,
+                                                                'result' => $result,
+                                                            ]);
+                                                        }
                                                     } else {
                                                         // Если расчет не удался, показываем ошибку
                                                         $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
@@ -398,13 +402,15 @@ class ReceiptResource extends Resource
                                                             }
 
                                                             // Логируем атрибуты для отладки
-                                                            \Log::info('Attributes for volume calculation (number - ReceiptResource)', [
-                                                                'template' => $template->name,
-                                                                'all_attributes' => $attributes,
-                                                                'numeric_attributes' => $numericAttributes,
-                                                                'quantity' => $quantity,
-                                                                'formula' => $template->formula,
-                                                            ]);
+                                                            if (config('app.debug')) {
+                                                                \Log::debug('Attributes for volume calculation (number - ReceiptResource)', [
+                                                                    'template' => $template->name,
+                                                                    'all_attributes' => $attributes,
+                                                                    'numeric_attributes' => $numericAttributes,
+                                                                    'quantity' => $quantity,
+                                                                    'formula' => $template->formula,
+                                                                ]);
+                                                            }
 
                                                             // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                                             if (! empty($numericAttributes) && $template->formula) {
@@ -414,11 +420,13 @@ class ReceiptResource extends Resource
                                                                     $set('calculated_volume', $result);
 
                                                                     // Логируем для отладки
-                                                                    \Log::info('Volume calculated (ReceiptResource)', [
-                                                                        'template' => $template->name,
-                                                                        'attributes' => $numericAttributes,
-                                                                        'result' => $result,
-                                                                    ]);
+                                                                    if (config('app.debug')) {
+                                                                        \Log::debug('Volume calculated (ReceiptResource)', [
+                                                                            'template' => $template->name,
+                                                                            'attributes' => $numericAttributes,
+                                                                            'result' => $result,
+                                                                        ]);
+                                                                    }
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
                                                                     $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
@@ -501,13 +509,15 @@ class ReceiptResource extends Resource
                                                             }
 
                                                             // Логируем атрибуты для отладки
-                                                            \Log::info('Attributes for volume calculation (text - ReceiptResource)', [
-                                                                'template' => $template->name,
-                                                                'all_attributes' => $attributes,
-                                                                'numeric_attributes' => $numericAttributes,
-                                                                'quantity' => $quantity,
-                                                                'formula' => $template->formula,
-                                                            ]);
+                                                            if (config('app.debug')) {
+                                                                \Log::debug('Attributes for volume calculation (text - ReceiptResource)', [
+                                                                    'template' => $template->name,
+                                                                    'all_attributes' => $attributes,
+                                                                    'numeric_attributes' => $numericAttributes,
+                                                                    'quantity' => $quantity,
+                                                                    'formula' => $template->formula,
+                                                                ]);
+                                                            }
 
                                                             // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                                             if (! empty($numericAttributes) && $template->formula) {
@@ -517,11 +527,13 @@ class ReceiptResource extends Resource
                                                                     $set('calculated_volume', $result);
 
                                                                     // Логируем для отладки
-                                                                    \Log::info('Volume calculated (ReceiptResource)', [
-                                                                        'template' => $template->name,
-                                                                        'attributes' => $numericAttributes,
-                                                                        'result' => $result,
-                                                                    ]);
+                                                                    if (config('app.debug')) {
+                                                                        \Log::debug('Volume calculated (ReceiptResource)', [
+                                                                            'template' => $template->name,
+                                                                            'attributes' => $numericAttributes,
+                                                                            'result' => $result,
+                                                                        ]);
+                                                                    }
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
                                                                     $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
@@ -606,13 +618,15 @@ class ReceiptResource extends Resource
                                                             }
 
                                                             // Логируем атрибуты для отладки
-                                                            \Log::info('Attributes for volume calculation (select - ReceiptResource)', [
-                                                                'template' => $template->name,
-                                                                'all_attributes' => $attributes,
-                                                                'numeric_attributes' => $numericAttributes,
-                                                                'quantity' => $quantity,
-                                                                'formula' => $template->formula,
-                                                            ]);
+                                                            if (config('app.debug')) {
+                                                                \Log::debug('Attributes for volume calculation (select - ReceiptResource)', [
+                                                                    'template' => $template->name,
+                                                                    'all_attributes' => $attributes,
+                                                                    'numeric_attributes' => $numericAttributes,
+                                                                    'quantity' => $quantity,
+                                                                    'formula' => $template->formula,
+                                                                ]);
+                                                            }
 
                                                             // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                                             if (! empty($numericAttributes) && $template->formula) {
@@ -622,11 +636,13 @@ class ReceiptResource extends Resource
                                                                     $set('calculated_volume', $result);
 
                                                                     // Логируем для отладки
-                                                                    \Log::info('Volume calculated (ReceiptResource)', [
-                                                                        'template' => $template->name,
-                                                                        'attributes' => $numericAttributes,
-                                                                        'result' => $result,
-                                                                    ]);
+                                                                    if (config('app.debug')) {
+                                                                        \Log::debug('Volume calculated (ReceiptResource)', [
+                                                                            'template' => $template->name,
+                                                                            'attributes' => $numericAttributes,
+                                                                            'result' => $result,
+                                                                        ]);
+                                                                    }
                                                                 } else {
                                                                     // Если расчет не удался, показываем ошибку
                                                                     $set('calculated_volume', 'Заполните поля: '.($testResult['error'] ?? 'Неизвестная ошибка'));
@@ -960,7 +976,9 @@ class ReceiptResource extends Resource
     public static function mutateFormDataBeforeSave(array $data): array
     {
         // Логируем данные для отладки
-        \Log::info('ReceiptResource: Data before save', $data);
+        if (config('app.debug')) {
+            \Log::debug('ReceiptResource: Data before save', $data);
+        }
 
         // Обрабатываем характеристики из repeater, если они есть
         if (isset($data['products']) && is_array($data['products']) && ! empty($data['products'])) {
@@ -994,23 +1012,29 @@ class ReceiptResource extends Resource
                     }
 
                     // Логируем атрибуты для отладки
-                    \Log::info('ReceiptResource: Attributes for formula', [
-                        'template' => $template->name,
-                        'attributes' => $attributes,
-                        'formula_attributes' => $formulaAttributes,
-                        'quantity' => $data['quantity'] ?? 'not set',
-                        'formula' => $template->formula,
-                    ]);
+                    if (config('app.debug')) {
+                        \Log::debug('ReceiptResource: Attributes for formula', [
+                            'template' => $template->name,
+                            'attributes' => $attributes,
+                            'formula_attributes' => $formulaAttributes,
+                            'quantity' => $data['quantity'] ?? 'not set',
+                            'formula' => $template->formula,
+                        ]);
+                    }
 
                     $testResult = $template->testFormula($formulaAttributes);
-                    \Log::info('ReceiptResource: Formula result', $testResult);
+                    if (config('app.debug')) {
+                        \Log::debug('ReceiptResource: Formula result', $testResult);
+                    }
 
                     if ($testResult['success']) {
                         $result = $testResult['result'];
                         $data['calculated_volume'] = $result;
-                        \Log::info('ReceiptResource: Volume calculated and saved', [
-                            'calculated_volume' => $result,
-                        ]);
+                        if (config('app.debug')) {
+                            \Log::debug('ReceiptResource: Volume calculated and saved', [
+                                'calculated_volume' => $result,
+                            ]);
+                        }
                     } else {
                         \Log::warning('ReceiptResource: Volume calculation failed', [
                             'error' => $testResult['error'],
@@ -1032,11 +1056,15 @@ class ReceiptResource extends Resource
                     if (! empty($nameParts)) {
                         $templateName = $template->name ?? 'Товар';
                         $data['name'] = $templateName.': '.implode(', ', $nameParts);
-                        \Log::info('ReceiptResource: Name generated', ['name' => $data['name']]);
+                        if (config('app.debug')) {
+                            \Log::debug('ReceiptResource: Name generated', ['name' => $data['name']]);
+                        }
                     } else {
                         // Если не удалось сформировать имя из характеристик, используем название шаблона
                         $data['name'] = $template->name ?? 'Товар';
-                        \Log::info('ReceiptResource: Name generated from template', ['name' => $data['name']]);
+                        if (config('app.debug')) {
+                            \Log::debug('ReceiptResource: Name generated from template', ['name' => $data['name']]);
+                        }
                     }
                 }
             }
@@ -1045,7 +1073,9 @@ class ReceiptResource extends Resource
             unset($data['products']);
         }
 
-        \Log::info('ReceiptResource: Data after processing', $data);
+        if (config('app.debug')) {
+            \Log::debug('ReceiptResource: Data after processing', $data);
+        }
 
         return $data;
     }

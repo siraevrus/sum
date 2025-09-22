@@ -45,6 +45,8 @@ tags:
     description: Агрегированные данные Инфопанели
   - name: Producers
     description: Управление производителями
+  - name: Discrepancies
+    description: Управление расхождениями
 
 security:
   - bearerAuth: []
@@ -1431,6 +1433,90 @@ paths:
                           format: date-time
                           example: "2025-09-17T13:45:00Z"
 
+  # === DISCREPANCIES ===
+  /discrepancies:
+    get:
+      tags: [Discrepancies]
+      summary: Получение списка расхождений
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Список расхождений
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDiscrepancies'
+    post:
+      tags: [Discrepancies]
+      summary: Создание расхождения
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscrepancyInput'
+      responses:
+        '201':
+          description: Расхождение создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discrepancy'
+
+  /discrepancies/{discrepancy}:
+    get:
+      tags: [Discrepancies]
+      summary: Получение расхождения по ID
+      parameters:
+        - name: discrepancy
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о расхождении
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discrepancy'
+    put:
+      tags: [Discrepancies]
+      summary: Обновление расхождения
+      parameters:
+        - name: discrepancy
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscrepancyInput'
+      responses:
+        '200':
+          description: Расхождение обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discrepancy'
+    delete:
+      tags: [Discrepancies]
+      summary: Удаление расхождения
+      parameters:
+        - name: discrepancy
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Расхождение удалено
+
   # === PRODUCERS ===
   /producers:
     get:
@@ -1457,53 +1543,54 @@ paths:
       responses:
         '201':
           description: Производитель создан
-    /producers/{id}:
-      get:
-        tags: [Producers]
-        summary: Получение производителя по ID
-        parameters:
-          - name: id
-            in: path
-            required: true
-            schema:
-              type: integer
-        responses:
-          '200':
-            description: Информация о производителе
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Producer'
-      put:
-        tags: [Producers]
-        summary: Обновление производителя
-        parameters:
-          - name: id
-            in: path
-            required: true
-            schema:
-              type: integer
-        requestBody:
+
+  /producers/{producer}:
+    get:
+      tags: [Producers]
+      summary: Получение производителя по ID
+      parameters:
+        - name: producer
+          in: path
           required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о производителе
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProducerInput'
-        responses:
-          '200':
-            description: Производитель обновлен
-      delete:
-        tags: [Producers]
-        summary: Удаление производителя
-        parameters:
-          - name: id
-            in: path
-            required: true
+                $ref: '#/components/schemas/Producer'
+    put:
+      tags: [Producers]
+      summary: Обновление производителя
+      parameters:
+        - name: producer
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
             schema:
-              type: integer
-        responses:
-          '200':
-            description: Производитель удален
+              $ref: '#/components/schemas/ProducerInput'
+      responses:
+        '200':
+          description: Производитель обновлен
+    delete:
+      tags: [Producers]
+      summary: Удаление производителя
+      parameters:
+        - name: producer
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Производитель удален
 
 # === COMPONENTS ===
 components:
@@ -2044,6 +2131,14 @@ components:
         name:
           type: string
           example: "Металлургический завод"
+        region:
+          type: string
+          nullable: true
+          example: "Московская область"
+        products_count:
+          type: integer
+          example: 15
+          description: "Количество товаров этого производителя"
         created_at:
           type: string
           format: date-time
@@ -2314,6 +2409,110 @@ components:
         name:
           type: string
           maxLength: 255
+        region:
+          type: string
+          maxLength: 255
+          nullable: true
+
+    Discrepancy:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        product_in_transit_id:
+          type: integer
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        reason:
+          type: string
+          example: "Повреждение при транспортировке"
+        old_quantity:
+          type: integer
+          nullable: true
+          example: 100
+        new_quantity:
+          type: integer
+          nullable: true
+          example: 95
+        old_color:
+          type: string
+          nullable: true
+          example: "Красный"
+        new_color:
+          type: string
+          nullable: true
+          example: "Синий"
+        old_size:
+          type: string
+          nullable: true
+          example: "L"
+        new_size:
+          type: string
+          nullable: true
+          example: "M"
+        old_weight:
+          type: number
+          format: float
+          nullable: true
+          example: 10.5
+        new_weight:
+          type: number
+          format: float
+          nullable: true
+          example: 9.8
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        product_in_transit:
+          $ref: '#/components/schemas/ProductInTransit'
+        user:
+          $ref: '#/components/schemas/User'
+
+    DiscrepancyInput:
+      type: object
+      required: [product_in_transit_id, reason]
+      properties:
+        product_in_transit_id:
+          type: integer
+        reason:
+          type: string
+          maxLength: 255
+        old_quantity:
+          type: integer
+          nullable: true
+        new_quantity:
+          type: integer
+          nullable: true
+        old_color:
+          type: string
+          maxLength: 255
+          nullable: true
+        new_color:
+          type: string
+          maxLength: 255
+          nullable: true
+        old_size:
+          type: string
+          maxLength: 255
+          nullable: true
+        new_size:
+          type: string
+          maxLength: 255
+          nullable: true
+        old_weight:
+          type: number
+          format: float
+          nullable: true
+        new_weight:
+          type: number
+          format: float
+          nullable: true
 
     # Paginated responses
     PaginatedUsers:
@@ -2395,6 +2594,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Stock'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    PaginatedDiscrepancies:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Discrepancy'
         links:
           $ref: '#/components/schemas/PaginationLinks'
         meta:

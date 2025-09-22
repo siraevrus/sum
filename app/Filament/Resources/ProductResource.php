@@ -213,11 +213,13 @@ class ProductResource extends Resource
                                                     $set('calculated_volume', $result);
 
                                                     // Логируем для отладки
-                                                    Log::info('Volume calculated from quantity change', [
-                                                        'template' => $template->name,
-                                                        'attributes' => $numericAttributes,
-                                                        'result' => $result,
-                                                    ]);
+                                                    if (config('app.debug')) {
+                                                        Log::debug('Volume calculated from quantity change', [
+                                                            'template' => $template->name,
+                                                            'attributes' => $numericAttributes,
+                                                            'result' => $result,
+                                                        ]);
+                                                    }
                                                 }
                                             } else {
                                                 // Если расчет не удался, показываем ошибку
@@ -299,13 +301,15 @@ class ProductResource extends Resource
                                                     }
 
                                                     // Логируем атрибуты для отладки
-                                                    Log::info('Attributes for volume calculation (number)', [
-                                                        'template' => $template->name,
-                                                        'all_attributes' => $attributes,
-                                                        'numeric_attributes' => $numericAttributes,
-                                                        'quantity' => $quantity,
-                                                        'formula' => $template->formula,
-                                                    ]);
+                                                    if (config('app.debug')) {
+                                                        Log::debug('Attributes for volume calculation (number)', [
+                                                            'template' => $template->name,
+                                                            'all_attributes' => $attributes,
+                                                            'numeric_attributes' => $numericAttributes,
+                                                            'quantity' => $quantity,
+                                                            'formula' => $template->formula,
+                                                        ]);
+                                                    }
 
                                                     // Если есть заполненные числовые характеристики и формула, рассчитываем объем
                                                     if (! empty($numericAttributes) && $template->formula) {
@@ -326,11 +330,13 @@ class ProductResource extends Resource
                                                                 $set('calculated_volume', $result);
 
                                                                 // Логируем для отладки
-                                                                Log::info('Volume calculated', [
-                                                                    'template' => $template->name,
-                                                                    'attributes' => $numericAttributes,
-                                                                    'result' => $result,
-                                                                ]);
+                                                                if (config('app.debug')) {
+                                                                    Log::debug('Volume calculated', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                }
                                                             }
                                                         } else {
                                                             // Если расчет не удался, показываем ошибку
@@ -442,11 +448,13 @@ class ProductResource extends Resource
                                                                 $set('calculated_volume', $result);
 
                                                                 // Логируем для отладки
-                                                                Log::info('Volume calculated', [
-                                                                    'template' => $template->name,
-                                                                    'attributes' => $numericAttributes,
-                                                                    'result' => $result,
-                                                                ]);
+                                                                if (config('app.debug')) {
+                                                                    Log::debug('Volume calculated', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                }
                                                             }
                                                         } else {
                                                             // Если расчет не удался, показываем ошибку
@@ -523,11 +531,13 @@ class ProductResource extends Resource
                                                                 $set('calculated_volume', $result);
 
                                                                 // Логируем для отладки
-                                                                Log::info('Volume calculated', [
-                                                                    'template' => $template->name,
-                                                                    'attributes' => $numericAttributes,
-                                                                    'result' => $result,
-                                                                ]);
+                                                                if (config('app.debug')) {
+                                                                    Log::debug('Volume calculated', [
+                                                                        'template' => $template->name,
+                                                                        'attributes' => $numericAttributes,
+                                                                        'result' => $result,
+                                                                    ]);
+                                                                }
                                                             }
                                                         } else {
                                                             // Если расчет не удался, показываем ошибку
