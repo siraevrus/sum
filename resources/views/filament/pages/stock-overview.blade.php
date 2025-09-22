@@ -27,32 +27,32 @@
                     <button 
                         @click="activeTab = 'producers'; $dispatch('tab-changed', { tab: 'producers' })"
                         :class="activeTab === 'producers'
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-600'
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border-primary-600'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border-transparent'"
                         class="border-b-2 py-2 md:py-3 px-3 md:px-4 text-sm font-medium rounded-t-md transition-colors duration-200"
                     >
                         По производителям
-                        <span :class="activeTab === 'producers' ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $producerCount }}</span>
+                        <span :class="activeTab === 'producers' ? 'bg-primary-100 dark:bg-primary-800/50 text-primary-700 dark:text-primary-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $producerCount }}</span>
                     </button>
                     <button 
                         @click="activeTab = 'warehouses'; $dispatch('tab-changed', { tab: 'warehouses' })"
                         :class="activeTab === 'warehouses'
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-600'
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border-primary-600'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border-transparent'"
                         class="border-b-2 py-2 md:py-3 px-3 md:px-4 text-sm font-medium rounded-t-md transition-colors duration-200"
                     >
                         По складам
-                        <span :class="activeTab === 'warehouses' ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $warehouseCount }}</span>
+                        <span :class="activeTab === 'warehouses' ? 'bg-primary-100 dark:bg-primary-800/50 text-primary-700 dark:text-primary-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $warehouseCount }}</span>
                     </button>
                     <button 
                         @click="activeTab = 'companies'; $dispatch('tab-changed', { tab: 'companies' })"
                         :class="activeTab === 'companies'
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-600'
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border-primary-600'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 border-transparent'"
                         class="border-b-2 py-2 md:py-3 px-3 md:px-4 text-sm font-medium rounded-t-md transition-colors duration-200"
                     >
                         Компании
-                        <span :class="activeTab === 'companies' ? 'bg-green-100 dark:bg-green-800/50 text-green-700 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $companyCount }}</span>
+                        <span :class="activeTab === 'companies' ? 'bg-primary-100 dark:bg-primary-800/50 text-primary-700 dark:text-primary-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs">{{ $companyCount }}</span>
                     </button>
                 </nav>
             </div>
