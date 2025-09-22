@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -74,6 +75,81 @@ class DashboardController extends Controller
             'requests_pending' => $requestsPending,
             'latest_sales' => $latestSales,
         ]);
+    }
+
+    /**
+     * Revenue data by currency for a period (day|week|month|custom).
+     */
+    public function revenue(Request $request): JsonResponse
+    {
+        $period = $request->query('period', 'day');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        [$from, $to] = $this->resolveDateRange($period, $dateFrom, $dateTo);
+
+        $salesQuery = \App\Models\Sale::query()
+            ->where('payment_status', \App\Models\Sale::PAYMENT_STATUS_PAID)
+            ->when(schema_has_column('sales', 'is_active'), fn ($q) => $q->where('is_active', true));
+
+        if ($period === 'day') {
+            $salesQuery->whereDate('sale_date', $from);
+        } else {
+            $salesQuery->whereBetween('sale_date', [
+                $from.' 00:00:00',
+                $to.' 23:59:59',
+            ]);
+        }
+
+        $results = $salesQuery
+            ->selectRaw('currency, SUM(total_price) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency');
+
+        $currencies = ['USD', 'RUB', 'UZS'];
+        $data = [];
+        foreach ($currencies as $currency) {
+            $amount = (float) ($results[$currency] ?? 0);
+            $data[$currency] = [
+                'amount' => $amount,
+                'formatted' => $this->formatCurrency($amount, $currency),
+            ];
+        }
+
+        return response()->json([
+            'period' => $period,
+            'date_from' => $from,
+            'date_to' => $to,
+            'revenue' => $data,
+        ]);
+    }
+
+    private function resolveDateRange(string $period, ?string $dateFrom, ?string $dateTo): array
+    {
+        $today = now()->format('Y-m-d');
+
+        return match ($period) {
+            'day' => [$today, $today],
+            'week' => [now()->subDays(6)->format('Y-m-d'), $today],
+            'month' => [now()->subDays(29)->format('Y-m-d'), $today],
+            'custom' => [
+                $dateFrom ?: $today,
+                $dateTo ?: $today,
+            ],
+            default => [$today, $today],
+        };
+    }
+
+    private function formatCurrency(float $amount, string $currency): string
+    {
+        $formatted = number_format($amount, 0, '.', ' ');
+
+        return match ($currency) {
+            'USD' => $formatted.'$',
+            'RUB' => $formatted.' ₽',
+            'UZS' => $formatted.' Сум',
+            default => $formatted,
+        };
     }
 }
 

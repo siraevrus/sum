@@ -1112,22 +1112,6 @@
               "path": ["dashboard", "summary"]
             }
           }
-        },
-        {
-          "name": "Get Dashboard Revenue",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/dashboard/revenue?period=week",
-              "host": ["{{base_url}}"],
-              "path": ["dashboard", "revenue"],
-              "query": [
-                { "key": "period", "value": "week" },
-                { "key": "date_from", "value": "" },
-                { "key": "date_to", "value": "" }
-              ]
-            }
-          }
         }
       ]
     }

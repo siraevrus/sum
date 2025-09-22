@@ -71,7 +71,7 @@ class ViewReceipt extends ViewRecord
                 })
                 ->requiresConfirmation()
                 ->modalHeading('Принять товар')
-                ->modalDescription('Товар будет перемещен в остатки на складе.')
+                ->modalDescription('Товар будет перемещен в Раздел "Поступление товаров" ')
                 ->modalSubmitActionLabel('Принять'),
         ];
     }

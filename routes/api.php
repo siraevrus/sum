@@ -179,4 +179,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Инфопанель (агрегированные данные для мобильного клиента)
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+    Route::get('/dashboard/revenue', [DashboardController::class, 'revenue']);
 });

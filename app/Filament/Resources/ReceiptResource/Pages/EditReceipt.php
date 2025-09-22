@@ -61,7 +61,7 @@ class EditReceipt extends EditRecord
                 })
                 ->requiresConfirmation()
                 ->modalHeading('Принять товар')
-                ->modalDescription('Товар будет перемещен в остатки на складе. Несохраненные изменения в форме будут потеряны.')
+                ->modalDescription('ТТовар будет перемещен в Раздел "Поступление товаров".')
                 ->modalSubmitActionLabel('Принять')
                 ->extraAttributes([
                     'class' => 'action-receive-product',

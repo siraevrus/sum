@@ -813,8 +813,10 @@ class ReceiptResource extends Resource
                     ->color('success')
                     ->visible(fn (Product $record): bool => $record->status === Product::STATUS_FOR_RECEIPT)
                     ->requiresConfirmation()
-                    ->modalHeading('Подтверждение приемки товара')
-                    ->modalDescription('Вы уверены, что хотите подтвердить приемку этого товара? Товар будет переведен в статус "На складе".')
+                    ->modalHeading('Принять товар')
+                    ->modalDescription('Товар будет перемещен в Раздел "Поступление товаров"
+
+')
                     ->action(function (Product $record): void {
                         $record->update([
                             'status' => Product::STATUS_IN_STOCK,
