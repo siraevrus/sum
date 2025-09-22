@@ -1,44 +1,59 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="{
+        activeTab: '{{ request()->get('tab', request()->get('company_id') ? 'warehouses' : 'producers') }}'
+    }" x-init="
+        // Синхронизация таба с URL
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab')) { activeTab = params.get('tab'); }
+        $watch('activeTab', (val) => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', val);
+            window.history.replaceState({}, '', url);
+        });
+        window.addEventListener('popstate', () => {
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('tab')) { activeTab = p.get('tab'); }
+        });
+    ">
+        @php
+            $producerCount = count($this->getProducerStats());
+            $warehouseCount = count($this->getWarehouseStats());
+            $companyCount = count($this->getCompanyStats());
+        @endphp
         <!-- Табы для переключения -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div class="border-b border-gray-200 dark:border-gray-700">
                 <nav class="flex space-x-8 px-6" aria-label="Tabs">
                     <button 
-                        x-data="{ active: '{{ request()->get('company_id') ? 'false' : 'true' }}' }"
-                        @click="active = true; $dispatch('tab-changed', { tab: 'producers' })"
-                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        @click="activeTab = 'producers'; $dispatch('tab-changed', { tab: 'producers' })"
+                        :class="{ 'border-green-500 text-green-600': activeTab === 'producers', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'producers' }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
-                        x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'producers' }) })"
                     >
                         По производителям
+                        <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300">{{ $producerCount }}</span>
                     </button>
                     <button 
-                        x-data="{ active: '{{ request()->get('company_id') ? 'true' : 'false' }}' }"
-                        @click="active = true; $dispatch('tab-changed', { tab: 'warehouses' })"
-                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        @click="activeTab = 'warehouses'; $dispatch('tab-changed', { tab: 'warehouses' })"
+                        :class="{ 'border-green-500 text-green-600': activeTab === 'warehouses', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'warehouses' }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
-                        x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'warehouses' }) })"
                     >
                         По складам
+                        <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300">{{ $warehouseCount }}</span>
                     </button>
                     <button 
-                        x-data="{ active: false }"
-                        @click="active = true; $dispatch('tab-changed', { tab: 'companies' })"
-                        :class="{ 'border-green-500 text-green-600': active, 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': !active }"
+                        @click="activeTab = 'companies'; $dispatch('tab-changed', { tab: 'companies' })"
+                        :class="{ 'border-green-500 text-green-600': activeTab === 'companies', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'companies' }"
                         class="border-b-2 py-4 px-1 text-sm font-medium transition-colors duration-200"
-                        x-init="$watch('active', value => { if (value) $dispatch('tab-changed', { tab: 'companies' }) })"
                     >
                         Компании
+                        <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300">{{ $companyCount }}</span>
                     </button>
                 </nav>
             </div>
         </div>
 
         <!-- Контент табов -->
-        <div x-data="{ 
-            activeTab: '{{ request()->get('company_id') ? 'warehouses' : 'producers' }}' 
-        }" @tab-changed.window="activeTab = $event.detail.tab">
+        <div @tab-changed.window="activeTab = $event.detail.tab">
             
             <!-- Таб: По производителям -->
             <div x-show="activeTab === 'producers'" class="space-y-6">
